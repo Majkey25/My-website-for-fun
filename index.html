@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Majkey25</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">Majkey25</h1>
+    <p class="subtitle">
+        <span id="typing-effect">This is my nickname used in programming...</span>
+    </p>
+    <div class="about-me">
+      <h2>About Me</h2>
+      <p>My name is Matěj Teplý, and I’m a passionate musician. I play the drums, guitar, saxophone, and I also sing.</p>
+      <p>Beyond music, I enjoy creating things that have lasting value — something tangible and useful.</p>
+      <p>That’s why coding resonates with me; it allows me to build and leave behind something meaningful.</p>
+      <p>I specialize in Python, JavaScript, and web development, and enjoy exploring new technologies and frameworks. I just like to learn new stuff...</p>
+    </div>
+    <div class="social-links">
+        <a href="https://github.com/Majkey25" target="_blank">GitHub</a>
+        <a href="https://www.linkedin.com/in/mat%C4%9Bj-tepl%C3%BD-64b46125b/" target="_blank">LinkedIn</a>
+        <a href="https://www.instagram.com/_majkey_/" target="_blank">Instagram</a>
+      </div>
+    <div class="scroll-arrow">
+        <div class="arrow"></div>
+    </div>
+    
+      <div class="projects hidden">
+      <h2>My Projects</h2>
+      <ul>
+        <li><a href="https://majkey25.github.io/art_by_justyna/" target="_blank">art_by_justyna</a></li>
+        <li><a href="https://majkey25.github.io/wheel/" target="_blank">Spin_the_wheel</a></li>
+        <li><a href="project3.html" target="_blank">in progress (music analyzer)</a></li>
+      </ul>
+    </div>
+  </div>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const projectSection = document.querySelector('.projects'); // Select projects section
+
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible'); // Add the visible class when in view
+                observer.unobserve(entry.target); // Stop observing once it's visible
+            }
+        });
+    }, { threshold: 0.1 }); // Trigger when 10% of the section is in view
+
+    observer.observe(projectSection); // Observe the project section
+});
+document.addEventListener('DOMContentLoaded', function() {
+const scrollArrow = document.querySelector('.scroll-arrow');
+
+window.addEventListener('scroll', function() {
+    if (window.scrollY > 100) { // Adjust the value as needed for when the arrow disappears
+        scrollArrow.classList.add('hidden-arrow');
+    } else {
+        scrollArrow.classList.remove('hidden-arrow');
+    }
+});
+});
+document.addEventListener('DOMContentLoaded', function() {
+const projectSection = document.querySelector('.projects'); // Select projects section
+
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible'); // Add the visible class when in view
+            observer.unobserve(entry.target); // Stop observing once it's visible
+        }
+    });
+}, { threshold: 0.1 }); // Trigger when 10% of the section is in view
+
+observer.observe(projectSection); // Observe the project section
+
+// Typing effect for subtitle
+const codingText = document.getElementById('coding-text');
+const text = "this is my nickname used in programming";
+let index = 0;
+
+function type() {
+    if (index < text.length) {
+        codingText.textContent += text.charAt(index);
+        index++;
+        setTimeout(type, 100); // Adjust typing speed (100ms here)
+    } else {
+        codingText.classList.add('typing'); // Add the typing effect class after typing is done
+    }
+}
+
+type();
+
+const scrollArrow = document.querySelector('.scroll-arrow');
+
+window.addEventListener('scroll', function() {
+    if (window.scrollY > 100) { // Adjust the value as needed for when the arrow disappears
+        scrollArrow.classList.add('hidden-arrow');
+    } else {
+        scrollArrow.classList.remove('hidden-arrow');
+    }
+});
+});
+</script>
+
+</body>
+</html>

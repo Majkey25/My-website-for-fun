@@ -1,0 +1,277 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background: linear-gradient(135deg, #212121, #1a1a1a);
+    color: #98FCFF;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-attachment: fixed;
+    overflow-y: auto; /* Allow vertical scrolling */
+}
+
+.container {
+    text-align: center;
+    padding: 60px;
+    background: linear-gradient(145deg, #333, #1e1e1e);
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7);
+    border-radius: 20px;
+    width: 75%;
+    max-width: 1200px;
+    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    animation: fadeIn 2s ease-in-out;
+}
+
+.title {
+    font-size: 4em;
+    color: #00ffbf;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+    animation: slideDown 1.5s ease-in-out;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(to right, #00ffbf, #1ca800);
+    background-clip: text;
+    color: transparent;
+    animation: gradientFlow 5s ease-in-out infinite;
+}
+
+.subtitle {
+    font-size: 1.4em; /* Smaller font size */
+    color: #00ff00; /* Programming green color */
+    margin-bottom: 50px;
+    font-weight: 300;
+    font-family: 'Courier New', monospace; /* Code-like font */
+    white-space: nowrap; /* Prevent wrapping */
+    overflow: hidden; /* Hide overflowing text */
+    border-right: 2px solid #00ff00; /* Cursor effect */
+    display: inline-block; /* Center alignment */
+    width: fit-content; /* Adjust width based on content */
+    animation: typing 5s steps(30) forwards, blink-caret 0.75s step-end infinite; /* Typing animation */
+}
+
+/* Typing animation */
+@keyframes typing {
+    from { width: 0; } /* Start with no width */
+    to { width: 55%; } /* Full width of the text */
+}
+
+@keyframes blink-caret {
+    from, to { border-color: transparent; } /* Transparent at the start and end */
+    50% { border-color: #00ff00; } /* Blink effect */
+}
+
+
+.about-me {
+    margin-bottom: 50px;
+    animation: fadeIn 2.5s ease-in-out;
+}
+
+.about-me h2 {
+    color: #1ca800;
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #1ca800;
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+.about-me p {
+    font-size: 1.2em;
+    color: #e0e0e0;
+    line-height: 1.7;
+    margin-bottom: 15px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 20px;
+    font-size: 1.2em;
+    line-height: 1.6; 
+}
+
+.social-links {
+    margin-top: 40px; /* Increased margin for better spacing */
+    margin-bottom: 60px; /* Add space below social links */
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.social-links a {
+    text-decoration: none;
+    color: #98FCFF;
+    font-size: 1.2em;
+    border: 2px solid #98FCFF;
+    padding: 10px 20px;
+    border-radius: 50px;
+    transition: color 0.3s, background-color 0.3s, transform 0.3s ease;
+}
+
+.social-links a:hover {
+    background-color: #98FCFF;
+    color: #212121;
+    transform: scale(1.05);
+}
+
+.projects {
+    margin-top: 40px; /* Adds space between social links and projects */
+}
+
+.projects h2 {
+    color: #ffd700;
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #ffd700;
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+.projects ul {
+    list-style: none;
+    padding: 0;
+}
+
+.projects li {
+    margin: 20px 0;
+}
+
+.projects a {
+    text-decoration: none;
+    color: #00E676;
+    font-size: 1.5em;
+    transition: color 0.3s ease, transform 0.3s ease;
+    padding: 10px 20px;
+    border: 1px solid #00E676;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+.projects a:hover {
+    color: #00C853;
+    transform: scale(1.1) rotate(3deg);
+    box-shadow: 0 0 10px rgba(0, 255, 179, 0.5);
+    background-color: rgba(0, 255, 179, 0.1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gradientFlow {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle, rgba(0,0,0,0.5), transparent);
+    z-index: -1;
+    pointer-events: none;
+}
+
+.container::after {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    filter: blur(100px);
+    animation: float 6s ease-in-out infinite alternate;
+}
+
+@keyframes float {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-20px); }
+}
+
+/* Jump-in animation for projects */
+@keyframes jumpIn {
+    0% {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.hidden {
+    opacity: 0;
+    transform: translateY(50px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scroll-arrow {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.5s ease;
+}
+
+.arrow {
+    width: 20px; /* Adjust for thickness */
+    height: 20px; /* Adjust for height */
+    border: solid #98FCFF; /* Color of the arrow */
+    border-width: 0 4px 4px 0; /* Creates a right-pointing arrow */
+    border-radius: 5px; /* Round corners */
+    padding: 5px;
+    animation: bounce 1s infinite; /* Apply bounce animation */
+    transform: rotate(45deg); /* Rotate to point downwards */
+}
+
+.hidden-arrow {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-20px);
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0) rotate(45deg); /* Maintain downward rotation */
+    }
+    50% {
+        transform: translateY(15px) rotate(45deg); /* Maintain downward rotation */
+    }
+}
