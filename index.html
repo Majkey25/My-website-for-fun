@@ -39,74 +39,60 @@
       </ul>
     </div>
   </div>
-  <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const projectSection = document.querySelector('.projects'); // Select projects section
-
-    const observer = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible'); // Add the visible class when in view
-                observer.unobserve(entry.target); // Stop observing once it's visible
+  <footer style="text-align: center; margin-top: 50px;">
+    <p>Made by Matěj Teplý</p>
+    <p>&copy; <span id="year"></span> All rights reserved.</p>
+</footer>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Projects section visibility
+        const projectSection = document.querySelector('.projects'); // Select projects section
+    
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible'); // Add the visible class when in view
+                    observer.unobserve(entry.target); // Stop observing once it's visible
+                }
+            });
+        }, { threshold: 0.1 }); // Trigger when 10% of the section is in view
+    
+        observer.observe(projectSection); // Observe the project section
+    
+        // Typing effect for subtitle
+        const typingEffect = document.getElementById('typing-effect'); // Update ID reference
+        const text = "this is my nickname used in programming";
+        let index = 0;
+    
+        function type() {
+            if (index < text.length) {
+                typingEffect.textContent += text.charAt(index); // Typing effect works on the correct element
+                index++;
+                setTimeout(type, 100); // Adjust typing speed (100ms here)
+            } else {
+                typingEffect.classList.add('typing'); // Add the typing effect class after typing is done
+            }
+        }
+    
+        // Check if the typing effect has already started
+        if (typingEffect.textContent === "") {
+            type(); // Only start typing if the text is currently empty
+        }
+    
+        // Scroll arrow visibility
+        const scrollArrow = document.querySelector('.scroll-arrow');
+    
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 100) { // Adjust the value as needed for when the arrow disappears
+                scrollArrow.classList.add('hidden-arrow');
+            } else {
+                scrollArrow.classList.remove('hidden-arrow');
             }
         });
-    }, { threshold: 0.1 }); // Trigger when 10% of the section is in view
-
-    observer.observe(projectSection); // Observe the project section
-});
-document.addEventListener('DOMContentLoaded', function() {
-const scrollArrow = document.querySelector('.scroll-arrow');
-
-window.addEventListener('scroll', function() {
-    if (window.scrollY > 100) { // Adjust the value as needed for when the arrow disappears
-        scrollArrow.classList.add('hidden-arrow');
-    } else {
-        scrollArrow.classList.remove('hidden-arrow');
-    }
-});
-});
-document.addEventListener('DOMContentLoaded', function() {
-const projectSection = document.querySelector('.projects'); // Select projects section
-
-const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('visible'); // Add the visible class when in view
-            observer.unobserve(entry.target); // Stop observing once it's visible
-        }
+    
+        // Set current year in footer
+        document.getElementById("year").textContent = new Date().getFullYear();
     });
-}, { threshold: 0.1 }); // Trigger when 10% of the section is in view
-
-observer.observe(projectSection); // Observe the project section
-
-// Typing effect for subtitle
-const codingText = document.getElementById('coding-text');
-const text = "this is my nickname used in programming";
-let index = 0;
-
-function type() {
-    if (index < text.length) {
-        codingText.textContent += text.charAt(index);
-        index++;
-        setTimeout(type, 100); // Adjust typing speed (100ms here)
-    } else {
-        codingText.classList.add('typing'); // Add the typing effect class after typing is done
-    }
-}
-
-type();
-
-const scrollArrow = document.querySelector('.scroll-arrow');
-
-window.addEventListener('scroll', function() {
-    if (window.scrollY > 100) { // Adjust the value as needed for when the arrow disappears
-        scrollArrow.classList.add('hidden-arrow');
-    } else {
-        scrollArrow.classList.remove('hidden-arrow');
-    }
-});
-});
 </script>
-
 </body>
 </html>
