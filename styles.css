@@ -334,16 +334,3 @@ footer {
     position: relative;
     bottom: 0; /* Sticks footer to the bottom */
 }
-.animation-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 50px 0; /* Space around the animation */
-}
-
-.circle {
-    width: 50px; /* Size of the circles */
-    height: 50px; /* Size of the circles */
-    border-radius: 50%; /* Make them circular */
-    background: #00E676; /* Color of the circles */
-}
