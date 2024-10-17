@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Games</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="icon-512x512.png" type="image/png">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #212121, #1a1a1a);
+            color: #98FCFF;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-attachment: fixed;
+            flex-direction: column;
+            overflow-y: auto; /* Allow vertical scrolling */
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(145deg, #333, #1e1e1e);
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            width: 95vw;
+            max-width: 1200px; 
+            margin: 10px auto;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #00ffbf;
+        }
+
+        .game {
+            margin: 20px;
+            padding: 20px;
+            background-color: #333;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .game button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #00e676;
+            color: #212121;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .game button:hover {
+            background-color: #00c853;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #98FCFF;
+            width: 100%;
+            position: relative;
+            bottom: 0; /* Sticks footer to the bottom */
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 100; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0, 0, 0, 0.8); /* Black w/ opacity */
+        }
+
+        .modal-content {
+            background-color: #333;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #00e676;
+            width: 80%; /* Could be more or less, depending on screen size */
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #fff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Flappy Bird Game Styles */
+        #flappy-bird {
+            width: 300px;
+            height: 500px;
+            border: 3px solid #00e676;
+            position: relative;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+
+        #bird {
+            width: 30px;
+            height: 30px;
+            background-color: #ff0000;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 100px; /* Start near the bottom */
+            left: 50px;
+            transition: bottom 0.1s;
+        }
+
+        .pipe {
+            position: absolute;
+            background-color: #00e676;
+            width: 50px;
+        }
+
+        /* Ping Pong Game Styles */
+        #ping-pong {
+            width: 300px;
+            height: 150px;
+            border: 2px solid #00e676;
+            position: relative;
+            overflow: hidden;
+            margin: 20px auto;
+        }
+
+        #paddle {
+            width: 60px;
+            height: 10px;
+            background: #00e676;
+            position: absolute;
+            bottom: 0;
+            left: 120px;
+        }
+
+        #ping-pong-ball {
+            width: 15px;
+            height: 15px;
+            background: #ff0000;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: #00e676;
+            color: #212121;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            z-index: 100; /* Ensure it's above other elements */
+        }
+
+        .back-button:hover {
+            background-color: #00c853;
+        }
+    </style>
+</head>
+<body>
+<button class="back-button" onclick="window.location.href='index.html'">Back</button>
+<div class="container">
+    <h1>Simple Games</h1>
+
+    <!-- Game 1: Number Guessing Game -->
+    <div class="game">
+        <h2>Number Guessing Game</h2>
+        <p>Guess a number between 1 and 100!</p>
+        <input type="number" id="guess" placeholder="Enter your guess">
+        <button onclick="guessNumber()">Guess</button>
+        <button onclick="resetGuessingGame()">Reset</button>
+        <p id="result"></p>
+    </div>
+
+    <!-- Game 2: Rock Paper Scissors -->
+    <div class="game">
+        <h2>Rock Paper Scissors</h2>
+        <button onclick="playGame('rock')">Rock</button>
+        <button onclick="playGame('paper')">Paper</button>
+        <button onclick="playGame('scissors')">Scissors</button>
+        <p id="rps-result"></p>
+    </div>
+
+    <!-- Game 3: Flappy Bird Modal -->
+    <div class="game">
+        <h2>Flappy Bird Game</h2>
+        <button onclick="openModal('flappy-bird-modal')">Play Flappy Bird</button>
+    </div>
+
+    <!-- Game 4: Ping Pong Game Modal -->
+    <div class="game">
+        <h2>Ping Pong Game</h2>
+        <button onclick="openModal('ping-pong-modal')">Play Ping Pong</button>
+    </div>
+
+    <!-- Flappy Bird Modal -->
+    <div id="flappy-bird-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('flappy-bird-modal')">&times;</span>
+            <h2>Flappy Bird Game</h2>
+            <div id="flappy-bird">
+                <div id="bird"></div>
+            </div>
+            <p>Press the space bar to make the bird jump!</p>
+            <p id="flappy-result"></p>
+            <button onclick="startFlappyBird()">Start Over</button>
+        </div>
+    </div>
+
+    <!-- Ping Pong Modal -->
+    <div id="ping-pong-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('ping-pong-modal')">&times;</span>
+            <h2>Ping Pong Game</h2>
+            <div id="ping-pong">
+                <div id="paddle"></div>
+                <div id="ping-pong-ball"></div>
+            </div>
+            <p>Use left and right arrow keys to move the paddle!</p>
+            <p id="ping-result"></p>
+            <button onclick="startPingPong()">Start Over</button>
+        </div>
+    </div>
+</div>
+
+<footer style="display: flex; justify-content: center; align-items: center; text-align: center;">
+    <a href="https://majkey25.github.io/Majkey25/" style="text-decoration: none; color: inherit;">
+        <p style="margin: 1;">Made by Matěj Teplý &copy; <span id="year"></span> All rights reserved.</p>
+    </a>
+</footer>
+
+<script>
+    // Number Guessing Game Logic
+    let randomNumber = Math.floor(Math.random() * 100) + 1;
+
+    function guessNumber() {
+        const guess = Number(document.getElementById('guess').value);
+        const result = document.getElementById('result');
+
+        if (guess === randomNumber) {
+            result.textContent = 'Congratulations! You guessed the number!';
+        } else if (guess < randomNumber) {
+            result.textContent = 'Too low! Try again.';
+        } else {
+            result.textContent = 'Too high! Try again.';
+        }
+    }
+
+    function resetGuessingGame() {
+        randomNumber = Math.floor(Math.random() * 100) + 1;
+        document.getElementById('guess').value = '';
+        document.getElementById('result').textContent = '';
+    }
+
+    // Rock Paper Scissors Game Logic
+    function playGame(userChoice) {
+        const choices = ['rock', 'paper', 'scissors'];
+        const computerChoice = choices[Math.floor(Math.random() * choices.length)];
+        const result = document.getElementById('rps-result');
+
+        if (userChoice === computerChoice) {
+            result.textContent = `It's a tie! Both chose ${computerChoice}.`;
+        } else if (
+            (userChoice === 'rock' && computerChoice === 'scissors') ||
+            (userChoice === 'paper' && computerChoice === 'rock') ||
+            (userChoice === 'scissors' && computerChoice === 'paper')
+        ) {
+            result.textContent = `You win! ${userChoice} beats ${computerChoice}.`;
+        } else {
+            result.textContent = `You lose! ${computerChoice} beats ${userChoice}.`;
+        }
+    }
+
+    // Modal Functions
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = "block";
+
+        if (modalId === 'flappy-bird-modal') {
+            startFlappyBird();
+        } else if (modalId === 'ping-pong-modal') {
+            startPingPong();
+        }
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = "none";
+    }
+
+    // Flappy Bird Game Logic
+    const bird = document.getElementById('bird');
+    const flappyResult = document.getElementById('flappy-result');
+    let birdY = 100; // Initial position
+    let gravity = 3;
+    let jumpHeight = 60;
+    let isGameOver = false;
+
+    function startFlappyBird() {
+        birdY = 100; // Reset position
+        bird.style.bottom = birdY + 'px';
+        isGameOver = false;
+        flappyResult.textContent = '';
+        setInterval(updateFlappyBird, 20);
+    }
+
+    function updateFlappyBird() {
+        if (isGameOver) return;
+        birdY -= gravity; // Apply gravity
+        bird.style.bottom = birdY + 'px';
+
+        if (birdY <= 0) {
+            isGameOver = true;
+            flappyResult.textContent = 'Game Over! You hit the ground!';
+        }
+    }
+
+    document.addEventListener('keydown', function(event) {
+        if (event.code === 'Space' && !isGameOver) {
+            birdY += jumpHeight; // Make the bird jump
+        }
+    });
+
+    // Ping Pong Game Logic
+    const pingPongBall = document.getElementById('ping-pong-ball');
+    const paddle = document.getElementById('paddle');
+    const pingResult = document.getElementById('ping-result');
+    let pingBallSpeedX = 3;
+    let pingBallSpeedY = 3;
+
+    function startPingPong() {
+        pingResult.textContent = '';
+        pingPongBall.style.left = '50%'; // Reset position
+        pingPongBall.style.top = '50%'; // Reset position
+        pingPongBall.style.transform = 'translate(-50%, -50%)'; // Center ball
+        setInterval(movePingPongBall, 100);
+    }
+
+    function movePingPongBall() {
+        const ballRect = pingPongBall.getBoundingClientRect();
+        const paddleRect = paddle.getBoundingClientRect();
+        const pingContainerRect = document.getElementById('ping-pong').getBoundingClientRect();
+
+        // Update ball position
+        let newBallLeft = pingPongBall.offsetLeft + pingBallSpeedX;
+        let newBallTop = pingPongBall.offsetTop + pingBallSpeedY;
+
+        // Check for collision with walls
+        if (newBallLeft <= 0 || newBallLeft + ballRect.width >= pingContainerRect.width) {
+            pingBallSpeedX *= -1; // Reverse X direction
+        }
+        if (newBallTop <= 0) {
+            pingBallSpeedY *= -1; // Reverse Y direction
+        }
+        if (newBallTop + ballRect.height >= pingContainerRect.height) {
+            // Check for paddle collision
+            if (newBallLeft + ballRect.width / 2 >= paddleRect.left && newBallLeft + ballRect.width / 2 <= paddleRect.right) {
+                pingBallSpeedY *= -1; // Bounce off the paddle
+            } else {
+                pingResult.textContent = 'Game Over! You missed the ball!';
+                return; // Stop the game
+            }
+        }
+
+        pingPongBall.style.left = newBallLeft + 'px';
+        pingPongBall.style.top = newBallTop + 'px';
+    }
+
+    // Control Paddle Movement
+    document.addEventListener('keydown', function(event) {
+        const paddleLeft = paddle.offsetLeft;
+
+        if (event.key === 'ArrowLeft' && paddleLeft > 0) {
+            paddle.style.left = (paddleLeft - 20) + 'px'; // Move left
+        }
+        if (event.key === 'ArrowRight' && paddleLeft < (document.getElementById('ping-pong').clientWidth - paddle.clientWidth)) {
+            paddle.style.left = (paddleLeft + 20) + 'px'; // Move right
+        }
+    });
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>

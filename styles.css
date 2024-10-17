@@ -24,15 +24,16 @@ body {
     background: linear-gradient(145deg, #333, #1e1e1e);
     box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7);
     border-radius: 20px;
-    width: 90vw; /* Šířka přizpůsobená šířce obrazovky */
-    max-width: 1024px; /* Max šířka pro větší obrazovky */
     backdrop-filter: blur(10px);
     position: relative;
     z-index: 1;
     overflow: hidden;
     animation: fadeIn 2s ease-in-out;
-    margin: 0 auto;
     flex: 1;
+    width: 95vw;
+    max-width: 1370px; 
+    margin: 10px auto;
+    padding: 30px;
 }
 
 .title {
@@ -148,7 +149,7 @@ body {
 
 .social-links {
     margin-top: 40px; /* Zvětšený horní margin */
-    margin-bottom: 450px; /* Zvětšený spodní margin */
+    margin-bottom: 50px; /* Zvětšený spodní margin */
     display: flex;
     justify-content: center;
     gap: 10px;
@@ -170,6 +171,126 @@ body {
     color: #212121;
     transform: scale(1.05);
 }
+.game-button {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px; /* Adjust spacing between social links and button */
+    margin-bottom: 0px;
+    position: relative;
+    z-index: 10;
+}
+
+.game-button a {
+    --glow-color: rgb(217, 176, 255);
+    --glow-spread-color: rgba(191, 123, 255, 0.781);
+    --btn-color: rgb(100, 61, 136);
+    
+    padding: 0.6em 2em;
+    border: 2px solid var(--glow-color);
+    outline: none;
+    color: var(--glow-color);
+    background-color: var(--btn-color);
+    cursor: pointer;
+    position: relative;
+    z-index: 0;
+    border-radius: 10px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    text-decoration: none;
+    font-size: 1.5em;
+    font-weight: bold;
+    transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1); /* Smooth transition */
+    overflow: hidden; /* Ensures inner elements are clipped */
+}
+
+/* Glowing background */
+.game-button a:before {
+    content: "";
+    background: linear-gradient(
+      45deg,
+      #ff0000,
+      #ff7300,
+      #fffb00,
+      #48ff00,
+      #00ffd5,
+      #002bff,
+      #7a00ff,
+      #ff00c8,
+      #ff0000
+    );
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    background-size: 400%;
+    z-index: -1;
+    filter: blur(5px);
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    animation: glowing-button-85 20s linear infinite;
+    border-radius: 10px;
+}
+
+@keyframes glowing-button-85 {
+    0% {
+        background-position: 0 0;
+    }
+    50% {
+        background-position: 400% 0;
+    }
+    100% {
+        background-position: 0 0;
+    }
+}
+
+/* Shadow overlay */
+.game-button a:after {
+    z-index: -1;
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #222;
+    left: 0;
+    top: 0;
+    border-radius: 10px;
+}
+
+/* Hover effects */
+.game-button a:hover {
+    transform: scale(1.1) rotateZ(5deg);
+    background: #48301c; /* Change background color on hover */
+    color: var(--btn-color);
+    box-shadow: 0 0 1em .25em var(--glow-color),
+                0 0 4em 2em var(--glow-spread-color),
+                inset 0 0 .75em .25em var(--glow-color);
+}
+
+.game-button a:hover:before {
+    filter: blur(8px); /* Intensify the blur on hover */
+    animation: glowing-button-85-hover 2s linear infinite; /* Speed up the glow effect */
+}
+
+/* Glowing animation on hover */
+@keyframes glowing-button-85-hover {
+    0% {
+        background-position: 0 0;
+    }
+    50% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: 0 0;
+    }
+}
+
+/* Active state */
+.game-button a:active {
+    box-shadow: 0 0 0.6em .25em var(--glow-color),
+                0 0 2.5em 2em var(--glow-spread-color),
+                inset 0 0 .5em .25em var(--glow-color);
+}
+
 
 .projects {
     margin-top: 40px; /* Adds space between social links and projects */
@@ -291,18 +412,14 @@ body::before {
     opacity: 1;
     transform: translateY(0);
 }
-
 .scroll-arrow {
-    position: absolute; /* Change to absolute positioning */
-    top: 600px; /* Adjust this value to position it higher */
-    left: 50%; /* Center it horizontally */
-    transform: translateX(-50%); /* Adjust for centering */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    margin-top: 20px; /* Space between the button and the arrow */
+    margin-bottom: 150px;
+    display: flex; /* Use flexbox for centering */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
     transition: opacity 0.5s ease;
 }
-
 
 .arrow {
     width: 30px; /* Adjust for thickness */
@@ -312,14 +429,15 @@ body::before {
     border-radius: 5px; /* Round corners */
     padding: 5px;
     animation: bounce 1s infinite; /* Apply bounce animation */
-    transform: rotate(45deg); /* Rotate to point downwards */
+    transform: rotate(135deg); /* Rotate to point downwards */
 }
 
 .hidden-arrow {
     opacity: 0;
-    pointer-events: none;
+    pointer-events: none; /* Prevent clicks when hidden */
     transform: translateY(-20px);
 }
+
 
 @keyframes bounce {
     0%, 100% {
@@ -342,17 +460,17 @@ footer {
 }
 .seaContainer {
     position: absolute;
-    top: 53%; /* Move the sea and submarine further down the page */
+    top: 40%; /* Move the sea and submarine further down the page */
     left: 0;
     width: 100%;
     height: 100%;
-    background: #130560;
+    background: linear-gradient(to bottom, #2828283a , #130560 35%);
     overflow: hidden;
 }
 
 .submarine__container {
     position: absolute;
-    top: 37%;
+    top: 49%;
     left: 50%;
     width: 400px;
     height: 200px;
@@ -519,7 +637,7 @@ footer {
 }
 .bubbles__container {
     position: absolute;
-    top: 36%;
+    top: 49%;
     left: 55%;
     width: 100px;
     height: 50px;
@@ -528,7 +646,7 @@ footer {
 .bubbles {
     position: absolute;
     width: 10px;
-    height: 30px;
+    height: 10px;
     border-radius: 100%;
     left: 5%;
     top: 5%;
@@ -565,7 +683,7 @@ footer {
 }
 .ground__container {
     position: absolute;
-    top: 40%;
+    top: 52%;
     left: 0%;
     width: 100%;
     height: 25%;
