@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="icon-512x512.png" type="image/png">
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Arial', sans-serif;
+      color: white;
+      text-align: center;
+    }
+
+    #clock {
+      width: 400px;
+      height: 400px;
+      filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.3));
+      background: radial-gradient(circle, #ffffff, #e0e0e0);
+      border-radius: 50%;
+      padding: 20px;
+    }
+
+    #clock image {
+      transform-origin: 200px 200px;
+    }
+
+    span {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    #time {
+      font-size: 40px;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    #today {
+      font-size: 18px;
+      opacity: 0.9;
+    }
+  </style>
+  <script>
+    let secondHand, minuteHand, hourHand;
+
+    window.onload = function () {
+      secondHand = document.getElementById("secondHand");
+      minuteHand = document.getElementById("minuteHand");
+      hourHand = document.getElementById("hourHand");
+      updateTime()
+      setInterval(updateTime, 1000);
+    };
+
+    function updateClock() {
+      const now = new Date();
+      const sec = now.getSeconds();
+      const min = now.getMinutes();
+      const hour = now.getHours();
+      secondHand.setAttribute("transform", "rotate(" + (sec * 6) + " 200 200)");
+      minuteHand.setAttribute("transform", "rotate(" + ((min + sec / 60) * 6) + " 200 200)");
+      hourHand.setAttribute("transform", "rotate(" + ((hour % 12 + min / 60) * 30) + " 200 200)");
+    }
+
+    function updateTime() {
+      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const d = new Date();
+
+      const day = days[d.getDay()];
+      const date = `${day} ${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
+
+      const sec = String(d.getSeconds()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      const hour = String(d.getHours()).padStart(2, '0');
+
+      document.getElementById('today').innerHTML = `Today is: ${date}`;
+      document.getElementById('time').innerHTML = `${hour}:${min}:${sec}`;
+      updateClock();
+    }
+  </script>
+</head>
+<body>
+    <button class="back-button" onclick="window.location.href='index.html'">Back</button>
+  <svg id="clock" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+    <!-- Circle Border -->
+    <circle cx="200" cy="200" r="190" fill="#f8f9fa" stroke="#ccc" stroke-width="5" />
+    <circle cx="200" cy="200" r="10" fill="#333" />
+
+    <!-- Numbers -->
+      <text x="200" y="40" text-anchor="middle">12</text>
+      <text x="290" y="70" text-anchor="middle">1</text>
+      <text x="340" y="140" text-anchor="middle">2</text>
+      <text x="350" y="210" text-anchor="middle">3</text>
+      <text x="340" y="280" text-anchor="middle">4</text>
+      <text x="290" y="350" text-anchor="middle">5</text>
+      <text x="200" y="360" text-anchor="middle">6</text>
+      <text x="110" y="350" text-anchor="middle">7</text>
+      <text x="60" y="280" text-anchor="middle">8</text>
+      <text x="50" y="210" text-anchor="middle">9</text>
+      <text x="60" y="140" text-anchor="middle">10</text>
+      <text x="110" y="70" text-anchor="middle">11</text>
+    <!-- Clock Hands -->
+    <line id="hourHand" x1="200" y1="200" x2="200" y2="100" stroke="#555" stroke-width="6" />
+    <line id="minuteHand" x1="200" y1="200" x2="200" y2="60" stroke="#888" stroke-width="4" />
+    <line id="secondHand" x1="200" y1="200" x2="200" y2="40" stroke="#d33" stroke-width="2" />
+  </svg>
+  <span id="today"></span>
+  <span id="time"></span>
+</body>
+</html>

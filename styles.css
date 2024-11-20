@@ -290,8 +290,106 @@ body {
                 0 0 2.5em 2em var(--glow-spread-color),
                 inset 0 0 .5em .25em var(--glow-color);
 }
+.back-button {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background-color: #00e676;
+    color: #212121;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px; /* Smaller button size */
+    font-size: 1em; /* Regular font size */
+    cursor: pointer;
+    transition: background-color 0.3s;
+    z-index: 100; /* Ensure it's above other elements */
+}
 
+.back-button:hover {
+    background-color: #00c853;
+}
+/* Style for the time button */
+.time-button {
+    position: relative;
+    z-index: 1;
+    margin-top: 35px;
+    display: flex; /* Ensures the button is centered */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+}
 
+/* Button base styles */
+.time-button a {
+    box-sizing: border-box;
+    padding: 20px 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font: 600 16px 'Menlo', 'Roboto Mono', monospace; /* Using similar font styles */
+    background: rgb(41, 41, 41); /* Default background color */
+    border: none;
+    cursor: pointer;
+    transition: .3s; /* Transition for hover effect */
+    overflow: hidden;
+    box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.137); /* Shadow similar to Uiverse button */
+    border-radius: 8px; /* Rounded corners */
+    text-decoration: none; /* Remove underline */
+    width: 250px;
+}
+
+/* Span styles inside the button */
+.time-button a span {
+    letter-spacing: .1rem;
+    transition: .3s;
+    position: relative;
+    background: inherit;
+}
+
+.time-button a span::before {
+    box-sizing: border-box;
+    position: absolute;
+    content: "";
+    background: inherit;
+}
+
+/* Hover and focus styles */
+.time-button a:hover, .time-button a:focus {
+    background: rgb(51, 51, 51); /* Darker background on hover */
+}
+
+.time-button a:hover span, .time-button a:focus span {
+    color: #FAC921; /* Change text color on hover */
+}
+
+.time-button a:hover span::before, .time-button a:focus span::before {
+    animation: chitchat 1.2s linear both;
+}
+
+/* Keyframe animation for hover effect */
+@keyframes chitchat {
+    0% { content: "#"; }
+    5% { content: "."; }
+    10% { content: "^{"; }
+    15% { content: "-!"; }
+    20% { content: "#$_"; }
+    25% { content: "№:0"; }
+    30% { content: "#{+."; }
+    35% { content: "@}-?"; }
+    40% { content: "?{4@%"; }
+    45% { content: "=.,^!"; }
+    50% { content: "?2@%"; }
+    55% { content: "\\;1}]"; }
+    60% { content: "?{%:%"; right: 0; }
+    65% { content: "|{f[4"; right: 0; }
+    70% { content: "{4%0%"; right: 0; }
+    75% { content: "'1_0<"; right: 0; }
+    80% { content: "{0%"; right: 0; }
+    85% { content: "]>'"; right: 0; }
+    90% { content: "4"; right: 0; }
+    95% { content: "2"; right: 0; }
+    100% { content: ""; right: 0; }
+}
 .projects {
     margin-top: 40px; /* Adds space between social links and projects */
     margin-bottom: 300px;
@@ -878,4 +976,3 @@ footer {
         opacity: 0;
    }
 }
-
