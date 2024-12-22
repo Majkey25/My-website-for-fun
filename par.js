@@ -951,7 +951,7 @@ let curl;
 let pressure;
 let bloom;
 
-let ditheringTexture = createTextureAsync("LDR_RGB1_0.png");
+let ditheringTexture = createTextureAsync("media/LDR_RGB1_0.png");
 
 const clearProgram = new GLProgram(baseVertexShader, clearShader);
 const colorProgram = new GLProgram(baseVertexShader, colorShader);
@@ -1218,6 +1218,7 @@ function createTextureAsync(url) {
   };
 
   let image = new Image();
+  image.crossOrigin = "anonymous"; 
   image.onload = () => {
     obj.width = image.width;
     obj.height = image.height;
