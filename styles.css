@@ -392,6 +392,7 @@ body {
     95% { content: "2"; right: 0; }
     100% { content: ""; right: 0; }
 }
+
 .projects {
     margin-top: 40px; /* Adds space between social links and projects */
     margin-bottom: 300px;
@@ -513,7 +514,7 @@ body::before {
     transform: translateY(0);
 }
 .scroll-arrow {
-    margin-top: 40px; /* Space between the button and the arrow */
+    margin-top: 20px; /* Space between the button and the arrow */
     margin-bottom: 150px;
     display: flex; /* Use flexbox for centering */
     justify-content: center; /* Center horizontally */
@@ -535,7 +536,7 @@ body::before {
 .hidden-arrow {
     opacity: 0;
     pointer-events: none; /* Prevent clicks when hidden */
-    transform: translateY(-20px);
+    transform: translateY(-10px);
 }
 
 
@@ -1067,4 +1068,46 @@ footer {
       transform: scaleY(2.5);
     }
   }
+  .btn {
+    margin-top: 30px;
+    position: relative;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color:#94F5F8;
+    border: 2px solid #94F5F8;
+    border-radius: 8px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    z-index: 1;
+    background: none;
+  }
   
+  
+  .glitch:hover {
+    animation: glitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+    background: #94F5F8 ;
+    color: black;
+  }
+  
+  @keyframes glitch {
+    0% {
+      transform: translate(0);
+    }
+    20% {
+      transform: translate(-4px, 4px);
+    }
+    40% {
+      transform: translate(-4px, -4px);
+    }
+    60% {
+      transform: translate(4px, 4px);
+    }
+    80% {
+      transform: translate(4px, -4px);
+    }
+    100% {
+      transform: translate(0);
+    }
+  }

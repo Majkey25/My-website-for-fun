@@ -1,6 +1,7 @@
 
 "use strict";
 window.onload = function() {
+
 const canvas = document.getElementsByTagName("canvas")[0];
 canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
