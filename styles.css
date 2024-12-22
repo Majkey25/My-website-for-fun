@@ -344,6 +344,7 @@ body {
     transition: .3s;
     position: relative;
     background: inherit;
+    
 }
 
 .time-button a span::before {
@@ -351,6 +352,7 @@ body {
     position: absolute;
     content: "";
     background: inherit;
+    
 }
 
 /* Hover and focus styles */
@@ -502,7 +504,7 @@ body::before {
 
 .hidden {
     opacity: 0;
-    transform: translateY(50px);
+    transform: translateY(150px);
     transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
@@ -511,7 +513,7 @@ body::before {
     transform: translateY(0);
 }
 .scroll-arrow {
-    margin-top: 20px; /* Space between the button and the arrow */
+    margin-top: 40px; /* Space between the button and the arrow */
     margin-bottom: 150px;
     display: flex; /* Use flexbox for centering */
     justify-content: center; /* Center horizontally */
@@ -976,3 +978,93 @@ footer {
         opacity: 0;
    }
 }
+.covers-button {
+    text-align: center;
+    margin: 20px;
+  }
+  
+  .covers-button .button {
+    display: inline-block;
+    position: relative;
+    text-decoration: none;
+    color: #98FCFF;
+    padding: 15px 30px;
+    border: 2px solid #98FCFF;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    overflow: hidden;
+    transition: background-color 0.3s, transform 0.2s;
+    z-index: 2; /* Ensure the button is above the waves */
+  }
+  
+  .covers-button .button:hover {
+    background-color: #98FCFF;
+    transform: scale(1.1);
+  }
+  
+  .covers-button .button .button-text {
+    transition: opacity 0.3s ease; /* Smooth transition for text disappearance */
+  }
+  
+  .covers-button .button:hover .button-text {
+    opacity: 0; /* Hide text on hover */
+  }
+  
+  .covers-button .button .music-waves {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    justify-content: space-between;
+    width: 80px; /* Adjust width to accommodate more lines */
+    height: 20px;
+    pointer-events: none; /* Waves won't block the button click */
+    opacity: 0; /* Hide waves by default */
+    transition: opacity 0.3s ease; /* Smooth transition for opacity */
+    z-index: 1; /* Ensure the waves stay beneath the button */
+  }
+  
+  .covers-button .button:hover .music-waves {
+    opacity: 1; /* Show waves on hover */
+  }
+  
+  .covers-button .button .music-waves span {
+    display: block;
+    width: 5px;
+    height: 100%;
+    background: #212121;
+    border-radius: 2px;
+    animation: waveAnimation 1s ease-in-out infinite;
+  }
+  
+  .covers-button .button .music-waves span:nth-child(1) {
+    animation-delay: 0s;
+  }
+  
+  .covers-button .button .music-waves span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  
+  .covers-button .button .music-waves span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+  
+  .covers-button .button .music-waves span:nth-child(4) {
+    animation-delay: 0.6s; /* Added delay for new waves */
+  }
+  
+  .covers-button .button .music-waves span:nth-child(5) {
+    animation-delay: 0.8s; /* Added delay for new waves */
+  }
+  
+  @keyframes waveAnimation {
+    0%, 100% {
+      transform: scaleY(1);
+    }
+    50% {
+      transform: scaleY(2.5);
+    }
+  }
+  

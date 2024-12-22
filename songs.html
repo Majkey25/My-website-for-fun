@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Covers</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="icon-512x512.png" type="image/png">
+  <style>
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .song {
+      margin: 20px 0;
+    }
+    h3 {
+        color: #b4b5b5;
+    }
+
+    audio {
+      width: 100%;
+      outline: none;
+    }
+    canvas {
+      width: 100%;
+      height: 100px;
+      background-color: #333;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+    <button class="back-button" onclick="window.location.href='index.html'">Back</button>
+  <div class="container">
+
+    <h1>My Covers</h1>
+    <h3>I did them out of boredom and for fun so they are not proper covers</h3>
+    <h3>...Just another way to say they are horrible :)</h3>
+
+    <div class="song">
+        <h2>Wicked Game - Him</h2>
+        <audio controls id="audio1">
+            <source src="media/Wicked_game.mp3" type="audio/mpeg">
+          Your browser does not support the audio element.
+        </audio>
+    </div>
+
+    <div class="song">
+      <h2>One more light - Linkin Park</h2>
+      <audio controls id="audio2">
+        <source src="media/One_more_light.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
+    </div>
+
+    <div class="song">
+      <h2>Leave a light on - Papa Roach</h2>
+      <audio controls id="audio3">
+        <source src="media/Leave_a_light_on.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
+    </div>
+
+    <div class="song">
+      <h2>I see fire - Ed Sheeran</h2>
+      <audio controls id="audio4">
+        <source src="media/I_see_fire.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
+    </div>
+      <!-- Visualizer Canvas -->
+   <canvas id="visualizer"></canvas>
+  </div>
+</div>
+<script>
+    window.onload = function() {
+      var audioElements = {
+        audio1: document.getElementById("audio1"),
+        audio2: document.getElementById("audio2"),
+        audio3: document.getElementById("audio3"),
+        audio4: document.getElementById("audio4")
+      };
+
+      var canvas = document.getElementById("canvas");
+      var ctx = canvas.getContext("2d");
+
+      // Make canvas responsive to window size
+      canvas.width = window.innerWidth;
+      canvas.height = 200;
+
+      // Set up AudioContext and analyser
+      var context = new AudioContext();
+      var analyser = context.createAnalyser();
+      analyser.fftSize = 256;
+
+      // Buffer for frequency data
+      var bufferLength = analyser.frequencyBinCount;
+      var dataArray = new Uint8Array(bufferLength);
+
+      // Bars for the visualizer
+      var barWidth = (canvas.width / bufferLength) * 2.5;
+      var barHeight;
+      var x = 0;
+
+      // Function to start visualizer on audio play
+      function startVisualizer(audioElement) {
+        var src = context.createMediaElementSource(audioElement);
+        src.connect(analyser);
+        analyser.connect(context.destination);
+
+        function renderFrame() {
+          requestAnimationFrame(renderFrame);
+
+          x = 0;
+
+          analyser.getByteFrequencyData(dataArray);
+
+          ctx.fillStyle = "#111"; // Background color
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // Draw bars with color gradient based on frequency
+          for (var i = 0; i < bufferLength; i++) {
+            barHeight = dataArray[i];
+
+            var r = barHeight + (25 * (i / bufferLength));
+            var g = 250 * (i / bufferLength);
+            var b = 50;
+
+            ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+            ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+
+            x += barWidth + 1;
+          }
+        }
+
+        audioElement.play();
+        renderFrame();
+      }
+
+      // Attach event listeners to play the audio and start the visualizer
+      for (var key in audioElements) {
+        audioElements[key].addEventListener("play", function() {
+          for (var otherKey in audioElements) {
+            if (audioElements[otherKey] !== this) {
+              audioElements[otherKey].pause();
+            }
+          }
+          startVisualizer(this);
+        });
+      }
+    };
+  </script>
+</body>
+</html>
