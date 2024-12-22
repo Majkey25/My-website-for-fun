@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <title>Time</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="icon-512x512.png" type="image/png">
@@ -38,7 +38,6 @@
       100% { fill: #ff0000; }
     }
     #clock {
-      margin-top: -100px;
       width: 400px;
       height: 400px;
       filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.3));
@@ -94,7 +93,98 @@
     #secondHand {
       filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.8)); /* Neon effect for second hand */
     }
-  
+    .theBall,
+.theBall-outer {
+  width: 20px;
+  height: 20px;
+}
+.theBall-outer {
+  position: fixed;
+  top: -20px;
+  left: -20px;
+  z-index: 9999999999999999999;
+  pointer-events: none !important;
+}
+.theBall {
+  position: absolute;
+  background-color: rgba(255, 114, 114, 0.8);
+  border-radius: 50%;
+  -webkit-transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  -moz-transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  -ms-transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  -o-transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-origin: center center;
+}
+.zooming.theBall {
+  background-color: #ff7272;
+  -webkit-transform: scale(2);
+  -moz-transform: scale(2);
+  -ms-transform: scale(2);
+  -o-transform: scale(2);
+  transform: scale(2);
+}
+
+.mouse-move {
+  position: absolute;
+  bottom: -130px;
+  left: 50%;
+  width: 65px;
+  margin-left: -50px;
+}
+.mouse-move a {
+  letter-spacing: 2px;
+  font-size: 12px;
+  text-transform: uppercase;
+  height: 65px;
+  width: 65px;
+  line-height: 65px;
+  display: inline-block;
+  border-radius: 900px;
+  text-align: center;
+}
+.mouse-move .boom::before,
+.mouse-move .boom::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+.mouse-move .boom::before,
+.mouse-move .boom::after {
+  content: "";
+  z-index: -1;
+  margin: 0;
+  border-radius: 900px;
+  box-shadow: inset 0 0 0 2px;
+  animation: clipMe 8s linear infinite;
+}
+.mouse-move .boom::before {
+  animation-delay: -4s;
+}
+@keyframes clipMe {
+  0%,
+  100% {
+    clip: rect(0px, 220px, 2px, 0px);
+  }
+  25% {
+    clip: rect(0px, 2px, 220px, 0px);
+  }
+  50% {
+    clip: rect(218px, 220px, 220px, 0px);
+  }
+  75% {
+    clip: rect(0px, 220px, 220px, 218px);
+  }
+}
+.banner_canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+}
   </style>
 
   <script>
@@ -151,12 +241,23 @@
 
       document.getElementById('countdown').innerHTML = `New Year: ${daysLeft}d ${hoursLeft}h ${minutesLeft}m ${secondsLeft}s`;
     }
+  
   </script>
+  <script src="time.js"></script>
 </head>
 
 <body>
   <button class="back-button" onclick="window.location.href='index.html'">Back</button>
-  <canvas id="particleCanvas"></canvas>
+  <div class="theBall-outer">
+    <div class="theBall"></div>
+  </div>
+  <div id="page" class="site">
+    <canvas class="banner_canvas" id="canvas_banner"></canvas>
+
+    <div class="top-title wow fadeInUp" onmousemove="color_hover(event)">
+      
+    
+
   <svg id="clock" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
     <!-- Circle Border -->
     <circle cx="200" cy="200" r="190" fill="#f8f9fa" stroke="#ccc" stroke-width="5" />
@@ -181,9 +282,13 @@
     <line id="minuteHand" x1="200" y1="200" x2="200" y2="60" stroke="#888" stroke-width="4" />
     <line id="secondHand" x1="200" y1="200" x2="200" y2="40" stroke="#d33" stroke-width="2" />
   </svg>
-
+  <br> <br>
   <span id="today"></span>
+  <br>
+  <br>
   <span id="time"></span>
   <div class="countdown" id="countdown"></div>
+</div>
+</div>
 </body>
 </html>
