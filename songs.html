@@ -22,13 +22,21 @@
     audio {
       width: 100%;
       outline: none;
+      width: calc(100% - 20px);
     }
     canvas {
       width: 100%;
-      height: 100px;
+      height: 200px;
       background-color: #333;
       border-radius: 5px;
       margin-top: 10px;
+    }
+    #canvas {
+      position: fixed;
+      left: 0;
+      top: 200;
+      width: 100%;
+      height: 20%;
     }
   </style>
 </head>
@@ -72,86 +80,105 @@
       </audio>
     </div>
       <!-- Visualizer Canvas -->
-   <canvas id="visualizer"></canvas>
+    <canvas id="canvas"></canvas>
   </div>
 </div>
 <script>
-    window.onload = function() {
-      var audioElements = {
-        audio1: document.getElementById("audio1"),
-        audio2: document.getElementById("audio2"),
-        audio3: document.getElementById("audio3"),
-        audio4: document.getElementById("audio4")
-      };
-
-      var canvas = document.getElementById("canvas");
-      var ctx = canvas.getContext("2d");
-
-      // Make canvas responsive to window size
-      canvas.width = window.innerWidth;
-      canvas.height = 200;
-
-      // Set up AudioContext and analyser
-      var context = new AudioContext();
-      var analyser = context.createAnalyser();
-      analyser.fftSize = 256;
-
-      // Buffer for frequency data
-      var bufferLength = analyser.frequencyBinCount;
-      var dataArray = new Uint8Array(bufferLength);
-
-      // Bars for the visualizer
-      var barWidth = (canvas.width / bufferLength) * 2.5;
-      var barHeight;
-      var x = 0;
-
-      // Function to start visualizer on audio play
-      function startVisualizer(audioElement) {
-        var src = context.createMediaElementSource(audioElement);
-        src.connect(analyser);
-        analyser.connect(context.destination);
-
-        function renderFrame() {
-          requestAnimationFrame(renderFrame);
-
-          x = 0;
-
-          analyser.getByteFrequencyData(dataArray);
-
-          ctx.fillStyle = "#111"; // Background color
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-          // Draw bars with color gradient based on frequency
-          for (var i = 0; i < bufferLength; i++) {
-            barHeight = dataArray[i];
-
-            var r = barHeight + (25 * (i / bufferLength));
-            var g = 250 * (i / bufferLength);
-            var b = 50;
-
-            ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
-            ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-
-            x += barWidth + 1;
-          }
-        }
-
-        audioElement.play();
-        renderFrame();
-      }
-
-      // Attach event listeners to play the audio and start the visualizer
-      for (var key in audioElements) {
-        audioElements[key].addEventListener("play", function() {
-          for (var otherKey in audioElements) {
-            if (audioElements[otherKey] !== this) {
-              audioElements[otherKey].pause();
-            }
-          }
-          startVisualizer(this);
-        });
-      }
-    };
-  </script>
+    document.addEventListener("DOMContentLoaded", function() {
+       var audioElements = {
+         audio1: document.getElementById("audio1"),
+         audio2: document.getElementById("audio2"),
+         audio3: document.getElementById("audio3"),
+         audio4: document.getElementById("audio4")
+       };
+ 
+       var canvas = document.getElementById("canvas");
+       var ctx = canvas.getContext("2d");
+ 
+       // Make canvas responsive to window size
+       canvas.width = window.innerWidth;
+       canvas.height = 200; // fixed height for the visualizer
+ 
+       // Set up AudioContext and analyser
+       var context = new AudioContext();
+ 
+       // Resume AudioContext after user gesture (play)
+       document.querySelector("audio").addEventListener("play", function() {
+         if (context.state === 'suspended') {
+             context.resume();
+         }
+       });
+ 
+       var analyser = context.createAnalyser();
+       analyser.fftSize = 256; // Number of frequency bins
+ 
+       // Buffer for frequency data
+       var bufferLength = analyser.frequencyBinCount;
+       var dataArray = new Uint8Array(bufferLength);
+ 
+       // Bars for the visualizer
+       var barWidth = (canvas.width / bufferLength) * 2.5;
+       var barHeight;
+       var x = 0;
+ 
+       // Store the previous audio source to prevent reconnecting
+       var previousSource = null;
+ 
+       // Function to start visualizer on audio play
+       function startVisualizer(audioElement) {
+         // Disconnect previous source
+         if (previousSource) {
+           previousSource.disconnect();
+         }
+ 
+         var src = context.createMediaElementSource(audioElement);
+         src.connect(analyser);
+         analyser.connect(context.destination);
+ 
+         previousSource = src;
+ 
+         function renderFrame() {
+           requestAnimationFrame(renderFrame);
+ 
+           x = 0;
+ 
+           analyser.getByteFrequencyData(dataArray);
+ 
+           ctx.fillStyle = "#111"; // Background color
+           ctx.fillRect(0, 0, canvas.width, canvas.height);
+ 
+           // Draw bars with color gradient based on frequency
+           for (var i = 0; i < bufferLength; i++) {
+             barHeight = dataArray[i];
+ 
+             var r = barHeight + (25 * (i / bufferLength));
+             var g = 250 * (i / bufferLength);
+             var b = 50;
+ 
+             ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+             ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+ 
+             x += barWidth + 1;
+           }
+         }
+ 
+         audioElement.play();
+         renderFrame();
+       }
+ 
+       // Attach event listeners to play the audio and start the visualizer
+       for (var key in audioElements) {
+         audioElements[key].addEventListener("play", function() {
+           // Pause all other audio elements when one starts
+           for (var otherKey in audioElements) {
+             if (audioElements[otherKey] !== this) {
+               audioElements[otherKey].pause();
+             }
+           }
+           startVisualizer(this);
+         });
+       }
+     });
+ </script>
 </body>
 </html>
