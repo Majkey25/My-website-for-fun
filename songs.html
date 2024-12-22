@@ -84,101 +84,107 @@
 </div>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-       var audioElements = {
-         audio1: document.getElementById("audio1"),
-         audio2: document.getElementById("audio2"),
-         audio3: document.getElementById("audio3"),
-         audio4: document.getElementById("audio4")
-       };
+        var audioElements = {
+          audio1: document.getElementById("audio1"),
+          audio2: document.getElementById("audio2"),
+          audio3: document.getElementById("audio3"),
+          audio4: document.getElementById("audio4")
+        };
  
-       var canvas = document.getElementById("canvas");
-       var ctx = canvas.getContext("2d");
+        var canvas = document.getElementById("canvas");
+        var ctx = canvas.getContext("2d");
  
-       // Make canvas responsive to window size
-       canvas.width = window.innerWidth;
-       canvas.height = 200; // fixed height for the visualizer
-       
-       // Set up AudioContext and analyser
-       var context = new AudioContext();
+        // Make canvas responsive to window size
+        canvas.width = window.innerWidth;
+        canvas.height = 200; // fixed height for the visualizer
  
-       // Resume AudioContext after user gesture (play)
-       document.querySelector("audio").addEventListener("play", function() {
-         if (context.state === 'suspended') {
-             context.resume();
-         }
-       });
+        var context = null; // No AudioContext yet
  
-       var analyser = context.createAnalyser();
-       analyser.fftSize = 256; // Number of frequency bins
+        // Function to initialize AudioContext after a user action
+        function initializeAudioContext() {
+          if (context) return; // Do not initialize again
+          
+          context = new (window.AudioContext || window.webkitAudioContext)();  // Ensure compatibility across browsers
  
-       // Buffer for frequency data
-       var bufferLength = analyser.frequencyBinCount;
-       var dataArray = new Uint8Array(bufferLength);
+          // Setup analyser
+          var analyser = context.createAnalyser();
+          analyser.fftSize = 256; // Number of frequency bins
  
-       // Bars for the visualizer
-       var barWidth = (canvas.width / bufferLength) * 2.5;
-       var barHeight;
-       var x = 0;
+          // Buffer for frequency data
+          var bufferLength = analyser.frequencyBinCount;
+          var dataArray = new Uint8Array(bufferLength);
  
-       // Store the previous audio source to prevent reconnecting
-       var previousSource = null;
+          // Bars for the visualizer
+          var barWidth = (canvas.width / bufferLength) * 2.5;
+          var barHeight;
+          var x = 0;
  
-       // Function to start visualizer on audio play
-       function startVisualizer(audioElement) {
-         // Disconnect previous source
-         if (previousSource) {
-           previousSource.disconnect();
-         }
+          // Store the previous audio source to prevent reconnecting
+          var previousSource = null;
  
-         var src = context.createMediaElementSource(audioElement);
-         src.connect(analyser);
-         analyser.connect(context.destination);
+          // Function to start visualizer on audio play
+          function startVisualizer(audioElement) {
+            // Disconnect previous source
+            if (previousSource) {
+              previousSource.disconnect();
+            }
  
-         previousSource = src;
+            var src = context.createMediaElementSource(audioElement);
+            src.connect(analyser);
+            analyser.connect(context.destination);
  
-         function renderFrame() {
-           requestAnimationFrame(renderFrame);
+            previousSource = src;
  
-           x = 0;
+            function renderFrame() {
+              requestAnimationFrame(renderFrame);
  
-           analyser.getByteFrequencyData(dataArray);
+              x = 0;
  
-           ctx.fillStyle = "#111"; // Background color
-           ctx.fillRect(0, 0, canvas.width, canvas.height);
+              analyser.getByteFrequencyData(dataArray);
  
-           // Draw bars with smooth gradient color
-           for (var i = 0; i < bufferLength; i++) {
-             barHeight = dataArray[i];
-
-             // Color gradient from purple to blue to green
-             var r = Math.min(255, 255 - (barHeight * 2));
-             var g = Math.min(255, barHeight * 1.5);
-             var b = Math.min(255, (barHeight + (i / bufferLength) * 100));
-
-             ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
-             ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+              ctx.fillStyle = "#111"; // Background color
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
  
-             x += barWidth + 1;
-           }
-         }
+              // Draw bars with smooth gradient color
+              for (var i = 0; i < bufferLength; i++) {
+                barHeight = dataArray[i];
  
-         audioElement.play();
-         renderFrame();
-       }
+                // Color gradient from purple to blue to green
+                var r = Math.min(255, 255 - (barHeight * 2));
+                var g = Math.min(255, barHeight * 1.5);
+                var b = Math.min(255, (barHeight + (i / bufferLength) * 100));
  
-       // Attach event listeners to play the audio and start the visualizer
-       for (var key in audioElements) {
-         audioElements[key].addEventListener("play", function() {
-           // Pause all other audio elements when one starts
-           for (var otherKey in audioElements) {
-             if (audioElements[otherKey] !== this) {
-               audioElements[otherKey].pause();
-             }
-           }
-           startVisualizer(this);
-         });
-       }
-     });
- </script>
+                ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+                ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+ 
+                x += barWidth + 1;
+              }
+            }
+ 
+            audioElement.play();
+            renderFrame();
+          }
+ 
+          // Attach event listeners to play the audio and start the visualizer
+          for (var key in audioElements) {
+            audioElements[key].addEventListener("play", function() {
+              // Pause all other audio elements when one starts
+              for (var otherKey in audioElements) {
+                if (audioElements[otherKey] !== this) {
+                  audioElements[otherKey].pause();
+                }
+              }
+ 
+              // Start AudioContext initialization only after the user clicks play
+              initializeAudioContext();
+ 
+              startVisualizer(this);
+            });
+          }
+        }
+ 
+      });
+  </script>
+ 
 </body>
 </html>
