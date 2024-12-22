@@ -120,10 +120,10 @@ document.addEventListener("DOMContentLoaded", function() {
     var bufferLength = analyser.frequencyBinCount;
     var dataArray = new Uint8Array(bufferLength);
 
-    // Variables for the line visualizer
+    // Bars for the visualizer
+    var barWidth = (canvas.width / bufferLength) * 2.5;
     var barHeight;
     var x = 0;
-    var lineWidth = 2; // Width of the smooth wave line
 
     // Store the previous audio source to prevent reconnecting
     var previousSource = null;
@@ -145,33 +145,26 @@ document.addEventListener("DOMContentLoaded", function() {
             requestAnimationFrame(renderFrame);
 
             x = 0;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             analyser.getByteFrequencyData(dataArray);
 
-            // Draw a smooth rounded waveform line
-            ctx.beginPath();
-            ctx.moveTo(0, canvas.height / 2); // Start in the middle of the canvas
+            ctx.fillStyle = "#272727"; // Background color
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Loop through frequency data and create a smooth wave
+            // Draw bars with smooth gradient color
             for (var i = 0; i < bufferLength; i++) {
                 barHeight = dataArray[i];
 
-                // Apply a smooth sine wave effect using the frequency data
-                var y = canvas.height / 2 + Math.sin(i / bufferLength * Math.PI * 2) * (barHeight / 2);
+                // Color gradient from purple to blue to green
+                var r = Math.min(255, 255 - (barHeight * 2));
+                var g = Math.min(255, barHeight * 1.5);
+                var b = Math.min(255, (barHeight + (i / bufferLength) * 100));
 
-                // Smooth curve with rounded look
-                ctx.lineTo(x, y);
+                ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+                ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
 
-                x += (canvas.width / bufferLength);
+                x += barWidth + 1;
             }
-
-            // Finish drawing the path with a rounded end
-            ctx.lineWidth = lineWidth;
-            ctx.strokeStyle = "rgb(0, 204, 255)"; // Smooth light cyan color
-            ctx.lineJoin = 'round'; // Rounded corners on the line
-            ctx.lineCap = 'round'; // Rounded end points
-            ctx.stroke();
         }
 
         audioElement.play();
