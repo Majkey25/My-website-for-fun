@@ -109,6 +109,7 @@ document.addEventListener("DOMContentLoaded", function() {
     canvas.width = window.innerWidth;
     canvas.height = 200; // fixed height for the visualizer
     
+    
     // Set up AudioContext and analyser
     var context = new (window.AudioContext || window.webkitAudioContext)();  // Ensure compatibility across browsers
 
@@ -141,11 +142,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Function to start visualizer on audio play
     function startVisualizer(audioElement) {
-        // Disconnect previous source
+        // Disconnect previous source if it exists
         if (previousSource) {
             previousSource.disconnect();
         }
 
+        // Create a new media element source for the current audio element
         var src = context.createMediaElementSource(audioElement);
         src.connect(analyser);
         analyser.connect(context.destination);
@@ -178,8 +180,16 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         }
 
+        // Play the audio
         audioElement.play();
         renderFrame();
+    }
+
+    // Function to reset the visualizer and play the audio
+    function resetAndPlay(audioElement) {
+        audioElement.currentTime = 0; // Reset to start
+        audioElement.play(); // Play audio again
+        startVisualizer(audioElement); // Restart visualizer
     }
 
     // Attach event listeners to play the audio and start the visualizer
@@ -194,12 +204,17 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             }
             resumeAudioContext();  // Ensure AudioContext is resumed after user interaction
-            startVisualizer(this);
+            startVisualizer(this);  // Start the visualizer with the current audio
         });
 
         // Handle seeking (jumping to a different part of the song)
         audioElement.addEventListener("seeked", function() {
-            startVisualizer(this);  // Restart visualizer from the current position
+            resetAndPlay(this);  // Reset and restart visualizer when seeking
+        });
+
+        // Reset and restart visualizer when paused
+        audioElement.addEventListener("pause", function() {
+            resetAndPlay(this);  // Restart visualizer if paused
         });
     }
 });
