@@ -98,7 +98,7 @@ document.addEventListener("DOMContentLoaded", function() {
         audio2: document.getElementById("audio2"),
         audio3: document.getElementById("audio3"),
         audio4: document.getElementById("audio4"),
-        audio4: document.getElementById("audio5"),
+        audio5: document.getElementById("audio5"),
     };
 
     var canvas = document.getElementById("canvas");
@@ -180,15 +180,17 @@ document.addEventListener("DOMContentLoaded", function() {
         audioElement.play();
         renderFrame();
     }
-// Function to reset the audio playback (in case of pause or skip)
-function resetAudioAndVisualizer(audioElement) {
+
+    // Function to reset the audio playback (in case of pause or skip)
+    function resetAudioAndVisualizer(audioElement) {
         // Stop the audio and reset time
         audioElement.pause();
         audioElement.currentTime = 0;
         resumeAudioContext();
     }
-     // Attach event listeners to play the audio and start the visualizer
-     for (var key in audioElements) {
+
+    // Attach event listeners to play the audio and start the visualizer
+    for (var key in audioElements) {
         audioElements[key].addEventListener("play", function() {
             // Pause all other audio elements when one starts
             for (var otherKey in audioElements) {
@@ -212,6 +214,7 @@ function resetAudioAndVisualizer(audioElement) {
         });
     }
 });
+
  </script>
 </body>
 </html>
