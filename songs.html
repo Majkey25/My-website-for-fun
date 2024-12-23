@@ -186,18 +186,6 @@ document.addEventListener("DOMContentLoaded", function() {
         resumeAudioContext(); // Ensure AudioContext is resumed
     }
 
-    // Function to handle playing and pausing behavior
-    function handlePlayPause(audioElement) {
-        if (audioElement.paused) {
-            // If audio is paused, reset and play
-            resetAudioAndVisualizer(audioElement);
-            startVisualizer(audioElement);
-        } else {
-            // If audio is playing, simply pause and reset
-            resetAudioAndVisualizer(audioElement);
-        }
-    }
-
     // Attach event listeners to play the audio and start the visualizer
     for (var key in audioElements) {
         var audioElement = audioElements[key];
@@ -222,14 +210,8 @@ document.addEventListener("DOMContentLoaded", function() {
             // Handle seek event when user skips through the audio
             startVisualizer(this);  // Restart the visualizer from the current position
         });
-
-        // Handle play/pause toggle manually for better control
-        audioElement.addEventListener("click", function() {
-            handlePlayPause(this); // Toggle play/pause and reset visualizer
-        });
     }
 });
-
  </script>
 </body>
 </html>
