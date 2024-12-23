@@ -182,19 +182,7 @@ document.addEventListener("DOMContentLoaded", function() {
         renderFrame();
     }
 
-    // Attach event listeners to play the audio and start the visualizer
-    for (var key in audioElements) {
-        audioElements[key].addEventListener("play", function() {
-            // Pause all other audio elements when one starts
-            for (var otherKey in audioElements) {
-                if (audioElements[otherKey] !== this) {
-                    audioElements[otherKey].pause();
-                }
-            }
-            resumeAudioContext();  // Ensure AudioContext is resumed after user interaction
-            startVisualizer(this);
-        });
-    }
+    
 });
  </script>
 </body>
