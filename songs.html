@@ -92,136 +92,108 @@
   </div>
 </div>
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    var audioElements = {
-        audio1: document.getElementById("audio1"),
-        audio2: document.getElementById("audio2"),
-        audio3: document.getElementById("audio3"),
-        audio4: document.getElementById("audio4"),
-        audio5: document.getElementById("audio5"),
-        // audio6: document.getElementById("audio6"),
-    };
-
-    var canvas = document.getElementById("canvas");
-    var ctx = canvas.getContext("2d");
-
-    // Make canvas responsive to window size
-    canvas.width = window.innerWidth;
-    canvas.height = 200; // fixed height for the visualizer
-    
-    // Set up AudioContext and analyser
-    var context = new (window.AudioContext || window.webkitAudioContext)();  // Ensure compatibility across browsers
-
-    // Resume AudioContext after user gesture (e.g. play)
-    var isUserInteracted = false;
-    function resumeAudioContext() {
-        if (!isUserInteracted) {
-            isUserInteracted = true;
-            if (context.state === 'suspended') {
-                context.resume();
-            }
-        }
-    }
-
-    // Setup analyser
-    var analyser = context.createAnalyser();
-    analyser.fftSize = 256; // Number of frequency bins
-
-    // Buffer for frequency data
-    var bufferLength = analyser.frequencyBinCount;
-    var dataArray = new Uint8Array(bufferLength);
-
-    // Bars for the visualizer
-    var barWidth = (canvas.width / bufferLength) * 2.5;
-    var barHeight;
-    var x = 0;
-
-    // Store the previous audio source to prevent reconnecting
-    var previousSource = null;
-
-    // Function to start visualizer on audio play
-    function startVisualizer(audioElement) {
-        // Disconnect previous source
-        if (previousSource) {
-            previousSource.disconnect();
-        }
-
-        var src = context.createMediaElementSource(audioElement);
-        src.connect(analyser);
-        analyser.connect(context.destination);
-
-        previousSource = src;
-
-        function renderFrame() {
-            requestAnimationFrame(renderFrame);
-
-            x = 0;
-
-            analyser.getByteFrequencyData(dataArray);
-
-            ctx.fillStyle = "#272727"; // Background color
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw bars with smooth gradient color
-            for (var i = 0; i < bufferLength; i++) {
-                barHeight = dataArray[i];
-
-                // Color gradient from purple to blue to green
-                var r = Math.min(255, 255 - (barHeight * 2));
-                var g = Math.min(255, barHeight * 1.5);
-                var b = Math.min(255, (barHeight + (i / bufferLength) * 100));
-
-                ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
-                ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-
-                x += barWidth + 1;
-            }
-        }
-
-        audioElement.play();
-        renderFrame();
-    }
-
-    // Function to handle play event and stop others
-    function playAudio(audioElement) {
-        for (var key in audioElements) {
-            if (audioElements[key] !== audioElement) {
-                audioElements[key].pause();  // Pause all other audio
-            }
-        }
-        audioElement.play();  // Play the selected audio
-        startVisualizer(audioElement);  // Start the visualizer for the current audio
-    }
-  // Function to handle play event
-  function playAudio(audioElement) {
-        // Pause all other audio elements
-        audioElements.forEach(function(otherAudio) {
-            if (otherAudio !== audioElement) {
-                otherAudio.pause();
-            }
-        });
-
-        // Play the selected audio and start visualizer
-        audioElement.play();
-        startVisualizer(audioElement);
-    }
-
-    // Attach event listeners to each audio element
-    audioElements.forEach(function(audioElement) {
-        audioElement.addEventListener("play", function() {
-            playAudio(this);
-        });
-
-        // Click to toggle play/pause
-        audioElement.addEventListener("click", function() {
-            if (this.paused) {
-                playAudio(this);
-            } else {
-                this.pause();  // If already playing, pause
-            }
-        });
-    });
-});
- </script>
+  document.addEventListener("DOMContentLoaded", function() {
+      var audioElements = {
+          audio1: document.getElementById("audio1"),
+          audio2: document.getElementById("audio2"),
+          audio3: document.getElementById("audio3"),
+          audio4: document.getElementById("audio4"),
+          audio5: document.getElementById("audio5"),
+      };
+  
+      var canvas = document.getElementById("canvas");
+      var ctx = canvas.getContext("2d");
+  
+      // Make canvas responsive to window size
+      canvas.width = window.innerWidth;
+      canvas.height = 200; // fixed height for the visualizer
+      
+      // Set up AudioContext and analyser
+      var context = new (window.AudioContext || window.webkitAudioContext)();
+      var analyser = context.createAnalyser();
+      analyser.fftSize = 256; // Number of frequency bins
+  
+      // Buffer for frequency data
+      var bufferLength = analyser.frequencyBinCount;
+      var dataArray = new Uint8Array(bufferLength);
+  
+      var barWidth = (canvas.width / bufferLength) * 2.5;
+      var barHeight;
+      var x = 0;
+  
+      var previousSource = null;
+  
+      // Function to start visualizer on audio play
+      function startVisualizer(audioElement) {
+          // Disconnect previous source
+          if (previousSource) {
+              previousSource.disconnect();
+          }
+  
+          var src = context.createMediaElementSource(audioElement);
+          src.connect(analyser);
+          analyser.connect(context.destination);
+  
+          previousSource = src;
+  
+          // Render the frequency data into the visualizer
+          function renderFrame() {
+              requestAnimationFrame(renderFrame);
+  
+              x = 0;
+              analyser.getByteFrequencyData(dataArray);
+  
+              ctx.fillStyle = "#272727"; // Background color
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+              // Draw bars with smooth gradient color
+              for (var i = 0; i < bufferLength; i++) {
+                  barHeight = dataArray[i];
+  
+                  var r = Math.min(255, 255 - (barHeight * 2));
+                  var g = Math.min(255, barHeight * 1.5);
+                  var b = Math.min(255, (barHeight + (i / bufferLength) * 100));
+  
+                  ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+                  ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+  
+                  x += barWidth + 1;
+              }
+          }
+  
+          audioElement.play();
+          renderFrame();
+      }
+  
+      // Function to handle play event and stop others
+      function playAudio(audioElement) {
+          // Pause all other audio elements
+          for (var key in audioElements) {
+              if (audioElements[key] !== audioElement) {
+                  audioElements[key].pause();
+              }
+          }
+          // Play the selected audio
+          audioElement.play();
+          startVisualizer(audioElement);  // Start the visualizer for the current audio
+      }
+  
+      // Attach event listeners to each audio element
+      for (var key in audioElements) {
+          audioElements[key].addEventListener("play", function() {
+              playAudio(this);
+          });
+  
+          // Click to toggle play/pause
+          audioElements[key].addEventListener("click", function() {
+              if (this.paused) {
+                  playAudio(this);
+              } else {
+                  this.pause();  // If already playing, pause
+              }
+          });
+      }
+  });
+  </script>  
 </body>
 </html>
