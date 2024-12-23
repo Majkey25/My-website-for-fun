@@ -1558,7 +1558,7 @@ canvas.addEventListener("mousemove", (e) => {
   pointers[0].y = e.offsetY;
 });
 
-/* canvas.addEventListener('touchmove', e => {
+canvas.addEventListener('touchmove', e => {
     e.preventDefault();
     const touches = e.targetTouches;
     for (let i = 0; i < touches.length; i++) {
@@ -1569,14 +1569,14 @@ canvas.addEventListener("mousemove", (e) => {
         pointer.x = touches[i].pageX;
         pointer.y = touches[i].pageY;
     }
-}, false); */
+}, false);
 
 canvas.addEventListener("mousedown", () => {
   pointers[0].down = true;
   pointers[0].color = generateColor();
 });
 
-/* canvas.addEventListener('touchstart', e => {
+canvas.addEventListener('touchstart', e => {
     e.preventDefault();
     const touches = e.targetTouches;
     for (let i = 0; i < touches.length; i++) {
@@ -1589,7 +1589,7 @@ canvas.addEventListener("mousedown", () => {
         pointers[i].y = touches[i].pageY;
         pointers[i].color = generateColor();
     }
-}); */
+});
 
 /* window.addEventListener('mouseup', () => {
     pointers[0].down = false;
@@ -1602,13 +1602,13 @@ window.addEventListener('touchend', e => {
             if (touches[i].identifier == pointers[j].id)
                 pointers[j].down = false;
 }); */
-/* 
+
 window.addEventListener('keydown', e => {
     if (e.code === 'KeyP')
         config.PAUSED = !config.PAUSED;
     if (e.key === ' ')
         splatStack.push(parseInt(Math.random() * 20) + 5);
-}); */
+});
 
 function generateColor() {
   let c = HSVtoRGB(Math.random(), 1.0, 1.0);
