@@ -99,7 +99,6 @@ document.addEventListener("DOMContentLoaded", function() {
         audio3: document.getElementById("audio3"),
         audio4: document.getElementById("audio4"),
         audio5: document.getElementById("audio5"),
-        // audio6: document.getElementById("audio6"),
     };
 
     var canvas = document.getElementById("canvas");
@@ -228,7 +227,7 @@ document.addEventListener("DOMContentLoaded", function() {
         audioElements[key].addEventListener("seeked", function() {
             // Reset visualizer and start it again from the new position
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            startVisualizer(this);
+            startVisualizer(this);  // Restart visualizer from new position
         });
     }
 });
