@@ -182,7 +182,55 @@ document.addEventListener("DOMContentLoaded", function() {
         renderFrame();
     }
 
-    
+  // Function to handle play event and stop others
+  function playAudio(audioElement) {
+        console.log('Playing audio:', audioElement.id);
+
+        // Pause all other audio elements
+        for (var key in audioElements) {
+            if (audioElements[key] !== audioElement) {
+                audioElements[key].pause();
+            }
+        }
+
+        // Reset AudioContext if it's not running
+        if (context.state === 'suspended') {
+            context.resume();
+        }
+
+        // Play the selected audio
+        audioElement.play();
+        startVisualizer(audioElement);  // Start the visualizer for the current audio
+    }
+
+    // Attach event listeners to each audio element
+    for (var key in audioElements) {
+        audioElements[key].addEventListener("play", function() {
+            playAudio(this);
+        });
+
+        // Toggle play/pause behavior for each audio element
+        audioElements[key].addEventListener("click", function() {
+            if (this.paused) {
+                playAudio(this);
+            } else {
+                this.pause();  // If already playing, pause
+            }
+        });
+
+        // Handle when audio is paused
+        audioElements[key].addEventListener("pause", function() {
+            // Reset visualizer and stop the current animation
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+        // Handle when audio is seeking
+        audioElements[key].addEventListener("seeked", function() {
+            // Reset visualizer and start it again from the new position
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            startVisualizer(this);
+        });
+    }
 });
  </script>
 </body>
