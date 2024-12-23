@@ -98,7 +98,8 @@ document.addEventListener("DOMContentLoaded", function() {
         audio2: document.getElementById("audio2"),
         audio3: document.getElementById("audio3"),
         audio4: document.getElementById("audio4"),
-        audio5: document.getElementById("audio5"), // Corrected this key
+        audio5: document.getElementById("audio5"),
+        // audio6: document.getElementById("audio6"),
     };
 
     var canvas = document.getElementById("canvas");
@@ -183,7 +184,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Attach event listeners to play the audio and start the visualizer
     for (var key in audioElements) {
-        audioElements[key].addEventListener("play", function() {
+        var audioElement = audioElements[key];
+
+        audioElement.addEventListener("play", function() {
             // Pause all other audio elements when one starts
             for (var otherKey in audioElements) {
                 if (audioElements[otherKey] !== this) {
@@ -192,6 +195,11 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             resumeAudioContext();  // Ensure AudioContext is resumed after user interaction
             startVisualizer(this);
+        });
+
+        // Handle seeking (jumping to a different part of the song)
+        audioElement.addEventListener("seeked", function() {
+            startVisualizer(this);  // Restart visualizer from the current position
         });
     }
 });
