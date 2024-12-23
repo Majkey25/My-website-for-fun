@@ -192,17 +192,27 @@ document.addEventListener("DOMContentLoaded", function() {
         audioElement.play();  // Play the selected audio
         startVisualizer(audioElement);  // Start the visualizer for the current audio
     }
+  // Function to handle play event
+  function playAudio(audioElement) {
+        // Pause all other audio elements
+        audioElements.forEach(function(otherAudio) {
+            if (otherAudio !== audioElement) {
+                otherAudio.pause();
+            }
+        });
 
-    // Attach event listeners to play the audio and start the visualizer
-    for (var key in audioElements) {
-        var audioElement = audioElements[key];
+        // Play the selected audio and start visualizer
+        audioElement.play();
+        startVisualizer(audioElement);
+    }
 
-        // Play event for each audio element
+    // Attach event listeners to each audio element
+    audioElements.forEach(function(audioElement) {
         audioElement.addEventListener("play", function() {
             playAudio(this);
         });
 
-        // Click to play
+        // Click to toggle play/pause
         audioElement.addEventListener("click", function() {
             if (this.paused) {
                 playAudio(this);
@@ -210,7 +220,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 this.pause();  // If already playing, pause
             }
         });
-    }
+    });
 });
  </script>
 </body>
