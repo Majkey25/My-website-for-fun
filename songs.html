@@ -93,77 +93,42 @@
 </div>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    var audioElements = {
-        audio1: document.getElementById("audio1"),
-        audio2: document.getElementById("audio2"),
-        audio3: document.getElementById("audio3"),
-        audio4: document.getElementById("audio4"),
-        audio5: document.getElementById("audio5"),
-    };
-
+    var audioElements = document.querySelectorAll('audio');
     var canvas = document.getElementById("canvas");
     var ctx = canvas.getContext("2d");
 
-    // Make canvas responsive to window size
     canvas.width = window.innerWidth;
-    canvas.height = 200; // fixed height for the visualizer
-    
-    // Set up AudioContext and analyser
-    var context = new (window.AudioContext || window.webkitAudioContext)();  // Ensure compatibility across browsers
-    var analyser = context.createAnalyser();
-    analyser.fftSize = 256; // Number of frequency bins
+    canvas.height = 200;
 
-    // Buffer for frequency data
+    var context = new (window.AudioContext || window.webkitAudioContext)();
+    var analyser = context.createAnalyser();
+    analyser.fftSize = 256;
+
     var bufferLength = analyser.frequencyBinCount;
     var dataArray = new Uint8Array(bufferLength);
 
-    // Bars for the visualizer
     var barWidth = (canvas.width / bufferLength) * 2.5;
     var barHeight;
     var x = 0;
 
-    // Store the previous audio source to prevent reconnecting
-    var previousSource = null;
-
-    // Resume AudioContext after user gesture (e.g. play)
-    var isUserInteracted = false;
-    function resumeAudioContext() {
-        if (!isUserInteracted) {
-            isUserInteracted = true;
-            if (context.state === 'suspended') {
-                context.resume();
-            }
-        }
-    }
-
     // Function to start visualizer on audio play
     function startVisualizer(audioElement) {
-        // Disconnect previous source
-        if (previousSource) {
-            previousSource.disconnect();
-        }
-
         var src = context.createMediaElementSource(audioElement);
         src.connect(analyser);
         analyser.connect(context.destination);
-
-        previousSource = src;
 
         function renderFrame() {
             requestAnimationFrame(renderFrame);
 
             x = 0;
-
             analyser.getByteFrequencyData(dataArray);
 
-            ctx.fillStyle = "#272727"; // Background color
+            ctx.fillStyle = "#272727";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw bars with smooth gradient color
             for (var i = 0; i < bufferLength; i++) {
                 barHeight = dataArray[i];
 
-                // Color gradient from purple to blue to green
                 var r = Math.min(255, 255 - (barHeight * 2));
                 var g = Math.min(255, barHeight * 1.5);
                 var b = Math.min(255, (barHeight + (i / bufferLength) * 100));
@@ -179,38 +144,22 @@ document.addEventListener("DOMContentLoaded", function() {
         renderFrame();
     }
 
-    // Reset the audio and visualizer on pause or seek
-    function resetAudioAndVisualizer(audioElement) {
-        audioElement.currentTime = 0; // Reset to the start
-        audioElement.pause(); // Pause audio to ensure it can be played again
-        resumeAudioContext(); // Ensure AudioContext is resumed
-    }
-
     // Attach event listeners to play the audio and start the visualizer
-    for (var key in audioElements) {
-        var audioElement = audioElements[key];
-
+    audioElements.forEach(function(audioElement) {
         audioElement.addEventListener("play", function() {
             // Pause all other audio elements when one starts
-            for (var otherKey in audioElements) {
-                if (audioElements[otherKey] !== this) {
-                    audioElements[otherKey].pause();
+            audioElements.forEach(function(otherAudioElement) {
+                if (otherAudioElement !== audioElement) {
+                    otherAudioElement.pause();
                 }
-            }
-            resumeAudioContext(); // Ensure AudioContext is resumed after user interaction
-            startVisualizer(this);
+            });
+            startVisualizer(audioElement);
         });
 
-        // Reset the visualizer if the audio is paused or seeked
         audioElement.addEventListener("pause", function() {
-            resetAudioAndVisualizer(this);  // Reset audio and visualizer when paused
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas when paused
         });
-
-        audioElement.addEventListener("seeked", function() {
-            // Handle seek event when user skips through the audio
-            startVisualizer(this);  // Restart the visualizer from the current position
-        });
-    }
+    });
 });
  </script>
 </body>
