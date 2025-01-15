@@ -166,7 +166,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
-    // Setup canvas dimensions
     canvas.width = window.innerWidth;
     canvas.height = 200;
 
@@ -174,7 +173,6 @@ document.addEventListener("DOMContentLoaded", function () {
     let analyser = null;
     let dataArray = null;
     let animationFrame = null;
-    let currentSource = null;
 
     function initializeAudioContext() {
         if (!audioContext) {
@@ -188,13 +186,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function startVisualizer(audioElement) {
         initializeAudioContext();
 
-        if (currentSource) {
-            currentSource.disconnect();
-        }
-
-        // Create a new MediaElementAudioSourceNode for the current audio
-        currentSource = audioContext.createMediaElementSource(audioElement);
-        currentSource.connect(analyser);
+        const source = audioContext.createMediaElementSource(audioElement);
+        source.connect(analyser);
         analyser.connect(audioContext.destination);
 
         function renderFrame() {
@@ -202,18 +195,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
             analyser.getByteFrequencyData(dataArray);
 
-            ctx.fillStyle = "#272727"; // Background color
+            ctx.fillStyle = "#272727";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             const barWidth = (canvas.width / dataArray.length) * 2.5;
-            let barHeight;
             let x = 0;
 
             for (let i = 0; i < dataArray.length; i++) {
-                barHeight = dataArray[i];
-                const r = Math.min(255, 255 - barHeight * 2);
-                const g = Math.min(255, barHeight * 1.5);
-                const b = Math.min(255, barHeight + (i / dataArray.length) * 100);
+                const barHeight = dataArray[i];
+                const r = 255 - barHeight * 2;
+                const g = barHeight * 1.5;
+                const b = barHeight;
 
                 ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
                 ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
@@ -223,9 +215,17 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         renderFrame();
+
+        audioElement.addEventListener("ended", () => {
+            source.disconnect();
+            analyser.disconnect();
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+        });
     }
 
-    // Event listeners for each audio element
     audioElements.forEach((audioElement) => {
         audioElement.addEventListener("play", () => {
             if (!audioContext || audioContext.state === "suspended") {
@@ -242,26 +242,8 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
-
-        audioElement.addEventListener("seeked", () => {
-            // Restart the visualizer after seeking
-            if (!audioContext || audioContext.state === "suspended") {
-                initializeAudioContext();
-                audioContext.resume();
-            }
-            startVisualizer(audioElement);
-        });
-
-        audioElement.addEventListener("ended", () => {
-            if (animationFrame) {
-                cancelAnimationFrame(animationFrame);
-                animationFrame = null;
-            }
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        });
     });
 });
-
  </script>
 </body>
 </html>
