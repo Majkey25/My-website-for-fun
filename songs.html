@@ -173,7 +173,6 @@ document.addEventListener("DOMContentLoaded", function () {
     let analyser = null;
     let dataArray = null;
     let animationFrame = null;
-    let currentSource = null;
 
     function initializeAudioContext() {
         if (!audioContext) {
@@ -187,13 +186,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function startVisualizer(audioElement) {
         initializeAudioContext();
 
-        if (currentSource) {
-            currentSource.disconnect(); // Odpojit předchozí zdroj
-        }
-
-        // Vytvoření nového zdroje
-        currentSource = audioContext.createMediaElementSource(audioElement);
-        currentSource.connect(analyser);
+        const source = audioContext.createMediaElementSource(audioElement);
+        source.connect(analyser);
         analyser.connect(audioContext.destination);
 
         function renderFrame() {
@@ -201,7 +195,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             analyser.getByteFrequencyData(dataArray);
 
-            ctx.fillStyle = "#272727"; // Barva pozadí
+            ctx.fillStyle = "#272727";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             const barWidth = (canvas.width / dataArray.length) * 2.5;
@@ -221,6 +215,15 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         renderFrame();
+
+        audioElement.addEventListener("ended", () => {
+            source.disconnect();
+            analyser.disconnect();
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+        });
     }
 
     audioElements.forEach((audioElement) => {
@@ -239,24 +242,8 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
-
-        audioElement.addEventListener("seeked", () => {
-            // Restart vizualizéru po seekování
-            if (audioContext && audioContext.state !== "closed") {
-                startVisualizer(audioElement);
-            }
-        });
-
-        audioElement.addEventListener("ended", () => {
-            if (animationFrame) {
-                cancelAnimationFrame(animationFrame);
-                animationFrame = null;
-            }
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        });
     });
 });
-
  </script>
 </body>
 </html>
