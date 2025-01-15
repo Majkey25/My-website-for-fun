@@ -170,17 +170,24 @@ document.addEventListener("DOMContentLoaded", function () {
     canvas.width = window.innerWidth;
     canvas.height = 200;
 
-    // Create a single AudioContext instance
-    let audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    let analyser = audioContext.createAnalyser();
-    analyser.fftSize = 256;
-
-    let dataArray = new Uint8Array(analyser.frequencyBinCount);
-    let animationFrame;
+    let audioContext = null;
+    let analyser = null;
+    let dataArray = null;
+    let animationFrame = null;
     let currentSource = null;
 
+    function initializeAudioContext() {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+        }
+    }
+
     function startVisualizer(audioElement) {
-        // Clear previous audio source
+        initializeAudioContext();
+
         if (currentSource) {
             currentSource.disconnect();
         }
@@ -218,28 +225,38 @@ document.addEventListener("DOMContentLoaded", function () {
         renderFrame();
     }
 
-    // Handle audio events
+    // Event listeners for each audio element
     audioElements.forEach((audioElement) => {
         audioElement.addEventListener("play", () => {
-            if (audioContext.state === "suspended") {
+            if (!audioContext || audioContext.state === "suspended") {
+                initializeAudioContext();
                 audioContext.resume();
             }
             startVisualizer(audioElement);
         });
 
         audioElement.addEventListener("pause", () => {
-            cancelAnimationFrame(animationFrame);
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
 
         audioElement.addEventListener("seeked", () => {
-            cancelAnimationFrame(animationFrame);
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Restart the visualizer after seeking
+            if (!audioContext || audioContext.state === "suspended") {
+                initializeAudioContext();
+                audioContext.resume();
+            }
             startVisualizer(audioElement);
         });
 
         audioElement.addEventListener("ended", () => {
-            cancelAnimationFrame(animationFrame);
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
     });
