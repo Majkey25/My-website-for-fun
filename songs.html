@@ -173,7 +173,6 @@ document.addEventListener("DOMContentLoaded", function () {
     let analyser = null;
     let dataArray = null;
     let animationFrame = null;
-    let globalSource = null;
 
     function initializeAudioContext() {
         if (!audioContext) {
@@ -184,15 +183,19 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function startVisualizer() {
+    function startVisualizer(audioElement) {
         initializeAudioContext();
+
+        const source = audioContext.createMediaElementSource(audioElement);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
 
         function renderFrame() {
             animationFrame = requestAnimationFrame(renderFrame);
 
             analyser.getByteFrequencyData(dataArray);
 
-            ctx.fillStyle = "#272727"; // Barva pozadí
+            ctx.fillStyle = "#272727";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             const barWidth = (canvas.width / dataArray.length) * 2.5;
@@ -212,25 +215,15 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         renderFrame();
-    }
 
-    function connectAudioElement(audioElement) {
-        initializeAudioContext();
-
-        // Odpojit předchozí zdroj, pokud existuje
-        if (globalSource) {
-            globalSource.disconnect();
-        }
-
-        // Připojit nový zdroj
-        globalSource = audioContext.createMediaElementSource(audioElement);
-
-        // Připojit analyzér i výstup
-        globalSource.connect(analyser);
-        analyser.connect(audioContext.destination);
-
-        // Zajistit propojení i přímo na výstup (pro slyšitelný zvuk)
-        globalSource.connect(audioContext.destination);
+        audioElement.addEventListener("ended", () => {
+            source.disconnect();
+            analyser.disconnect();
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+        });
     }
 
     audioElements.forEach((audioElement) => {
@@ -239,34 +232,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 initializeAudioContext();
                 audioContext.resume();
             }
-            connectAudioElement(audioElement);
+            startVisualizer(audioElement);
         });
 
         audioElement.addEventListener("pause", () => {
-            // Pauza nezastaví vizualizér
             if (animationFrame) {
                 cancelAnimationFrame(animationFrame);
                 animationFrame = null;
             }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
-
-        audioElement.addEventListener("seeked", () => {
-            // Znovu připojit audio zdroj po seeku
-            connectAudioElement(audioElement);
-        });
-
-        audioElement.addEventListener("ended", () => {
-            if (globalSource) {
-                globalSource.disconnect();
-            }
-        });
     });
-
-    // Spustit visualizer při načtení stránky
-    startVisualizer();
 });
-
  </script>
 </body>
 </html>
