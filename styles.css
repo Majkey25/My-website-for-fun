@@ -550,15 +550,17 @@ body::before {
 }
 
 footer {
-    text-align: center;
-    margin-top: 50px;
-    padding: 20px;
-    background-color: #1a1a1a;
-    color: #98FCFF;
-    width: 100%;
-    position: relative;
-    bottom: 0; /* Sticks footer to the bottom */
-}
+    position: fixed; /* Fixed to the bottom */
+    bottom: 0; /* Positioned at the bottom */
+    left: 0; /* Positioned to the left */
+    width: 100%; /* Width to 100% */
+    text-align: center; /* Center text */
+    padding: 0px 0; /* Padding top and bottom */
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1); /* Shadow above footer */
+    display: flex; /* Flexbox layout */
+    justify-content: center; /* Center the items */
+    gap: 10px; /* Space between paragraphs */
+}  
 .seaContainer {
     position: absolute;
     top: 40%; /* Move the sea and submarine further down the page */
