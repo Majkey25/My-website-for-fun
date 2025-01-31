@@ -74,6 +74,11 @@ body {
         max-width: 90%; /* Omezit šířku pro menší zařízení */
     }
 }
+@media (max-width: 768px) {
+    #typing-effect {
+        display: none;
+    }
+}
 
 
 .about-me p {
@@ -568,7 +573,7 @@ footer {
     
 .seaContainer {
     position: absolute;
-    top: 40%; /* Move the sea and submarine further down the page */
+    top: 45%; /* Move the sea and submarine further down the page */
     left: 0;
     width: 100%;
     height: 100%;
