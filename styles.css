@@ -95,6 +95,7 @@ nav .nav-links a:hover::after {
 @media (max-width: 600px) {
   #menu-toggle {
     display: block;
+    transition: transform 0.3s;
   }
   nav .nav-links {
     position: absolute;
@@ -109,6 +110,19 @@ nav .nav-links a:hover::after {
   }
   nav.open .nav-links {
     max-height: 200px;
+  }
+
+  nav .nav-links li {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  nav.open .nav-links li {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  nav.open #menu-toggle {
+    transform: rotate(90deg);
   }
 }
 
@@ -160,7 +174,6 @@ button,
   cursor: pointer;
   text-decoration: none;
   overflow: hidden;
-  animation: pulse 3s infinite;
   transition: background 0.3s, color 0.3s, transform 0.3s;
 }
 
@@ -181,6 +194,7 @@ button:hover,
   background: var(--ACCENT);
   color: var(--BACKGROUND);
   transform: translateY(-2px) scale(1.05);
+  animation: pulse 0.8s;
 }
 
 button:hover::before,
@@ -225,25 +239,26 @@ button:hover::after,
   color: var(--TEXT);
   text-decoration: none;
   overflow: hidden;
-  transition: color 0.3s;
+  transition: color 0.3s, transform 0.3s;
 }
 
 .project-link::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--ACCENT);
+  background: linear-gradient(45deg, var(--ACCENT), #ff4081, #ffeb3b);
   transform: translateX(-100%);
-  transition: transform 0.3s;
+  transition: transform 0.4s;
   z-index: -1;
-}
-
-.project-link:hover::before {
-  transform: translateX(0);
 }
 
 .project-link:hover {
   color: var(--BACKGROUND);
+  transform: translateY(-2px) scale(1.05);
+}
+
+.project-link:hover::before {
+  transform: translateX(0);
 }
 
 .songs-container {
