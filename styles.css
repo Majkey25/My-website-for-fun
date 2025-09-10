@@ -9,8 +9,6 @@
   --SURFACE: #1e1e1e;
   --TEXT: #e5e5e5;
   --ACCENT: #64b5f6;
-  --BUTTON_ANIMATION: 6s;
-  --BUTTON_BORDER_SPEED: 4s;
   --CLOCK_SIZE: 220px;
   --CLOCK_NUMBER_SIZE: 1rem;
 }
@@ -170,17 +168,9 @@ button:hover {
 }
 
 .button {
-  position: relative;
   display: inline-block;
-  padding: 2px;
+  border: 2px solid var(--ACCENT);
   border-radius: 8px;
-  background: conic-gradient(
-    from 0deg,
-    var(--ACCENT),
-    color-mix(in srgb, var(--ACCENT), white 40%),
-    var(--ACCENT)
-  );
-  animation: spinBorder var(--BUTTON_BORDER_SPEED) linear infinite;
   text-decoration: none;
 }
 
@@ -190,63 +180,34 @@ button:hover {
   border-radius: 6px;
   background: var(--SURFACE);
   color: var(--ACCENT);
-  transition: background 0.3s, color 0.3s, transform 0.3s;
-  position: relative;
-  overflow: hidden;
-}
-
-.button span::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(
-    120deg,
-    transparent,
-    color-mix(in srgb, var(--ACCENT), white 60%),
-    transparent
-  );
-  transform: skewX(-25deg);
-}
-
-.button:hover span::after {
-  animation: shine 0.75s forwards;
+  transition: background 0.3s, color 0.3s;
 }
 
 .button:hover span {
   background: var(--ACCENT);
   color: var(--BACKGROUND);
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 0 10px var(--ACCENT);
+  animation: boom 0.4s;
+  box-shadow: 0 0 8px var(--ACCENT);
 }
 
-.social-links .button span {
-  animation: buttonPulse var(--BUTTON_ANIMATION) ease-in-out infinite;
-}
-
-@keyframes buttonPulse {
+@keyframes boom {
   0% {
-    transform: translateY(0);
+    transform: scale(1) translateX(0);
   }
-  50% {
-    transform: translateY(-2px);
+  40% {
+    transform: scale(1.15) translateX(0);
+  }
+  55% {
+    transform: scale(1.15) translateX(-4px);
+  }
+  70% {
+    transform: scale(1.15) translateX(4px);
+  }
+  85% {
+    transform: scale(1.15) translateX(-2px);
   }
   100% {
-    transform: translateY(0);
-  }
-}
-
-@keyframes spinBorder {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes shine {
-  to {
-    left: 150%;
+    transform: scale(1) translateX(0);
   }
 }
 
