@@ -4,64 +4,56 @@
     box-sizing: border-box;
 }
 
+:root {
+    --background-color: #121212;
+    --card-color: #1e1e1e;
+    --text-color: #e5e5e5;
+    --accent-color: #64b5f6;
+}
+
 body {
-    font-family: 'Montserrat', sans-serif;
-    background: linear-gradient(135deg, #212121, #1a1a1a);
-    color: #98FCFF;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--background-color);
+    color: var(--text-color);
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
     min-height: 100vh;
-    background-attachment: fixed;
-    overflow-y: auto; /* Allow vertical scrolling */
-    flex-direction: column; /* Arrange elements vertically */
-    
+    overflow-y: auto;
 }
 
 .container {
     text-align: center;
+    background: var(--card-color);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 960px;
+    margin: 40px auto;
     padding: 20px;
-    background: linear-gradient(145deg, #333, #1e1e1e);
-    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7);
-    border-radius: 20px;
-    backdrop-filter: blur(10px);
-    position: relative;
-    z-index: 1;
-    overflow: hidden;
-    animation: fadeIn 2s ease-in-out;
-    flex: 1;
-    width: 95vw;
-    max-width: 1370px; 
-    margin: 10px auto;
-    padding: 30px;
 }
 
 .title {
-    font-size: 3rem; /* Menší na mobilních zařízeních */
-    color: #00ffbf;
-    margin-bottom: 40px;
+    font-size: 3rem;
+    color: var(--accent-color);
+    margin: 20px 0;
     letter-spacing: 2px;
-    animation: slideDown 1.5s ease-in-out;
     text-transform: uppercase;
-    background: linear-gradient(to right, #00ffbf, #1ca800);
-    background-clip: text;
-    color: transparent;
-    animation: gradientFlow 5s ease-in-out infinite;
-    margin-top: 20px;
 }
 
 .subtitle {
     font-size: 1.4em;
-    color: #00ff00;
+    color: var(--text-color);
     margin-bottom: 50px;
     font-weight: 300;
-    font-family: 'Courier New', monospace;
-    white-space: nowrap; /* Zachovat jeden řádek na větších obrazovkách */
+    font-family: "Courier New", monospace;
+    white-space: nowrap;
     overflow: hidden;
-    border-right: 2px solid #00ff00;
+    border-right: 2px solid var(--accent-color);
     display: inline-block;
-    width: fit-content; /* Automatická šířka podle obsahu */
-    animation: typing 5s steps(30) forwards, blink-caret 0.75s step-end infinite; /* Typing animation */
+    width: fit-content;
+    animation: typing 5s steps(30) forwards,
+               blink-caret 0.75s step-end infinite;
 }
 
 /* Pro menší obrazovky */
@@ -121,8 +113,8 @@ body {
 }
 
 @keyframes blink-caret {
-    from, to { border-color: transparent; } /* Transparent at the start and end */
-    50% { border-color: #00ff00; } /* Blink effect */
+    from, to { border-color: transparent; }
+    50% { border-color: var(--accent-color); }
 }
 
 
@@ -132,10 +124,10 @@ body {
 }
 
 .about-me h2 {
-    color: #1ca800;
+    color: var(--accent-color);
     font-size: 2.5em;
     margin-bottom: 20px;
-    border-bottom: 2px solid #1ca800;
+    border-bottom: 2px solid var(--accent-color);
     display: inline-block;
     padding-bottom: 5px;
 }
@@ -163,17 +155,17 @@ body {
 
 .social-links a {
     text-decoration: none;
-    color: #98FCFF;
+    color: var(--accent-color);
     font-size: 1.2em;
-    border: 2px solid #98FCFF;
+    border: 2px solid var(--accent-color);
     padding: 10px 10px;
     border-radius: 50px;
     transition: color 0.3s, background-color 0.3s, transform 0.3s ease;
 }
 
 .social-links a:hover {
-    background-color: #98FCFF;
-    color: #212121;
+    background-color: var(--accent-color);
+    color: var(--background-color);
     transform: scale(1.05);
 }
 .game-button {
@@ -299,19 +291,19 @@ body {
     position: absolute;
     top: 20px;
     left: 20px;
-    background-color: #00e676;
-    color: #212121;
+    background-color: var(--accent-color);
+    color: var(--background-color);
     border: none;
     border-radius: 5px;
-    padding: 8px 12px; /* Smaller button size */
-    font-size: 1em; /* Regular font size */
+    padding: 8px 12px;
+    font-size: 1em;
     cursor: pointer;
     transition: background-color 0.3s;
-    z-index: 100; /* Ensure it's above other elements */
+    z-index: 100;
 }
 
 .back-button:hover {
-    background-color: #00c853;
+    background-color: #4e9ce8;
 }
 /* Style for the time button */
 .time-button {
@@ -530,7 +522,7 @@ body::before {
 .arrow {
     width: 30px; /* Adjust for thickness */
     height: 30px; /* Adjust for height */
-    border: solid #98FCFF; /* Color of the arrow */
+    border: solid var(--accent-color);
     border-width: 0 4px 4px 0; /* Creates a right-pointing arrow */
     border-radius: 5px; /* Round corners */
     padding: 5px;
@@ -558,18 +550,17 @@ footer {
     text-align: center;
     margin-top: 50px;
     padding: 10px;
-    background-color: #1a1a1a;
-    color: #98FCFF;
+    background-color: var(--card-color);
+    color: var(--text-color);
     width: 100%;
     position: relative;
-    bottom: 0; /* Sticks footer to the bottom */
-    left: 0; /* Positioned to the left */
-    width: 100%; /* Width to 100% */
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1); /* Shadow above footer */
-    display: flex; /* Flexbox layout */
-    justify-content: center; /* Center the items */
-    gap: 10px; /* Space between paragraphs */
-    }  
+    bottom: 0;
+    left: 0;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
     
 .seaContainer {
     position: absolute;
@@ -996,13 +987,13 @@ footer {
     margin: 20px;
   }
   
-  .covers-button .button {
+.covers-button .button {
     display: inline-block;
     position: relative;
     text-decoration: none;
-    color: #98FCFF;
+    color: var(--accent-color);
     padding: 15px 30px;
-    border: 2px solid #98FCFF;
+    border: 2px solid var(--accent-color);
     border-radius: 10px;
     font-size: 18px;
     font-weight: bold;
@@ -1010,9 +1001,9 @@ footer {
     transition: background-color 0.3s, transform 0.2s;
     z-index: 2; /* Ensure the button is above the waves */
   }
-  
+
   .covers-button .button:hover {
-    background-color: #98FCFF;
+    background-color: var(--accent-color);
     transform: scale(1.1);
   }
   
@@ -1043,14 +1034,14 @@ footer {
     opacity: 1; /* Show waves on hover */
   }
   
-  .covers-button .button .music-waves span {
-    display: block;
-    width: 5px;
-    height: 100%;
-    background: #212121;
-    border-radius: 2px;
-    animation: waveAnimation 1s ease-in-out infinite;
-  }
+    .covers-button .button .music-waves span {
+        display: block;
+        width: 5px;
+        height: 100%;
+        background: var(--background-color);
+        border-radius: 2px;
+        animation: waveAnimation 1s ease-in-out infinite;
+    }
   
   .covers-button .button .music-waves span:nth-child(1) {
     animation-delay: 0s;

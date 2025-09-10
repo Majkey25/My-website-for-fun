@@ -8,35 +8,35 @@
   <link rel="icon" href="media/icon-512x512.png" type="image/png">
   
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: 'Arial', sans-serif;
-      color: white;
-      text-align: center;
-      background-color: #111; /* Default background */
-    }
+      body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text-color);
+        text-align: center;
+        background-color: var(--background-color);
+      }
 
       @keyframes glow {
-      0% { box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; }
-      25% { box-shadow: 0 0 15px #00ff00, 0 0 30px #00ff00; }
-      50% { box-shadow: 0 0 15px #0000ff, 0 0 30px #0000ff; }
-      75% { box-shadow: 0 0 15px #ffff00, 0 0 30px #ffff00; }
-      100% { box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000; }
-    }
+        0%, 100% {
+          box-shadow: 0 0 15px var(--accent-color),
+                      0 0 30px var(--accent-color);
+        }
+        50% {
+          box-shadow: 0 0 25px var(--accent-color),
+                      0 0 50px var(--accent-color);
+        }
+      }
 
-    @keyframes textGlow {
-      0% { fill: #ff0000; }
-      25% { fill: #00ff00; }
-      50% { fill: #0000ff; }
-      75% { fill: #ffff00; }
-      100% { fill: #ff0000; }
-    }
+      @keyframes textGlow {
+        0%, 100% { fill: var(--accent-color); }
+        50% { fill: var(--accent-color); }
+      }
     #clock {
       width: 400px;
       height: 400px;
@@ -251,7 +251,7 @@
   <svg id="clock" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
     <!-- Circle Border -->
     <circle cx="200" cy="200" r="190" fill="#f8f9fa" stroke="#ccc" stroke-width="5" />
-    <circle cx="200" cy="200" r="10" fill="#333" />
+    <circle cx="200" cy="200" r="10" fill="var(--card-color)" />
 
     <!-- Numbers -->
     <text x="200" y="40" text-anchor="middle">12</text>
