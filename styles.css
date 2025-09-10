@@ -11,6 +11,7 @@
   --ACCENT: #64b5f6;
   --BUTTON_ANIMATION: 6s;
   --CLOCK_SIZE: 220px;
+  --CLOCK_NUMBER_SIZE: 1rem;
 }
 
 body {
@@ -281,4 +282,12 @@ footer {
   background: var(--ACCENT);
   border-radius: 50%;
   transform: translate(-50%, -50%);
+}
+
+.clock-number {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  color: var(--TEXT);
+  font-size: var(--CLOCK_NUMBER_SIZE);
+  font-weight: bold;
 }
