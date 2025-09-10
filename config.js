@@ -1,0 +1,1 @@
+const SKETCH_LINE_WIDTH = 3;

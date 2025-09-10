@@ -11,6 +11,7 @@
   --ACCENT: #64b5f6;
   --CLOCK_SIZE: 220px;
   --CLOCK_NUMBER_SIZE: 1rem;
+  --SKETCH_HEIGHT: 400px;
 }
 
 body {
@@ -280,6 +281,19 @@ audio {
   background: var(--SURFACE);
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+#sketch-canvas {
+  width: 100%;
+  height: var(--SKETCH_HEIGHT);
+  background: var(--BACKGROUND);
+  border: 2px solid var(--ACCENT);
+  border-radius: 8px;
+  cursor: crosshair;
+}
+
+.sketch-controls {
+  margin-top: 15px;
 }
 
 footer {
