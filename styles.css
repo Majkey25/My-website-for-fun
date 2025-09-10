@@ -146,22 +146,7 @@ p {
   margin: 5px 0;
 }
 
-button {
-  padding: 8px 16px;
-  color: var(--ACCENT);
-  background: var(--SURFACE);
-  border: 2px solid var(--ACCENT);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.3s, color 0.3s, transform 0.3s;
-}
-
-button:hover {
-  background: var(--ACCENT);
-  color: var(--BACKGROUND);
-  transform: translateY(-2px);
-}
-
+button,
 .social-button {
   position: relative;
   display: inline-flex;
@@ -171,12 +156,15 @@ button:hover {
   color: var(--ACCENT);
   background: var(--SURFACE);
   border: 2px solid var(--ACCENT);
-  border-radius: 6px;
+  border-radius: 50px;
+  cursor: pointer;
   text-decoration: none;
   overflow: hidden;
+  animation: pulse 3s infinite;
   transition: background 0.3s, color 0.3s, transform 0.3s;
 }
 
+button::before,
 .social-button::before {
   content: "";
   position: absolute;
@@ -184,54 +172,78 @@ button:hover {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(120deg,
-      transparent,
-      rgba(255, 255, 255, 0.3),
-      transparent);
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
   transition: transform 0.5s;
 }
 
+button:hover,
+.social-button:hover {
+  background: var(--ACCENT);
+  color: var(--BACKGROUND);
+  transform: translateY(-2px) scale(1.05);
+}
+
+button:hover::before,
 .social-button:hover::before {
   transform: translateX(200%);
 }
 
-.social-button:hover {
+button::after,
+.social-button::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  width: 10px;
+  height: 10px;
   background: var(--ACCENT);
-  color: var(--BACKGROUND);
-  transform: translateY(-2px);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translateX(-50%) scale(0.5);
+}
+
+button:hover::after,
+.social-button:hover::after {
+  animation: bubble 0.6s ease-out forwards;
 }
 
 .social-button .icon {
   width: 20px;
   height: 20px;
   fill: currentColor;
+  transition: transform 0.3s;
+}
+
+.social-button:hover .icon {
+  transform: rotate(360deg);
 }
 
 .project-link {
   position: relative;
+  display: inline-block;
+  padding: 4px 8px;
   color: var(--TEXT);
   text-decoration: none;
-  transition: color 0.3s, transform 0.3s;
+  overflow: hidden;
+  transition: color 0.3s;
 }
 
-.project-link::after {
+.project-link::before {
   content: "";
   position: absolute;
-  left: 0;
-  bottom: -2px;
-  width: 0;
-  height: 2px;
+  inset: 0;
   background: var(--ACCENT);
-  transition: width 0.3s;
+  transform: translateX(-100%);
+  transition: transform 0.3s;
+  z-index: -1;
+}
+
+.project-link:hover::before {
+  transform: translateX(0);
 }
 
 .project-link:hover {
-  color: var(--ACCENT);
-  transform: translateX(4px);
-}
-
-.project-link:hover::after {
-  width: 100%;
+  color: var(--BACKGROUND);
 }
 
 .songs-container {
@@ -322,4 +334,27 @@ footer p {
   color: var(--TEXT);
   font-size: var(--CLOCK_NUMBER_SIZE);
   font-weight: bold;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--ACCENT);
+  }
+  70% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes bubble {
+  from {
+    opacity: 0.6;
+    transform: translateX(-50%) translateY(0) scale(0.5);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-80px) scale(1);
+  }
 }
