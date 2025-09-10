@@ -23,7 +23,12 @@
 
   <main class="container">
     <h1>Current Time</h1>
-    <p id="clock"></p>
+    <div class="analog-clock">
+      <div class="hand hour-hand"></div>
+      <div class="hand minute-hand"></div>
+      <div class="hand second-hand"></div>
+      <div class="clock-center"></div>
+    </div>
   </main>
 
   <footer>
@@ -31,15 +36,9 @@
   </footer>
 
   <script src="menu.js"></script>
+  <script src="clock.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
-    const clockElement = document.getElementById('clock');
-    function updateClock() {
-      const now = new Date();
-      clockElement.textContent = now.toLocaleTimeString();
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
   </script>
 </body>
 </html>

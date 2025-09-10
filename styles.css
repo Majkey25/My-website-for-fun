@@ -9,6 +9,9 @@
   --SURFACE: #1e1e1e;
   --TEXT: #e5e5e5;
   --ACCENT: #64b5f6;
+  --ACCENT_ALT: #ff4081;
+  --BUTTON_ANIMATION: 6s;
+  --CLOCK_SIZE: 220px;
 }
 
 body {
@@ -134,19 +137,58 @@ p {
 
 button,
 .button {
-  padding: 10px 20px;
-  background: var(--ACCENT);
+  position: relative;
+  padding: 12px 24px;
   color: var(--BACKGROUND);
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.3s;
+  background: linear-gradient(
+    45deg,
+    var(--ACCENT),
+    var(--ACCENT_ALT),
+    var(--ACCENT)
+  );
+  background-size: 300%;
+  animation: gradientShift var(--BUTTON_ANIMATION) ease infinite;
+  overflow: hidden;
+  transition: transform 0.3s;
 }
 
 button:hover,
 .button:hover {
-  background: #4e9ce8;
+  transform: scale(1.05);
+}
+
+button::after,
+.button::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: skewX(-45deg);
+  transition: left 0.5s;
+}
+
+button:hover::after,
+.button:hover::after {
+  left: 200%;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .songs-container {
@@ -175,4 +217,52 @@ footer {
   text-align: center;
   padding: 20px;
   margin-top: 40px;
+}
+
+.analog-clock {
+  position: relative;
+  width: var(--CLOCK_SIZE);
+  height: var(--CLOCK_SIZE);
+  margin: 40px auto;
+  border: 8px solid var(--ACCENT);
+  border-radius: 50%;
+  background: var(--SURFACE);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.hand {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  width: 2px;
+  background: var(--TEXT);
+  transform-origin: bottom;
+  transform: translateX(-50%) rotate(calc(var(--rotation) * 1deg));
+  border-radius: 6px;
+}
+
+.hour-hand {
+  width: 6px;
+  height: 30%;
+}
+
+.minute-hand {
+  width: 4px;
+  height: 40%;
+}
+
+.second-hand {
+  height: 45%;
+  background: var(--ACCENT);
+}
+
+.clock-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  background: var(--ACCENT);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
 }
