@@ -10,6 +10,7 @@
   --TEXT: #e5e5e5;
   --ACCENT: #64b5f6;
   --BUTTON_ANIMATION: 6s;
+  --BUTTON_BORDER_SPEED: 4s;
   --CLOCK_SIZE: 220px;
   --CLOCK_NUMBER_SIZE: 1rem;
 }
@@ -48,12 +49,19 @@ nav .nav-bar {
 nav .title {
   font-size: 1.5rem;
   color: var(--ACCENT);
+  text-decoration: none;
+  transition: opacity 0.3s;
+}
+
+nav .title:hover {
+  opacity: 0.8;
 }
 
 #menu-toggle {
   display: none;
   background: none;
   border: none;
+  padding: 0;
   color: var(--TEXT);
   font-size: 1.5rem;
   cursor: pointer;
@@ -145,24 +153,77 @@ p {
   margin: 5px 0;
 }
 
-button,
-.button {
-  position: relative;
-  padding: 12px 24px;
+button {
+  padding: 8px 16px;
   color: var(--ACCENT);
   background: var(--SURFACE);
   border: 2px solid var(--ACCENT);
   border-radius: 6px;
   cursor: pointer;
-  text-decoration: none;
-  transition: transform 0.3s, background 0.3s, color 0.3s;
+  transition: background 0.3s, color 0.3s, transform 0.3s;
 }
 
-button:hover,
-.button:hover {
+button:hover {
   background: var(--ACCENT);
   color: var(--BACKGROUND);
   transform: translateY(-2px);
+}
+
+.button {
+  position: relative;
+  display: inline-block;
+  padding: 2px;
+  border-radius: 8px;
+  background: conic-gradient(
+    from 0deg,
+    var(--ACCENT),
+    color-mix(in srgb, var(--ACCENT), white 40%),
+    var(--ACCENT)
+  );
+  animation: spinBorder var(--BUTTON_BORDER_SPEED) linear infinite;
+  text-decoration: none;
+}
+
+.button span {
+  display: block;
+  padding: 12px 24px;
+  border-radius: 6px;
+  background: var(--SURFACE);
+  color: var(--ACCENT);
+  transition: background 0.3s, color 0.3s, transform 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.button span::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    color-mix(in srgb, var(--ACCENT), white 60%),
+    transparent
+  );
+  transform: skewX(-25deg);
+}
+
+.button:hover span::after {
+  animation: shine 0.75s forwards;
+}
+
+.button:hover span {
+  background: var(--ACCENT);
+  color: var(--BACKGROUND);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 0 10px var(--ACCENT);
+}
+
+.social-links .button span {
+  animation: buttonPulse var(--BUTTON_ANIMATION) ease-in-out infinite;
 }
 
 @keyframes buttonPulse {
@@ -177,8 +238,16 @@ button:hover,
   }
 }
 
-.social-links .button {
-  animation: buttonPulse var(--BUTTON_ANIMATION) ease-in-out infinite;
+@keyframes spinBorder {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shine {
+  to {
+    left: 150%;
+  }
 }
 
 .project-link {
