@@ -16,7 +16,7 @@
   --BUTTON_PRESS_MS: 150ms;
   --BUTTON_PRESS_OFFSET: 2px;
   --BUTTON_GLOW_BLUR: 8px;
-  --MASK_GROW_MS: 400ms;
+  --PROJECT_SWEEP_MS: 400ms;
 }
 
 body {
@@ -241,33 +241,45 @@ button:hover::after,
 .project-link {
   position: relative;
   display: inline-block;
-  padding: 6px 12px;
-  border: 1px solid var(--ACCENT);
-  border-radius: 6px;
-  color: var(--TEXT);
+  padding: 6px 14px;
+  color: var(--ACCENT);
   text-decoration: none;
+  border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  transition: color var(--MASK_GROW_MS);
+  transition: color var(--PROJECT_SWEEP_MS);
 }
 
-.project-link::before {
+.project-link::before,
+.project-link::after {
   content: "";
   position: absolute;
   inset: 0;
+  border-radius: inherit;
+  transition: transform var(--PROJECT_SWEEP_MS);
+}
+
+.project-link::before {
   background: var(--ACCENT);
-  mask: radial-gradient(circle at center, #000 0 30%, #0000 31%);
-  transform: scale(0);
-  transition: transform var(--MASK_GROW_MS);
+  transform: translateX(-100%);
   z-index: -1;
 }
 
-.project-link:hover::before {
-  transform: scale(4);
+.project-link::after {
+  border: 2px solid var(--ACCENT);
+  transform: scale(1);
 }
 
 .project-link:hover {
   color: var(--BACKGROUND);
+}
+
+.project-link:hover::before {
+  transform: translateX(0);
+}
+
+.project-link:hover::after {
+  transform: scale(1.05);
 }
 
 .press-button {
