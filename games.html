@@ -1,346 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Games</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="media/icon-512x512.png" type="image/png">
-    <style>
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background: linear-gradient(135deg, #212121, #1a1a1a);
-            color: #98FCFF;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            flex-direction: column;
-            overflow-y: hidden; /* Prevent scrolling */
-        }
-
-        .container {
-            text-align: center;
-            padding: 40px; /* Increased padding */
-            background: linear-gradient(145deg, #333, #1e1e1e);
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7);
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            width: 90vw; /* Slightly narrower */
-            max-width: 1350px; 
-            margin: 20px auto; /* Increased margin for better spacing */
-        }
-
-        h1 {
-            margin-bottom: 30px; /* More space below heading */
-            color: #00ffbf;
-            font-size: 2.5em; /* Larger heading */
-        }
-
-        .game {
-            margin: 20px;
-            padding: 20px;
-            background-color: #333;
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
-        }
-
-        .game button {
-            padding: 8px 12px; /* Small button size */
-            border: none;
-            border-radius: 5px;
-            background-color: #00e676;
-            color: #212121;
-            font-size: 1.2em; /* Slightly larger button font */
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .game button:hover {
-            background-color: #00c853;
-        }
-
-        footer {
-            text-align: center;
-            margin-top: 50px;
-            padding: 20px;
-            background-color: #1a1a1a;
-            color: #98FCFF;
-            width: 100%;
-            position: relative;
-            bottom: 0; /* Sticks footer to the bottom */
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 100; /* Sit on top */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: hidden; /* Disable scrolling */
-            background-color: rgba(0, 0, 0, 0.8); /* Black w/ opacity */
-        }
-
-        .modal-content {
-            background-color: #333;
-            margin: auto; /* Centered */
-            padding: 20px;
-            border: 1px solid #00e676;
-            width: 80%; /* Could be more or less, depending on screen size */
-            position: relative;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-        .close:hover,
-        .close:focus {
-            color: #fff;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        /* Snake Game Styles */
-        #snake-game {
-            width: 400px; /* Size for the snake game */
-            height: 400px; /* Size for the snake game */
-            border: 3px solid #00e676;
-            position: relative;
-            overflow: hidden;
-            margin: 9px auto;
-        }
-
-        .snake {
-            background-color: #00e676;
-            position: absolute;
-            transition: all 0.1s;
-        }
-
-        .food {
-            background-color: #ff0000;
-            position: absolute;
-        }
-
-        /* Score Display Styles */
-        #score {
-            font-size: 1.5em; /* Larger score font */
-            color: #00e676;
-            margin: 10px 0;
-        }
-
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Games</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="media/icon-512x512.png" type="image/png">
 </head>
 <body>
-<button class="back-button" onclick="window.location.href='index.html'">Back</button>
-<div class="container">
+  <nav>
+    <div class="nav-bar">
+      <a class="title"
+         href="https://github.com/Majkey25"
+         target="_blank"
+         rel="noopener noreferrer">Majkey25</a>
+      <button id="menu-toggle" aria-label="Menu">☰</button>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="songs.html">Songs</a></li>
+        <li><a href="games.html">Games</a></li>
+        <li><a href="sketch.html">Sketch</a></li>
+        <li><a href="time.html">Time</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="container">
     <h1>Simple Games</h1>
 
-    <!-- Game 1: Number Guessing Game -->
     <div class="game">
-        <h2>Number Guessing Game</h2>
-        <p>Guess a number between 1 and 100!</p>
-        <input type="number" id="guess" placeholder="Enter your guess">
-        <button onclick="guessNumber()">Guess</button>
-        <button onclick="resetGuessingGame()">Reset</button>
-        <p id="result"></p>
+      <h2>Number Guessing Game</h2>
+      <p>Guess a number between 1 and 100.</p>
+      <input type="number" id="guess-input">
+      <button onclick="checkGuess()">Guess</button>
+      <button onclick="resetGuess()">Reset</button>
+      <p id="guess-result"></p>
     </div>
 
-    <!-- Game 2: Rock Paper Scissors -->
     <div class="game">
-        <h2>Rock Paper Scissors</h2>
-        <button onclick="playGame('rock')">Rock</button>
-        <button onclick="playGame('paper')">Paper</button>
-        <button onclick="playGame('scissors')">Scissors</button>
-        <p id="rps-result"></p>
+      <h2>Rock Paper Scissors</h2>
+      <button onclick="playRound('rock')">Rock</button>
+      <button onclick="playRound('paper')">Paper</button>
+      <button onclick="playRound('scissors')">Scissors</button>
+      <p id="rps-result"></p>
     </div>
+  </main>
 
-    <!-- Game 3: Snake Game Modal -->
-    <div class="game">
-        <h2>Snake Game</h2>
-        <button onclick="openModal('snake-modal')">Play Snake</button>
-    </div>
+  <footer>
+    <p>Made by Matěj Teplý © <span id="year"></span> All rights reserved.</p>
+  </footer>
 
-    <!-- Snake Modal -->
-    <div id="snake-modal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('snake-modal')">&times;</span>
-            <h2>Snake Game</h2>
-            <div id="snake-game">
-                <div id="snake" class="snake"></div>
-                <div id="food" class="food"></div>
-            </div>
-            <p id="score">Score: 0</p> <!-- Score Display -->
-            <p>Use arrow keys to move the snake!</p>
-            <p id="snake-result"></p>
-            <button onclick="startSnakeGame()">Start Over</button>
-        </div>
-    </div>
-
-</div>
-
-<footer style="display: flex; justify-content: center; align-items: center; text-align: center;">
-    <a href="https://majkey25.github.io/Majkey25/" style="text-decoration: none; color: inherit;">
-        <p style="margin: 1;">Made by Matěj Teplý &copy; <span id="year"></span> All rights reserved.</p>
-    </a>
-</footer>
-
-<script>
-    // Number Guessing Game Logic
-    let randomNumber = Math.floor(Math.random() * 100) + 1;
-
-    function guessNumber() {
-        const guess = Number(document.getElementById('guess').value);
-        const result = document.getElementById('result');
-
-        if (guess === randomNumber) {
-            result.textContent = 'Congratulations! You guessed the number!';
-        } else if (guess < randomNumber) {
-            result.textContent = 'Too low! Try again.';
-        } else {
-            result.textContent = 'Too high! Try again.';
-        }
-    }
-
-    function resetGuessingGame() {
-        randomNumber = Math.floor(Math.random() * 100) + 1;
-        document.getElementById('guess').value = '';
-        document.getElementById('result').textContent = '';
-    }
-
-    // Rock Paper Scissors Game Logic
-    function playGame(userChoice) {
-        const choices = ['rock', 'paper', 'scissors'];
-        const computerChoice = choices[Math.floor(Math.random() * choices.length)];
-        const result = document.getElementById('rps-result');
-
-        if (userChoice === computerChoice) {
-            result.textContent = `It's a tie! Both chose ${computerChoice}.`;
-        } else if (
-            (userChoice === 'rock' && computerChoice === 'scissors') ||
-            (userChoice === 'paper' && computerChoice === 'rock') ||
-            (userChoice === 'scissors' && computerChoice === 'paper')
-        ) {
-            result.textContent = `You win! ${userChoice} beats ${computerChoice}.`;
-        } else {
-            result.textContent = `You lose! ${computerChoice} beats ${userChoice}.`;
-        }
-    }
-
-    // Modal Functions
-    function openModal(modalId) {
-        document.getElementById(modalId).style.display = "block";
-
-        if (modalId === 'snake-modal') {
-            startSnakeGame();
-        }
-    }
-
-    function closeModal(modalId) {
-        document.getElementById(modalId).style.display = "none";
-    }
-
-    // Snake Game Logic
-    const snakeGame = document.getElementById('snake-game');
-    const snake = document.getElementById('snake');
-    const food = document.getElementById('food');
-    const snakeResult = document.getElementById('snake-result');
-    const scoreDisplay = document.getElementById('score'); // Score element
-    let snakeBody = [{ x: 5, y: 5 }]; // Starting position
-    let foodPosition = { x: 10, y: 10 }; // Food position
-    let direction = { x: 1, y: 0 }; // Initial direction
-    let gameInterval;
-    const gridSize = 20; // Increased grid size for better visibility
-    let score = 0; // Initialize score
-
-    function startSnakeGame() {
-        clearInterval(gameInterval);
-        snakeBody = [{ x: 5, y: 5 }];
-        score = 0; // Reset score
-        scoreDisplay.textContent = `Score: ${score}`; // Display score
-        direction = { x: 1, y: 0 }; // Reset direction
-        spawnFood();
-        gameInterval = setInterval(updateSnakeGame, 200);
-        snakeResult.textContent = '';
-    }
-
-    function spawnFood() {
-        foodPosition.x = Math.floor(Math.random() * (snakeGame.clientWidth / gridSize));
-        foodPosition.y = Math.floor(Math.random() * (snakeGame.clientHeight / gridSize));
-        food.style.left = `${foodPosition.x * gridSize}px`;
-        food.style.top = `${foodPosition.y * gridSize}px`;
-    }
-
-    function updateSnakeGame() {
-        const head = { x: snakeBody[0].x + direction.x, y: snakeBody[0].y + direction.y };
-
-        // Check for collisions with food
-        if (head.x === foodPosition.x && head.y === foodPosition.y) {
-            snakeBody.unshift(head); // Add new head
-            spawnFood(); // Spawn new food
-            score++; // Increment score
-            scoreDisplay.textContent = `Score: ${score}`; // Update score display
-        } else {
-            snakeBody.unshift(head); // Add new head
-            snakeBody.pop(); // Remove last segment
-        }
-
-        // Check for collisions with walls or self
-        if (head.x < 0 || head.x >= snakeGame.clientWidth / gridSize || head.y < 0 || head.y >= snakeGame.clientHeight / gridSize || checkCollision(head)) {
-            clearInterval(gameInterval);
-            snakeResult.textContent = 'Game Over! You hit the wall or yourself!';
-        }
-
-        drawSnake();
-    }
-
-    function checkCollision(head) {
-        return snakeBody.slice(1).some(segment => segment.x === head.x && segment.y === head.y);
-    }
-
-    function drawSnake() {
-        snakeGame.innerHTML = ''; // Clear the game area
-        snakeBody.forEach(segment => {
-            const segmentDiv = document.createElement('div');
-            segmentDiv.classList.add('snake');
-            segmentDiv.style.width = `${gridSize}px`;
-            segmentDiv.style.height = `${gridSize}px`;
-            segmentDiv.style.left = `${segment.x * gridSize}px`;
-            segmentDiv.style.top = `${segment.y * gridSize}px`;
-            snakeGame.appendChild(segmentDiv);
-        });
-
-        // Draw food
-        const foodDiv = document.createElement('div');
-        foodDiv.classList.add('food');
-        foodDiv.style.width = `${gridSize}px`;
-        foodDiv.style.height = `${gridSize}px`;
-        foodDiv.style.left = `${foodPosition.x * gridSize}px`;
-        foodDiv.style.top = `${foodPosition.y * gridSize}px`;
-        snakeGame.appendChild(foodDiv);
-    }
-
-    // Control Snake Direction
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'ArrowUp' && direction.y === 0) {
-            direction = { x: 0, y: -1 };
-        } else if (event.key === 'ArrowDown' && direction.y === 0) {
-            direction = { x: 0, y: 1 };
-        } else if (event.key === 'ArrowLeft' && direction.x === 0) {
-            direction = { x: -1, y: 0 };
-        } else if (event.key === 'ArrowRight' && direction.x === 0) {
-            direction = { x: 1, y: 0 };
-        }
-    });
-
+  <script src="menu.js"></script>
+  <script src="particles.js"></script>
+  <script>
     document.getElementById('year').textContent = new Date().getFullYear();
-</script>
 
+    let targetNumber = Math.floor(Math.random() * 100) + 1;
+
+    function checkGuess() {
+      const guessValue = Number(document.getElementById('guess-input').value);
+      const resultElement = document.getElementById('guess-result');
+      if (guessValue === targetNumber) {
+        resultElement.textContent = 'Correct!';
+      } else if (guessValue > targetNumber) {
+        resultElement.textContent = 'Too high.';
+      } else {
+        resultElement.textContent = 'Too low.';
+      }
+    }
+
+    function resetGuess() {
+      targetNumber = Math.floor(Math.random() * 100) + 1;
+      document.getElementById('guess-result').textContent = '';
+      document.getElementById('guess-input').value = '';
+    }
+
+    const choices = ['rock', 'paper', 'scissors'];
+
+    function playRound(playerChoice) {
+      const computerChoice = choices[Math.floor(Math.random() * 3)];
+      let outcome = '';
+      if (playerChoice === computerChoice) {
+        outcome = 'Draw.';
+      } else if (
+        (playerChoice === 'rock' && computerChoice === 'scissors') ||
+        (playerChoice === 'paper' && computerChoice === 'rock') ||
+        (playerChoice === 'scissors' && computerChoice === 'paper')
+      ) {
+        outcome = 'You win!';
+      } else {
+        outcome = 'You lose.';
+      }
+      document.getElementById('rps-result').textContent =
+        `Computer chose ${computerChoice}. ${outcome}`;
+    }
+  </script>
 </body>
 </html>
