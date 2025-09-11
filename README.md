@@ -3,3 +3,4 @@ This is my website where I share information about myself and my interests. I ho
 
 ### Features
 - Interactive sketch pad for quick doodles
+- Random quote generator on home page

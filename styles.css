@@ -12,6 +12,7 @@
   --CLOCK_SIZE: 220px;
   --CLOCK_NUMBER_SIZE: 1rem;
   --SKETCH_HEIGHT: 400px;
+  --QUOTE_FADE_MS: 0ms;
 }
 
 body {
@@ -236,30 +237,54 @@ button:hover::after,
 .project-link {
   position: relative;
   display: inline-block;
-  padding: 4px 8px;
-  color: var(--TEXT);
+  padding: 6px 12px;
+  border: 1px solid var(--ACCENT);
+  border-radius: 4px;
+  color: var(--ACCENT);
+  background: none;
   text-decoration: none;
   overflow: hidden;
-  transition: color 0.3s, transform 0.3s;
+  cursor: pointer;
+  transition: color 0.3s;
 }
 
-.project-link::before {
+.project-link::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(45deg, var(--ACCENT), #ff4081, #ffeb3b);
-  transform: translateX(-100%);
+  background: var(--ACCENT);
+  transform: translateX(-100%) skewX(-15deg);
   transition: transform 0.4s;
   z-index: -1;
 }
 
 .project-link:hover {
   color: var(--BACKGROUND);
-  transform: translateY(-2px) scale(1.05);
+  animation: link-wobble 0.4s;
 }
 
-.project-link:hover::before {
-  transform: translateX(0);
+.project-link:hover::after {
+  transform: translateX(0) skewX(-15deg);
+}
+
+@keyframes link-wobble {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-4px) rotate(1deg); }
+  100% { transform: translateY(0); }
+}
+
+.quote-section {
+  margin: 40px 0;
+  text-align: center;
+}
+
+#quote-text {
+  min-height: 48px;
+  transition: opacity var(--QUOTE_FADE_MS);
+}
+
+#quote-text.fade {
+  opacity: 0;
 }
 
 .songs-container {
