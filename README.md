@@ -5,3 +5,4 @@ This is my website where I share information about myself and my interests. I ho
 - Interactive sketch pad for quick doodles
 - Random quote generator on home page
 - Pressable glow button and masked project links
+- Hover teaser with glow and confetti for upcoming projects

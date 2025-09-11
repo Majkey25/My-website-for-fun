@@ -17,7 +17,8 @@
   --BUTTON_PRESS_OFFSET: 2px;
   --BUTTON_GLOW_BLUR: 8px;
   --PROJECT_SWEEP_MS: 400ms;
-  --MORE_TEXT_MS: 3s;
+  --MORE_GLOW_MS: 300ms;
+  --MORE_GLOW_BLUR: 8px;
 }
 
 body {
@@ -168,11 +169,16 @@ p {
 }
 
 .projects-more {
+  position: relative;
+  display: inline-block;
   margin-top: 15px;
   font-weight: bold;
   color: var(--ACCENT);
-  display: inline-block;
-  animation: moreText var(--MORE_TEXT_MS) infinite;
+  transition: text-shadow var(--MORE_GLOW_MS);
+}
+
+.projects-more:hover {
+  text-shadow: 0 0 var(--MORE_GLOW_BLUR) var(--ACCENT);
 }
 
 button,
@@ -365,7 +371,7 @@ footer p {
   margin: 0;
 }
 
-.analog-clock {
+ .analog-clock {
   position: relative;
   width: var(--CLOCK_SIZE);
   height: var(--CLOCK_SIZE);
@@ -412,7 +418,7 @@ footer p {
   border-radius: 50%;
   transform: translate(-50%, -50%);
 }
-
+ 
 .clock-number {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -420,7 +426,7 @@ footer p {
   font-size: var(--CLOCK_NUMBER_SIZE);
   font-weight: bold;
 }
-
+ 
 @keyframes pulse {
   0% {
     box-shadow: 0 0 0 0 var(--ACCENT);
@@ -432,7 +438,7 @@ footer p {
     box-shadow: 0 0 0 0 transparent;
   }
 }
-
+ 
 @keyframes bubble {
   from {
     opacity: 0.6;
@@ -444,17 +450,23 @@ footer p {
   }
 }
 
-@keyframes moreText {
-  0% {
-    transform: scale(1) rotate(0deg);
-    text-shadow: 0 0 5px var(--ACCENT);
-  }
-  50% {
-    transform: scale(1.3) rotate(5deg);
-    text-shadow: 0 0 20px var(--ACCENT);
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-    text-shadow: 0 0 5px var(--ACCENT);
+.confetti-piece {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--size);
+  height: var(--size);
+  background: var(--confetti-color);
+  border-radius: 1px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: confetti var(--duration) ease-out forwards;
+}
+
+@keyframes confetti {
+  to {
+    transform: translate(calc(-50% + var(--x)),
+      calc(-50% + var(--y))) rotate(720deg);
+    opacity: 0;
   }
 }

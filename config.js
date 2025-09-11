@@ -104,3 +104,8 @@ const QUOTES = [
 ];
 
 const QUOTE_FADE_MS = 300;
+const CONFETTI_COLORS = ['#ff4081', '#64b5f6', '#81c784', '#ffb74d'];
+const CONFETTI_COUNT = 15;
+const CONFETTI_SIZE_PX = 6;
+const CONFETTI_SPREAD_PX = 60;
+const CONFETTI_DURATION_MS = 800;
