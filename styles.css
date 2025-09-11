@@ -242,44 +242,34 @@ button:hover::after,
   position: relative;
   display: inline-block;
   padding: 6px 14px;
-  color: var(--ACCENT);
+  color: var(--TEXT);
   text-decoration: none;
+  border: 2px solid var(--ACCENT);
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  transition: color var(--PROJECT_SWEEP_MS);
+  transition: color var(--PROJECT_SWEEP_MS),
+    transform var(--PROJECT_SWEEP_MS);
 }
 
-.project-link::before,
-.project-link::after {
+.project-link::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  transition: transform var(--PROJECT_SWEEP_MS);
-}
-
-.project-link::before {
   background: var(--ACCENT);
   transform: translateX(-100%);
+  transition: transform var(--PROJECT_SWEEP_MS);
   z-index: -1;
-}
-
-.project-link::after {
-  border: 2px solid var(--ACCENT);
-  transform: scale(1);
 }
 
 .project-link:hover {
   color: var(--BACKGROUND);
+  transform: scale(1.05);
 }
 
 .project-link:hover::before {
   transform: translateX(0);
-}
-
-.project-link:hover::after {
-  transform: scale(1.05);
 }
 
 .press-button {
