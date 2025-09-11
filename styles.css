@@ -13,6 +13,10 @@
   --CLOCK_NUMBER_SIZE: 1rem;
   --SKETCH_HEIGHT: 400px;
   --QUOTE_FADE_MS: 0ms;
+  --BUTTON_PRESS_MS: 150ms;
+  --BUTTON_PRESS_OFFSET: 2px;
+  --BUTTON_GLOW_BLUR: 8px;
+  --MASK_GROW_MS: 400ms;
 }
 
 body {
@@ -239,38 +243,54 @@ button:hover::after,
   display: inline-block;
   padding: 6px 12px;
   border: 1px solid var(--ACCENT);
-  border-radius: 4px;
-  color: var(--ACCENT);
-  background: none;
+  border-radius: 6px;
+  color: var(--TEXT);
   text-decoration: none;
   overflow: hidden;
   cursor: pointer;
-  transition: color 0.3s;
+  transition: color var(--MASK_GROW_MS);
 }
 
-.project-link::after {
+.project-link::before {
   content: "";
   position: absolute;
   inset: 0;
   background: var(--ACCENT);
-  transform: translateX(-100%) skewX(-15deg);
-  transition: transform 0.4s;
+  mask: radial-gradient(circle at center, #000 0 30%, #0000 31%);
+  transform: scale(0);
+  transition: transform var(--MASK_GROW_MS);
   z-index: -1;
+}
+
+.project-link:hover::before {
+  transform: scale(4);
 }
 
 .project-link:hover {
   color: var(--BACKGROUND);
-  animation: link-wobble 0.4s;
 }
 
-.project-link:hover::after {
-  transform: translateX(0) skewX(-15deg);
+.press-button {
+  display: inline-block;
+  padding: 10px 20px;
+  border: 2px solid var(--ACCENT);
+  border-radius: 8px;
+  color: var(--TEXT);
+  background: var(--SURFACE);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--BUTTON_PRESS_MS),
+    box-shadow var(--BUTTON_PRESS_MS);
+  box-shadow: 0 0 0 var(--ACCENT);
 }
 
-@keyframes link-wobble {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-4px) rotate(1deg); }
-  100% { transform: translateY(0); }
+.press-button:hover {
+  box-shadow: 0 0 var(--BUTTON_GLOW_BLUR) var(--ACCENT);
+}
+
+.press-button:active {
+  transform: translateY(var(--BUTTON_PRESS_OFFSET));
+  box-shadow: 0 0 0 var(--ACCENT);
 }
 
 .quote-section {
