@@ -19,6 +19,11 @@
   --PROJECT_SWEEP_MS: 400ms;
   --MORE_GLOW_MS: 300ms;
   --MORE_GLOW_BLUR: 8px;
+  --CONTAINER_MAX_WIDTH: 960px;
+  --CONTENT_WIDTH: 90%;
+  --SOCIAL_GAP: 15px;
+  --PROJECT_MIN_WIDTH: 200px;
+  --PROJECT_GAP: 10px;
 }
 
 body {
@@ -100,6 +105,12 @@ nav .nav-links a:hover::after {
   width: 100%;
 }
 
+@media (max-width: 900px) {
+  .container {
+    margin: 60px auto 30px;
+  }
+}
+
 @media (max-width: 600px) {
   #menu-toggle {
     display: block;
@@ -132,10 +143,20 @@ nav .nav-links a:hover::after {
   nav.open #menu-toggle {
     transform: rotate(90deg);
   }
+
+  .social-links {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .container {
+    margin: 40px auto 20px;
+  }
 }
 
 .container {
-  max-width: 960px;
+  width: var(--CONTENT_WIDTH);
+  max-width: var(--CONTAINER_MAX_WIDTH);
   margin: 80px auto 40px;
   padding: 20px;
   background: var(--SURFACE);
@@ -154,7 +175,8 @@ p {
 
 .social-links {
   display: flex;
-  gap: 15px;
+  flex-wrap: wrap;
+  gap: var(--SOCIAL_GAP);
   justify-content: center;
   margin: 20px 0;
 }
@@ -162,10 +184,13 @@ p {
 .projects ul {
   list-style: none;
   padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--PROJECT_MIN_WIDTH), 1fr));
+  gap: var(--PROJECT_GAP);
 }
 
 .projects li {
-  margin: 5px 0;
+  margin: 0;
 }
 
 .projects-more {
