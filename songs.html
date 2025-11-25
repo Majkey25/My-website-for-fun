@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Covers</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="media/icon-512x512.png" type="image/png">
+  <link rel="icon" href="media/icon.svg" type="image/svg+xml">
 </head>
 <body>
   <nav>
@@ -14,7 +14,11 @@
          href="https://github.com/Majkey25"
          target="_blank"
          rel="noopener noreferrer">Majkey25</a>
-      <button id="menu-toggle" aria-label="Menu">☰</button>
+      <button id="menu-toggle"
+              aria-label="Toggle menu"
+              aria-expanded="false">
+        <span class="menu-lines"></span>
+      </button>
       <ul class="nav-links">
         <li><a href="index.html">Home</a></li>
         <li><a href="songs.html">Songs</a></li>
@@ -30,49 +34,49 @@
     <p>I did them out of boredom and for fun so they are not proper covers.</p>
     <div class="songs-container">
       <div class="song">
-        <h2>Wicked Game - Him</h2>
+        <h2>Wicked Game - HIM</h2>
         <audio controls>
           <source src="media/Wicked_game.mp3" type="audio/mpeg">
         </audio>
       </div>
       <div class="song">
-        <h2>Wicked Game - Him V2</h2>
+        <h2>Wicked Game - HIM (V2)</h2>
         <audio controls>
           <source src="media/Wicked_game-2.mp3" type="audio/mpeg">
         </audio>
       </div>
       <div class="song">
-        <h2>Beggin’ - Måneskin</h2>
+        <h2>Beggin' - M&aring;neskin</h2>
         <audio controls>
           <source src="media/Beggin.mp3" type="audio/mpeg">
         </audio>
       </div>
       <div class="song">
-        <h2>One more light - Linkin Park</h2>
+        <h2>One More Light - Linkin Park</h2>
         <audio controls>
           <source src="media/One_more_light.mp3" type="audio/mpeg">
         </audio>
       </div>
       <div class="song">
-        <h2>Leave a light on - Papa Roach</h2>
+        <h2>Leave a Light On - Papa Roach</h2>
         <audio controls>
           <source src="media/Leave_a_light_on.mp3" type="audio/mpeg">
         </audio>
       </div>
       <div class="song">
-        <h2>I see fire - Ed Sheeran</h2>
+        <h2>I See Fire - Ed Sheeran</h2>
         <audio controls>
           <source src="media/I_see_fire.mp3" type="audio/mpeg">
         </audio>
       </div>
       <div class="song">
-        <h2>Heart shaped box - Nirvana</h2>
+        <h2>Heart-Shaped Box - Nirvana</h2>
         <audio controls>
           <source src="media/Heart_shaped_box.mp3" type="audio/mpeg">
         </audio>
       </div>
       <div class="song">
-        <h2>Smells like teen spirit - Nirvana</h2>
+        <h2>Smells Like Teen Spirit - Nirvana</h2>
         <audio controls>
           <source src="media/Smells_like_teen_spirit.mp3" type="audio/mpeg">
         </audio>
@@ -84,7 +88,7 @@
         </audio>
       </div>
       <div class="song">
-        <h2>Would - Alice in Chains</h2>
+        <h2>Would? - Alice In Chains</h2>
         <audio controls>
           <source src="media/Would.mp3" type="audio/mpeg">
         </audio>
@@ -93,7 +97,7 @@
   </main>
 
   <footer>
-    <p>Made by Matěj Teplý © <span id="year"></span> All rights reserved.</p>
+    <p>Made by Mat&#283;j Tepl&#xfd; &copy; <span id="year"></span>. All rights reserved.</p>
   </footer>
 
   <script src="menu.js"></script>

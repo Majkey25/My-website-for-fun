@@ -11,10 +11,10 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-const COLOR_CHOICES = ['#64b5f6', '#ff4081', '#ffeb3b'];
-const BACKGROUND_PARTICLE_COUNT = 60;
-const BURST_PARTICLE_COUNT = 12;
-const BURST_LIFE = 60;
+const COLOR_CHOICES = ['#7cf0c9', '#6ea8ff', '#f6b9ff', '#9be5ff'];
+const BACKGROUND_PARTICLE_COUNT = 90;
+const BURST_PARTICLE_COUNT = 14;
+const BURST_LIFE = 70;
 
 function randomColor() {
   const index = Math.floor(Math.random() * COLOR_CHOICES.length);
@@ -26,9 +26,9 @@ for (let index = 0; index < BACKGROUND_PARTICLE_COUNT; index += 1) {
   backgroundParticles.push({
     x: Math.random() * particleCanvas.width,
     y: Math.random() * particleCanvas.height,
-    velocityX: (Math.random() - 0.5) * 0.5,
-    velocityY: (Math.random() - 0.5) * 0.5,
-    radius: Math.random() * 2 + 1,
+    velocityX: (Math.random() - 0.5) * 0.6,
+    velocityY: (Math.random() - 0.5) * 0.6,
+    radius: Math.random() * 2.2 + 1,
     color: randomColor()
   });
 }
