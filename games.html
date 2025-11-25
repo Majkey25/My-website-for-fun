@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Games</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="media/icon-512x512.png" type="image/png">
+  <link rel="icon" href="media/icon.svg" type="image/svg+xml">
 </head>
 <body>
   <nav>
@@ -14,7 +14,11 @@
          href="https://github.com/Majkey25"
          target="_blank"
          rel="noopener noreferrer">Majkey25</a>
-      <button id="menu-toggle" aria-label="Menu">☰</button>
+      <button id="menu-toggle"
+              aria-label="Toggle menu"
+              aria-expanded="false">
+        <span class="menu-lines"></span>
+      </button>
       <ul class="nav-links">
         <li><a href="index.html">Home</a></li>
         <li><a href="songs.html">Songs</a></li>
@@ -47,7 +51,7 @@
   </main>
 
   <footer>
-    <p>Made by Matěj Teplý © <span id="year"></span> All rights reserved.</p>
+    <p>Made by Mat&#283;j Tepl&#xfd; &copy; <span id="year"></span>. All rights reserved.</p>
   </footer>
 
   <script src="menu.js"></script>
