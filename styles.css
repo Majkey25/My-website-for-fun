@@ -524,8 +524,8 @@ button:not(#menu-toggle):active,
   list-style: none;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
 }
 
 .projects li {
@@ -720,15 +720,9 @@ footer p {
 }
 
 @keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 var(--ACCENT);
-  }
-  70% {
-    box-shadow: 0 0 0 10px transparent;
-  }
-  100% {
-    box-shadow: 0 0 0 0 transparent;
-  }
+  0% { box-shadow: 0 0 0 0 var(--ACCENT); }
+  70% { box-shadow: 0 0 0 10px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 
 @keyframes bubble {
@@ -764,46 +758,37 @@ footer p {
 }
 
 @keyframes backdropPan {
-  from {
-    background-position: 0% 0%, 100% 0%, 0 0;
-  }
-  to {
-    background-position: 20% 12%, 80% 6%, 0 0;
-  }
+  from { background-position: 0% 0%, 100% 0%, 0 0; }
+  to { background-position: 20% 12%, 80% 6%, 0 0; }
 }
 
 @keyframes glowShift {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(10px);
-  }
+  from { transform: translateY(0); }
+  to { transform: translateY(10px); }
 }
 
 @keyframes sweep {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes float {
-  from {
-    transform: translateY(0);
+  from { transform: translateY(0); }
+  to { transform: translateY(24px); }
+}
+
+@media (max-width: 900px) {
+  .container {
+    padding: 22px;
+    margin: 70px auto 30px;
   }
-  to {
-    transform: translateY(24px);
+
+  .projects ul {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
 }
 
@@ -837,8 +822,16 @@ footer p {
   nav .nav-links a {
     display: block;
   }
-  .container {
-    padding: 22px;
-    margin: 70px auto 30px;
+}
+
+@media (max-width: 540px) {
+  .hero-actions {
+    flex-direction: column;
+  }
+  .projects ul {
+    grid-template-columns: 1fr;
+  }
+  .social-links {
+    grid-template-columns: 1fr;
   }
 }
