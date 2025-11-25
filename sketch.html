@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Time</title>
+  <title>Sketch</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="media/icon.svg" type="image/svg+xml">
 </head>
@@ -30,12 +30,10 @@
   </nav>
 
   <main class="container">
-    <h1>Current Time</h1>
-    <div class="analog-clock">
-      <div class="hand hour-hand"></div>
-      <div class="hand minute-hand"></div>
-      <div class="hand second-hand"></div>
-      <div class="clock-center"></div>
+    <h1>Sketch Pad</h1>
+    <canvas id="sketch-canvas"></canvas>
+    <div class="sketch-controls">
+      <button id="clear-canvas">Clear</button>
     </div>
   </main>
 
@@ -44,8 +42,9 @@
   </footer>
 
   <script src="menu.js"></script>
-  <script src="clock.js"></script>
   <script src="particles.js"></script>
+  <script src="config.js"></script>
+  <script src="sketch.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>

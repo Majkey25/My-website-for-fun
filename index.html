@@ -3,206 +3,125 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Majkey25</title>
+  <title>Majkey25 � Musician &amp; Developer</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="media/icon-512x512.png" type="image/png">
+  <link rel="icon" href="media/icon.svg" type="image/svg+xml">
 </head>
 <body>
-  <div class="container">
-    <h1 class="title">Majkey25</h1>
-    <p class="subtitle">
-        <span id="typing-effect">This is my nickname used in programming...</span></p>
-        
-        
-    <div class="about-me">
-      <h2>About Me</h2>
-      <p>My name is Matěj Teplý, and I’m a passionate musician. I play the drums, guitar, saxophone, and I also sing.</p>
-      <p>Beyond music, I enjoy creating things that have lasting value — something tangible and useful.</p>
-      <p>That’s why coding resonates with me; it allows me to build and leave behind something meaningful.</p>
-      <p>I specialize in Python, JavaScript, and web development, and enjoy exploring new technologies and frameworks. I just like to learn new stuff...</p>
-    </div>
-    <div class="social-links">
-        <a href="https://github.com/Majkey25" target="_blank">GitHub</a>
-        <a href="https://www.linkedin.com/in/mat%C4%9Bj-tepl%C3%BD-64b46125b/" target="_blank">LinkedIn</a>
-        <a href="https://www.instagram.com/_majkey_/" target="_blank">Instagram</a>
-      </div>
-      <a href="particles.html">
-        <button class="btn glitch">
-          <span>Wanna see something cool?</span>
-        </button>
-      </a>
-      
-      <div class="covers-button">
-        <a href="songs.html" class="button">
-          <span class="button-text">My Covers</span>
-          <div class="music-waves">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        </a>
-      </div>
-
-      <div class="game-button">
-        <a href="games.html">Play a Game</a>
-    </div>
- 
-
-    <div class="time-button">
-      <a href="time.html"><span>Time?</span></a>
-    </div>
-
-
-    <div class="scroll-arrow">
-        <div class="arrow"></div>
-    </div>
-
-    
-    <div class="seaContainer">
-        <div class="submarine__container">
-          <div class="light"></div>
-          <div class="submarine__periscope"></div>
-          <div class="submarine__periscope-glass"></div>
-          <div class="submarine__sail">
-            <div class="submarine__sail-shadow dark1">
-            </div>
-            <div class="submarine__sail-shadow light1"></div>
-            <div class="submarine__sail-shadow dark2"></div>
-          </div>
-          <div class="submarine__body">
-            <div class="submarine__window one">
-      
-            </div>
-            <div class="submarine__window two">
-      
-            </div>
-            <div class="submarine__shadow-dark"></div>
-            <div class="submarine__shadow-light"></div>
-            <div class="submarine__shadow-arcLight"></div>
-          </div>
-          <div class="submarine__propeller">
-            <div class="propeller__perspective">
-            <div class="submarine__propeller-parts darkOne"></div>
-            <div class="submarine__propeller-parts lightOne"></div>
-            </div>        
-          </div>
-        </div>
-        <div class="bubbles__container">
-          <span class="bubbles bubble-1"></span>
-          <span class="bubbles bubble-2"></span>
-          <span class="bubbles bubble-3"></span>
-          <span class="bubbles bubble-4"></span>
-        </div>
-        <div class="ground__container">
-          <div class="ground ground1">
-            <span class="up-1"></span>
-            <span class="up-2"></span>
-            <span class="up-3"></span>
-            <span class="up-4"></span>
-            <span class="up-5"></span>
-            <span class="up-6"></span>
-            <span class="up-7"></span>
-            <span class="up-8"></span>
-            <span class="up-9"></span>
-            <span class="up-10"></span>
-          </div>
-          <div class="ground ground2">
-            <span class="up-1"></span>
-            <span class="up-2"></span>
-            <span class="up-3"></span>
-            <span class="up-4"></span>
-            <span class="up-5"></span>
-            <span class="up-6"></span>
-            <span class="up-7"></span>
-            <span class="up-8"></span>
-            <span class="up-9"></span>
-            <span class="up-10"></span>
-            <span class="up-11"></span>
-            <span class="up-12"></span>
-            <span class="up-13"></span>
-            <span class="up-14"></span>
-            <span class="up-15"></span>
-            <span class="up-16"></span>
-            <span class="up-17"></span>
-            <span class="up-18"></span>
-            <span class="up-19"></span>
-            <span class="up-20"></span>
-          </div>
-        </div>
-      </div>
-      
-      <div class="projects hidden">
-      <h2>My Projects</h2>
-      <ul>
-        <li><a href="https://majkey25.github.io/art_by_justyna/" target="_blank">art_by_justyna</a></li>
-        
-        <li><a href="https://majkey25.github.io/exhalace/" target="_blank">Exhalace</a></li>
-        <li><a href="https://majkey25.github.io/wheel/" target="_blank">Spin_the_wheel</a></li>
-        <li><a href="https://majkey25.github.io/qrcode_generator/" target="_blank">QRcode_generator</a></li>
-        <li><a href="https://majkey25.github.io/calculator/" target="_blank">Multi-purpose Calculator</a></li>
-        <li><a href="https://github.com/Majkey25/youtube_downloader" target="_blank">Youtube .mp3 downloader</a></li>
-        <li><a href="https://github.com/StudentTraineeCenter/music-analyzer" target="_blank">Music Analyzer</a></li>
+  <nav>
+    <div class="nav-bar">
+      <a class="title"
+         href="https://github.com/Majkey25"
+         target="_blank"
+         rel="noopener noreferrer">Majkey25</a>
+      <button id="menu-toggle"
+              aria-label="Toggle menu"
+              aria-expanded="false">
+        <span class="menu-lines"></span>
+      </button>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="songs.html">Songs</a></li>
+        <li><a href="games.html">Games</a></li>
+        <li><a href="sketch.html">Sketch</a></li>
+        <li><a href="time.html">Time</a></li>
       </ul>
     </div>
-  </div>
+  </nav>
 
-  <footer style="text-align: center; margin-top: 50px;">
-    <p>Made by Matěj Teplý</p>
-    <p>&copy; <span id="year"></span> All rights reserved.</p>
-</footer>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Projects section visibility
-        const projectSection = document.querySelector('.projects'); // Select projects section
-    
-        const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible'); // Add the visible class when in view
-                    observer.unobserve(entry.target); // Stop observing once it's visible
-                }
-            });
-        }, { threshold: 0.1 }); // Trigger when 10% of the section is in view
-    
-        observer.observe(projectSection); // Observe the project section
-    
-        // Typing effect for subtitle
-        const typingEffect = document.getElementById('typing-effect'); // Update ID reference
-        const text = "this is my nickname used in programming";
-        let index = 0;
-    
-        function type() {
-            if (index < text.length) {
-                typingEffect.textContent += text.charAt(index); // Typing effect works on the correct element
-                index++;
-                setTimeout(type, 100); // Adjust typing speed (100ms here)
-            } else {
-                typingEffect.classList.add('typing'); // Add the typing effect class after typing is done
-            }
-        }
-    
-        // Check if the typing effect has already started
-        if (typingEffect.textContent === "") {
-            type(); // Only start typing if the text is currently empty
-        }
-    
-        // Scroll arrow visibility
-        const scrollArrow = document.querySelector('.scroll-arrow');
-    
-        window.addEventListener('scroll', function() {
-            if (window.scrollY > 500) { // Adjust the value as needed for when the arrow disappears
-                scrollArrow.classList.add('hidden-arrow');
-            } else {
-                scrollArrow.classList.remove('hidden-arrow');
-            }
-        });
-    
-        // Set current year in footer
-        document.getElementById("year").textContent = new Date().getFullYear();
-    });
-</script>
-</body>
+  <main class="container hero-grid">
+    <section class="hero">
+      <p class="eyebrow">Musician � Developer</p>
+      <h1>Mat&#283;j Tepl&#xfd;</h1>
+      <p class="lede">
+        I build playful, lasting experiences through music and clean code.
+        Drums, guitar, saxophone, and voice keep my creativity moving.
+      </p>
+      <div class="badge-row">
+        <span class="badge">Drums</span>
+        <span class="badge">Guitar</span>
+        <span class="badge">Saxophone</span>
+        <span class="badge">Voice</span>
+      </div>
+      <div class="hero-actions">
+        <a class="button primary"
+           href="https://github.com/Majkey25"
+           target="_blank"
+           rel="noopener noreferrer">View GitHub</a>
+        <a class="button ghost"
+           href="https://www.linkedin.com/in/mat%C4%9Bj-tepl%C3%BD-64b46125b/"
+           target="_blank"
+           rel="noopener noreferrer">Connect</a>
+      </div>
+    </section>
+
+    <section class="panel social-panel">
+      <h2>Stay Connected</h2>
+      <div class="social-links">
+        <a class="social-button"
+           href="https://github.com/Majkey25"
+           target="_blank"
+           rel="noopener noreferrer">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2.06c-3.2.7-3.87-1.54-3.87-1.54-.53-1.34-1.28-1.7-1.28-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.71 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 2.9-.39c.98 0 1.97.13 2.9.39 2.2-1.5 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.44-2.69 5.41-5.25 5.7.41.36.78 1.08.78 2.18v3.24c0 .31.21.68.8.56A10.52 10.52 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
+        <a class="social-button"
+           href="https://www.linkedin.com/in/mat%C4%9Bj-tepl%C3%BD-64b46125b/"
+           target="_blank"
+           rel="noopener noreferrer">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.447 20.452H17.22v-5.569c0-1.328-.025-3.037-1.852-3.037-1.853 0-2.136 1.446-2.136 2.939v5.667H9.004V9h3.113v1.561h.045c.433-.82 1.491-1.688 3.065-1.688 3.282 0 3.889 2.162 3.889 4.972v6.607zM5.337 7.433a1.802 1.802 0 1 1 0-3.604 1.802 1.802 0 0 1 0 3.604zm1.771 13.019H3.561V9h3.547v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.226.792 24 1.771 24h20.451C23.2 24 24 23.226 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+          <span>LinkedIn</span>
+        </a>
+        <a class="social-button"
+           href="https://www.instagram.com/_majkey_/"
+           target="_blank"
+           rel="noopener noreferrer">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9a5.5 5.5 0 0 1-5.5 5.5h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2zm0 2A3.5 3.5 0 0 0 4 7.5v9A3.5 3.5 0 0 0 7.5 20h9a3.5 3.5 0 0 0 3.5-3.5v-9A3.5 3.5 0 0 0 16.5 4h-9zm12.75 1.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
+          </svg>
+          <span>Instagram</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="panel quote-section">
+      <div class="quote-content">
+        <p id="quote-text"></p>
+        <a id="quote-button" class="press-button" href="#">Inspire me</a>
+      </div>
+    </section>
+
+    <section class="panel projects">
+      <h2>Projects</h2>
+      <ul>
+        <li><a class="project-link" href="https://majkey25.github.io/DownloadGithubDir/" target="_blank">DownloadGithubDir</a></li>
+        <li><a class="project-link" href="https://majkey25.github.io/art_by_justyna/" target="_blank">art_by_justyna</a></li>
+        <li><a class="project-link" href="https://majkey25.github.io/exhalace/" target="_blank">Exhalace</a></li>
+        <li><a class="project-link" href="https://majkey25.github.io/wheel/" target="_blank">Spin_the_wheel</a></li>
+        <li><a class="project-link" href="https://majkey25.github.io/qrcode_generator/" target="_blank">QRcode_generator</a></li>
+        <li><a class="project-link" href="https://majkey25.github.io/calculator/" target="_blank">Multi-purpose Calculator</a></li>
+        <li><a class="project-link" href="https://github.com/Majkey25/youtube_downloader" target="_blank">Youtube mp3 downloader</a></li>
+        <li><a class="project-link" href="https://github.com/StudentTraineeCenter/music-analyzer" target="_blank">Music Analyzer</a></li>
+      </ul>
+      <p class="projects-more">Much more to come...</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Made by Mat&#283;j Tepl&#xfd; &copy; <span id="year"></span>. All rights reserved.</p>
+  </footer>
+
+    <script src="config.js"></script>
+    <script src="menu.js"></script>
+    <script src="particles.js"></script>
+    <script src="quote.js"></script>
+    <script src="confetti.js"></script>
+    <script>
+      document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+  </body>
 </html>
