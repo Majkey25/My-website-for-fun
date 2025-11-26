@@ -215,6 +215,12 @@ nav.open .menu-lines::after { transform: translateY(-6px) rotate(-45deg); }
   overflow: visible;
 }
 
+.page-shell > section { width: 100%; }
+
+.page-shell > section:not(:first-of-type) {
+  margin-top: 28px;
+}
+
 .grid-overlay {
   position: absolute;
   inset: 6%;
@@ -255,7 +261,7 @@ nav.open .menu-lines::after { transform: translateY(-6px) rotate(-45deg); }
 
 .hero-grid {
   display: grid;
-  gap: 22px;
+  gap: 26px;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   position: relative;
   z-index: 1;
@@ -812,6 +818,7 @@ footer p { margin: 0; color: var(--MUTED); }
 @media (max-width: 900px) {
   .container { padding: 22px; margin: 66px auto 32px; }
   .projects-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .page-shell > section:not(:first-of-type) { margin-top: 22px; }
 }
 
 @media (max-width: 760px) {
