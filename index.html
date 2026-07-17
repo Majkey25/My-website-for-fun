@@ -3,289 +3,233 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Majkey25 & Musician &amp; Developer</title>
+  <meta
+    name="description"
+    content="Matěj Teplý is an AI/ML engineer and backend developer building practical AI systems, APIs, and automation."
+  >
+  <meta name="theme-color" content="#ffffff">
+  <title>Matěj Teplý — AI/ML Engineer &amp; Backend Developer</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="media/icon.svg" type="image/svg+xml">
+  <script>
+    let storedTheme = null;
+    try {
+      storedTheme = localStorage.getItem('theme');
+    } catch {
+      // The system theme remains available when storage is blocked.
+    }
+    const systemTheme = matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+    document.documentElement.dataset.theme =
+      storedTheme === 'dark' || storedTheme === 'light'
+        ? storedTheme
+        : systemTheme;
+  </script>
+  <script src="menu.js" defer></script>
 </head>
 <body>
-  <nav>
-    <div class="nav-bar">
-      <a class="title"
-         href="https://github.com/Majkey25"
-         target="_blank"
-         rel="noopener noreferrer">Majkey25</a>
-      <button id="menu-toggle"
-              aria-label="Toggle menu"
-              aria-expanded="false">
-        <span class="menu-lines"></span>
-      </button>
-      <ul class="nav-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="songs.html">Songs</a></li>
-        <li><a href="games.html">Games</a></li>
-        <li><a href="sketch.html">Sketch</a></li>
-        <li><a href="time.html">Time</a></li>
-      </ul>
-    </div>
-  </nav>
+  <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <main class="container page-shell">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-    <div class="grid-overlay"></div>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Matěj Teplý, home">Matěj Teplý</a>
 
-    <section class="hero-grid">
-      <section class="hero panel reveal" data-reveal>
-        <p class="eyebrow">Musician & Developer</p>
-        <h1>Mat&#283;j Tepl&#xfd;</h1>
-        <p class="lede">
-          Playful, lasting experiences through music and clean code.
+    <button
+      id="menu-toggle"
+      class="menu-toggle"
+      type="button"
+      aria-controls="site-nav"
+      aria-expanded="false"
+    >
+      Menu
+    </button>
+
+    <nav id="site-nav" class="site-nav" aria-label="Primary navigation">
+      <a href="#about">About</a>
+      <a href="#experience">Experience</a>
+      <a href="#skills">Skills</a>
+      <a href="#contact">Contact</a>
+    </nav>
+
+    <button
+      id="theme-toggle"
+      class="theme-toggle"
+      type="button"
+      aria-pressed="false"
+    >
+      <span class="theme-icon" aria-hidden="true"></span>
+      <span data-theme-label>Dark</span>
+    </button>
+  </header>
+
+  <main id="main-content">
+    <section id="top" class="hero layout" aria-labelledby="hero-title">
+      <div class="hero-copy" data-reveal>
+        <h1 id="hero-title">
+          AI/ML Engineer
+          <span class="hero-title-break">&amp; Backend Developer</span>
+        </h1>
+        <p class="intro">
+          I build practical AI systems, backend services, and automation that
+          stay clear, useful, and maintainable.
         </p>
-        <div class="badge-row">
-          <span class="badge">Drums</span>
-          <span class="badge">Guitar</span>
-          <span class="badge">Saxophone</span>
-          <span class="badge">Voice</span>
-        </div>
-        <div class="hero-actions">
-          <a class="button primary"
-             href="https://github.com/Majkey25"
-             target="_blank"
-             rel="noopener noreferrer">View GitHub</a>
-          <a class="button ghost"
-             href="https://www.linkedin.com/in/mat%C4%9Bj-tepl%C3%BD-64b46125b/"
-             target="_blank"
-             rel="noopener noreferrer">Connect</a>
-        </div>
-      </section>
+      </div>
 
-      <section class="panel accent-card reveal" data-reveal>
-        <h2>Now</h2>
-        <ul class="now-list">
-          <li>Building joyful web micro-interactions</li>
-          <li>Exploring sound + visuals for the web</li>
-          <li>Always learning something new</li>
-        </ul>
-        <div class="pulse-row">
-          <span class="pulse-dot"></span>
-          <span>Available for collaborations</span>
+      <div class="hero-context" data-reveal>
+        <div class="meta-row" aria-label="Location and company">
+          <span>Greater Zlín Area</span>
+          <span>OKsystem</span>
         </div>
-      </section>
-    </section>
-
-    <section class="panel social-panel reveal" data-reveal>
-      <h2>Stay Connected</h2>
-      <div class="social-links">
-        <a class="social-button"
-           href="https://github.com/Majkey25"
-           target="_blank"
-           rel="noopener noreferrer">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M12 .5C5.65.5.5 5.65.5 12
-c0 5.08 3.29 9.39 7.86 10.91
-.58.11.79-.25.79-.56v-2.06
-c-3.2.7-3.87-1.54-3.87-1.54
--.53-1.34-1.28-1.7-1.28-1.7
--1.05-.72.08-.71.08-.71
-1.16.08 1.77 1.19 1.77 1.19
-1.03 1.77 2.7 1.26 3.36.96
-.1-.75.4-1.26.73-1.55
--2.55-.29-5.23-1.28-5.23-5.71
-0-1.26.45-2.29 1.19-3.1
--.12-.29-.52-1.46.11-3.05
-0 0 .97-.31 3.18 1.18
-a11.1 11.1 0 0 1 2.9-.39
-c.98 0 1.97.13 2.9.39
-2.2-1.5 3.17-1.18 3.17-1.18
-.63 1.59.23 2.76.11 3.05
-.74.81 1.19 1.84 1.19 3.1
-0 4.44-2.69 5.41-5.25 5.7
-.41.36.78 1.08.78 2.18v3.24
-c0 .31.21.68.8.56A10.52 10.52 0 0 0 23.5 12
-C23.5 5.65 18.35.5 12 .5Z"
-            />
-          </svg>
-          <span>GitHub</span>
-        </a>
-        <a class="social-button"
-           href="https://www.linkedin.com/in/mat%C4%9Bj-tepl%C3%BD-64b46125b/"
-           target="_blank"
-           rel="noopener noreferrer">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M20.447 20.452H17.22v-5.569c0-1.328-.025-3.037-1.852-3.037
--1.853 0-2.136 1.446-2.136 2.939v5.667H9.004V9h3.113v1.561h.045
-c.433-.82 1.491-1.688 3.065-1.688 3.282 0 3.889 2.162 3.889 4.972v6.607z
-M5.337 7.433a1.802 1.802 0 1 1 0-3.604 1.802 1.802 0 0 1 0 3.604zm1.771 13.019
-H3.561V9h3.547v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542
-C0 23.226.792 24 1.771 24h20.451C23.2 24 24 23.226 24 22.271V1.729
-C24 .774 23.2 0 22.222 0h.003z"
-            />
-          </svg>
-          <span>LinkedIn</span>
-        </a>
-        <a class="social-button"
-           href="https://www.instagram.com/_majkey_/"
-           target="_blank"
-           rel="noopener noreferrer">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9a5.5 5.5 0 0 1-5.5 5.5h-9
-A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2zm0 2A3.5 3.5 0 0 0 4 7.5v9
-A3.5 3.5 0 0 0 7.5 20h9a3.5 3.5 0 0 0 3.5-3.5v-9A3.5 3.5 0 0 0 16.5 4h-9z
-m12.75 1.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2
-a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"
-            />
-          </svg>
-          <span>Instagram</span>
-        </a>
+        <div class="profile-links">
+          <a
+            href="https://www.linkedin.com/in/matejteply/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            LinkedIn
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M3 8h9M9 4l4 4-4 4"></path>
+            </svg>
+          </a>
+          <a
+            href="https://github.com/Majkey25"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M3 8h9M9 4l4 4-4 4"></path>
+            </svg>
+          </a>
+        </div>
       </div>
     </section>
 
-    <section class="panel quote-section reveal" data-reveal>
-      <div class="quote-content">
-        <p id="quote-text" data-typewriter></p>
-        <a id="quote-button" class="press-button" href="#">Inspire me</a>
+    <section id="about" class="section layout" aria-labelledby="about-title">
+      <h2 id="about-title" data-reveal>About</h2>
+      <p class="section-copy" data-reveal>
+        I work across AI, backend development, and automation. My focus is
+        turning ideas into reliable systems with clean logic — from agentic RAG
+        and AI agents to Python APIs and full-stack product work.
+      </p>
+    </section>
+
+    <section
+      id="experience"
+      class="section experience"
+      aria-labelledby="experience-title"
+    >
+      <h2 id="experience-title" data-reveal>Experience</h2>
+      <ol class="timeline">
+        <li data-reveal>
+          <time datetime="2026-05">May 2026 — Present</time>
+          <div>
+            <h3>AI Safety &amp; Red Teaming Researcher</h3>
+            <p class="organization">Freelance</p>
+            <p>
+              Independent safety evaluation and responsible vulnerability
+              research for advanced generative AI systems.
+            </p>
+          </div>
+        </li>
+        <li data-reveal>
+          <time datetime="2025-06">Jun 2025 — Present</time>
+          <div>
+            <h3>Junior/Mid Fullstack AI Developer</h3>
+            <p class="organization">OKsystem</p>
+            <p>
+              Building AI-enabled applications across backend, frontend, APIs,
+              databases, performance, and architecture.
+            </p>
+          </div>
+        </li>
+        <li data-reveal>
+          <time datetime="2023-01">Jan 2023 — Jun 2025</time>
+          <div>
+            <h3>Student Azure Programming</h3>
+            <p class="organization">Student Trainee Center</p>
+            <p>
+              Hands-on product development, cloud, and AI work, completed with
+              a Music Analyzer AI Separator.
+            </p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section id="skills" class="section" aria-labelledby="skills-title">
+      <h2 id="skills-title" data-reveal>Skills</h2>
+      <div class="skills-grid">
+        <article data-reveal>
+          <h3>AI systems</h3>
+          <p>
+            Agentic RAG, AI agents, context engineering, LLMs, chatbot
+            development, AI safety
+          </p>
+        </article>
+        <article data-reveal>
+          <h3>Backend</h3>
+          <p>Python, APIs, databases, automation, cloud</p>
+        </article>
+        <article data-reveal>
+          <h3>Product development</h3>
+          <p>JavaScript, TypeScript, HTML/CSS, C#, Git</p>
+        </article>
       </div>
     </section>
 
-    <section class="panel projects reveal" data-reveal>
-      <div class="projects-header">
-        <h2>Projects</h2>
-        <span class="projects-chip">Latest builds</span>
-      </div>
-      <div class="projects-grid">
-        <article class="project-card">
-          <div class="project-top">
-            <span class="pill">Utility</span>
-            <span class="spark"></span>
+    <section class="section education" aria-labelledby="education-title">
+      <h2 id="education-title" data-reveal>Education</h2>
+      <div class="education-list">
+        <article data-reveal>
+          <div>
+            <h3>Tomas Bata University in Zlín</h3>
+            <p>BSc, Computer Software Engineering</p>
           </div>
-          <h3>DownloadGithubDir</h3>
-          <p class="project-meta">
-            Grab a GitHub folder without cloning the whole repo.
-          </p>
-          <a class="project-link"
-             href="https://majkey25.github.io/DownloadGithubDir/"
-             target="_blank">Open project</a>
+          <p>2025 — 2030</p>
         </article>
-
-        <article class="project-card">
-          <div class="project-top">
-            <span class="pill">Portfolio</span>
-            <span class="spark"></span>
+        <article data-reveal>
+          <div>
+            <h3>Střední Průmyslová Škola Zlín</h3>
+            <p>Mechanical Engineering</p>
           </div>
-          <h3>art_by_justyna</h3>
-          <p class="project-meta">
-            A simple gallery space for artwork on the web.
-          </p>
-          <a class="project-link"
-             href="https://majkey25.github.io/art_by_justyna/"
-             target="_blank">Open project</a>
-        </article>
-
-        <article class="project-card">
-          <div class="project-top">
-            <span class="pill">Calm</span>
-            <span class="spark"></span>
-          </div>
-          <h3>Exhalace</h3>
-          <p class="project-meta">
-            A small breathing-friendly web experiment.
-          </p>
-          <a class="project-link"
-             href="https://majkey25.github.io/exhalace/"
-             target="_blank">Open project</a>
-        </article>
-
-        <article class="project-card">
-          <div class="project-top">
-            <span class="pill">Play</span>
-            <span class="spark"></span>
-          </div>
-          <h3>Spin_the_wheel</h3>
-          <p class="project-meta">
-            Lightweight random picker wheel for quick decisions.
-          </p>
-          <a class="project-link"
-             href="https://majkey25.github.io/wheel/"
-             target="_blank">Open project</a>
-        </article>
-
-        <article class="project-card">
-          <div class="project-top">
-            <span class="pill">Tool</span>
-            <span class="spark"></span>
-          </div>
-          <h3>QRcode_generator</h3>
-          <p class="project-meta">
-            Create QR codes in the browser with no fuss.
-          </p>
-          <a class="project-link"
-             href="https://majkey25.github.io/qrcode_generator/"
-             target="_blank">Open project</a>
-        </article>
-
-        <article class="project-card">
-          <div class="project-top">
-            <span class="pill">Utility</span>
-            <span class="spark"></span>
-          </div>
-          <h3>Multi-purpose Calculator</h3>
-          <p class="project-meta">
-            Quick calculations and converters in one place.
-          </p>
-          <a class="project-link"
-             href="https://majkey25.github.io/calculator/"
-             target="_blank">Open project</a>
-        </article>
-
-        <article class="project-card">
-          <div class="project-top">
-            <span class="pill">Desktop</span>
-            <span class="spark"></span>
-          </div>
-          <h3>Youtube mp3 downloader</h3>
-          <p class="project-meta">
-            A straightforward helper to save audio from YouTube.
-          </p>
-          <a class="project-link"
-             href="https://github.com/Majkey25/youtube_downloader"
-             target="_blank">View source</a>
-        </article>
-
-        <article class="project-card">
-          <div class="project-top">
-            <span class="pill">Audio</span>
-            <span class="spark"></span>
-          </div>
-          <h3>Music Analyzer</h3>
-          <p class="project-meta">
-            Exploring music insights with a lightweight analyzer.
-          </p>
-          <a class="project-link"
-             href="https://github.com/StudentTraineeCenter/music-analyzer"
-             target="_blank">View source</a>
+          <p>2021 — 2025</p>
         </article>
       </div>
-      <p class="projects-more">More drops on the way</p>
+    </section>
+
+    <section class="section layout outside" aria-labelledby="outside-title">
+      <h2 id="outside-title" data-reveal>Outside work</h2>
+      <p class="section-copy" data-reveal>
+        Music is a core part of my life. I play drums, guitar, saxophone, and
+        sing in
+        <a href="https://exhalace.cz/" target="_blank" rel="noopener noreferrer">
+          Exhalace</a>. I also collect vinyl records.
+      </p>
+    </section>
+
+    <section id="contact" class="section contact" aria-labelledby="contact-title">
+      <div data-reveal>
+        <h2 id="contact-title">Let’s connect.</h2>
+        <p>For professional conversations, collaboration, or a good technical problem.</p>
+      </div>
+      <div class="contact-links" data-reveal>
+        <a
+          href="https://www.linkedin.com/in/matejteply/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >LinkedIn</a>
+        <a
+          href="https://github.com/Majkey25"
+          target="_blank"
+          rel="noopener noreferrer"
+        >GitHub</a>
+      </div>
     </section>
   </main>
 
   <footer>
-    <p>Made by Mat&#283;j Tepl&#xfd; &copy; <span id="year"></span>. All rights reserved.</p>
+    <p>© <span id="year"></span> Matěj Teplý</p>
   </footer>
-
-    <script src="config.js"></script>
-    <script src="menu.js"></script>
-    <script src="particles.js"></script>
-    <script src="reveal.js"></script>
-    <script src="typewriter.js"></script>
-    <script src="quote.js"></script>
-    <script src="confetti.js"></script>
-    <script>
-      document.getElementById('year').textContent = new Date().getFullYear();
-    </script>
-  </body>
+</body>
 </html>

@@ -1,17 +1,150 @@
-const menuToggleButton = document.getElementById('menu-toggle');
-const navigation = document.querySelector('nav');
+const root = document.documentElement;
+const header = document.querySelector('.site-header, body > nav');
+const menuToggle = document.getElementById('menu-toggle');
+const themeToggle = document.getElementById('theme-toggle');
+const themeLabel = document.querySelector('[data-theme-label]');
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
-if (menuToggleButton && navigation) {
-  menuToggleButton.addEventListener('click', () => {
-    const isOpen = navigation.classList.toggle('open');
-    menuToggleButton.setAttribute('aria-expanded', String(isOpen));
+function closeMenu() {
+  if (!header || !menuToggle) return;
+  header.classList.remove('menu-open', 'open');
+  menuToggle.setAttribute('aria-expanded', 'false');
+}
+
+if (header && menuToggle) {
+  menuToggle.addEventListener('click', () => {
+    const menuClass = header.classList.contains('site-header')
+      ? 'menu-open'
+      : 'open';
+    const isOpen = header.classList.toggle(menuClass);
+    menuToggle.setAttribute('aria-expanded', String(isOpen));
   });
 
-  navigation.querySelectorAll('.nav-links a').forEach((link) => {
-    link.addEventListener('click', () => {
-      if (!navigation.classList.contains('open')) return;
-      navigation.classList.remove('open');
-      menuToggleButton.setAttribute('aria-expanded', 'false');
-    });
+  header.querySelectorAll('nav a').forEach((link) => {
+    link.addEventListener('click', closeMenu);
   });
 }
+
+function updateTheme(theme) {
+  const isDark = theme === 'dark';
+  root.dataset.theme = theme;
+  try {
+    localStorage.setItem('theme', theme);
+  } catch {
+    // The selected theme still applies when storage is unavailable.
+  }
+  document.querySelector('meta[name="theme-color"]')?.setAttribute(
+    'content',
+    isDark ? '#101010' : '#ffffff'
+  );
+
+  if (!themeToggle || !themeLabel) return;
+  themeToggle.setAttribute('aria-pressed', String(isDark));
+  themeToggle.setAttribute(
+    'aria-label',
+    `Switch to ${isDark ? 'light' : 'dark'} theme`
+  );
+  themeLabel.textContent = isDark ? 'Light' : 'Dark';
+}
+
+let savedTheme = null;
+try {
+  savedTheme = localStorage.getItem('theme');
+} catch {
+  // Use the system preference when storage is unavailable.
+}
+
+const initialTheme = root.dataset.theme === 'dark' || savedTheme === 'dark'
+  ? 'dark'
+  : 'light';
+updateTheme(initialTheme);
+
+themeToggle?.addEventListener('click', (event) => {
+  const nextTheme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  const applyTheme = () => updateTheme(nextTheme);
+
+  if (!document.startViewTransition || reducedMotion.matches) {
+    applyTheme();
+    return;
+  }
+
+  const transition = document.startViewTransition(applyTheme);
+  const toggleBounds = themeToggle.getBoundingClientRect();
+  const x = event.detail === 0
+    ? toggleBounds.left + toggleBounds.width / 2
+    : event.clientX;
+  const y = event.detail === 0
+    ? toggleBounds.top + toggleBounds.height / 2
+    : event.clientY;
+  const radius = Math.hypot(
+    Math.max(x, innerWidth - x),
+    Math.max(y, innerHeight - y)
+  );
+
+  transition.ready
+    .then(() => {
+      root.animate(
+        {
+          clipPath: [
+            `circle(0 at ${x}px ${y}px)`,
+            `circle(${radius}px at ${x}px ${y}px)`
+          ]
+        },
+        {
+          duration: 650,
+          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+          pseudoElement: '::view-transition-new(root)'
+        }
+      );
+    })
+    .catch(() => {
+      // The theme already changed; only the optional reveal animation failed.
+    });
+});
+
+const revealElements = document.querySelectorAll('[data-reveal]');
+
+if (reducedMotion.matches || !('IntersectionObserver' in window)) {
+  revealElements.forEach((element) => element.classList.add('is-visible'));
+} else {
+  root.classList.add('motion-ready');
+  const revealObserver = new IntersectionObserver(
+    (entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      });
+    },
+    { threshold: 0.15, rootMargin: '0px 0px -8% 0px' }
+  );
+
+  revealElements.forEach((element) => revealObserver.observe(element));
+}
+
+const navigationLinks = document.querySelectorAll('.site-nav a[href^="#"]');
+const observedSections = document.querySelectorAll('main section[id]');
+
+if ('IntersectionObserver' in window && navigationLinks.length > 0) {
+  const sectionObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        navigationLinks.forEach((link) => {
+          const isCurrent = link.getAttribute('href') === `#${entry.target.id}`;
+          if (isCurrent) {
+            link.setAttribute('aria-current', 'true');
+          } else {
+            link.removeAttribute('aria-current');
+          }
+        });
+      });
+    },
+    { rootMargin: '-25% 0px -65% 0px' }
+  );
+
+  observedSections.forEach((section) => sectionObserver.observe(section));
+}
+
+const year = document.getElementById('year');
+if (year) year.textContent = String(new Date().getFullYear());
