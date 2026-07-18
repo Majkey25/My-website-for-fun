@@ -271,7 +271,19 @@ h3 {
 
 .hero-context {
   display: grid;
-  gap: 58px;
+  grid-template-columns: 1fr auto;
+  gap: 34px 28px;
+}
+
+.profile-photo {
+  grid-column: 2;
+  grid-row: 1;
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border: 1px solid var(--strong-line);
+  border-radius: 50%;
+  filter: saturate(0.88) contrast(1.03);
 }
 
 .meta-row,
@@ -283,6 +295,9 @@ h3 {
 }
 
 .meta-row {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
   padding-top: 30px;
   border-top: 3px solid var(--accent);
   font-size: clamp(1.05rem, 1.7vw, 1.5rem);
@@ -296,10 +311,34 @@ h3 {
 .profile-links a {
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
-  color: var(--accent);
-  font-size: clamp(1.1rem, 1.7vw, 1.5rem);
-  font-weight: 500;
+  min-height: 52px;
+  padding: 10px 15px;
+  border: 1px solid var(--strong-line);
+  background: var(--background);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color 220ms ease, color 220ms ease,
+    transform 220ms var(--ease-out);
+}
+
+.profile-links {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.profile-links a:hover,
+.profile-links a:focus-visible,
+.contact-links a:hover,
+.contact-links a:focus-visible {
+  background: var(--text);
+  color: var(--background);
+  transform: translateY(-2px);
 }
 
 .profile-links svg {
@@ -439,13 +478,22 @@ h3 {
 
 .contact-links {
   display: flex;
-  gap: 34px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .contact-links a {
-  color: var(--accent);
-  font-size: 1.2rem;
+  min-width: 112px;
+  padding: 11px 16px;
+  border: 1px solid var(--strong-line);
+  background: var(--background);
+  color: var(--text);
+  font-size: 1rem;
   font-weight: 600;
+  text-align: center;
+  transition: background-color 220ms ease, color 220ms ease,
+    transform 220ms var(--ease-out);
 }
 
 footer {
@@ -738,6 +786,10 @@ button:not(.theme-toggle, .menu-toggle) {
     align-items: start;
   }
 
+  .profile-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   footer {
     padding-inline: 16px;
   }
@@ -796,11 +848,31 @@ button:not(.theme-toggle, .menu-toggle) {
   }
 
   .meta-row,
-  .profile-links,
   .education-list article,
   .contact-links {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .hero-context {
+    grid-template-columns: 1fr auto;
+  }
+
+  .profile-photo {
+    width: 76px;
+    height: 76px;
+  }
+
+  .profile-links {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-links {
+    width: 100%;
+  }
+
+  .contact-links a {
+    width: 100%;
   }
 
   .meta-row span + span {
