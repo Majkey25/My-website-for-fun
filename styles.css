@@ -244,12 +244,12 @@ h3 {
 
 h1 {
   margin-bottom: 22px;
-  font-size: clamp(2.75rem, 4.4vw, 4.2rem);
+  font-size: clamp(2.6rem, 4vw, 3.8rem);
 }
 
 h2 {
   margin-bottom: 0;
-  font-size: clamp(2.8rem, 5vw, 5.2rem);
+  font-size: clamp(2.5rem, 4.5vw, 4.6rem);
 }
 
 h3 {
@@ -265,7 +265,7 @@ h3 {
 .section-copy {
   max-width: 760px;
   margin-bottom: 0;
-  font-size: clamp(1.2rem, 2vw, 1.75rem);
+  font-size: clamp(1.1rem, 1.7vw, 1.55rem);
   line-height: 1.45;
 }
 
@@ -857,14 +857,6 @@ button:not(.theme-toggle, .menu-toggle) {
 @media (max-width: 520px) {
   body {
     font-size: 16px;
-  }
-
-  h1 {
-    font-size: 3rem;
-  }
-
-  h2 {
-    font-size: 2.8rem;
   }
 
   .brand {
