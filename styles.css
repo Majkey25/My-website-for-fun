@@ -514,14 +514,43 @@ footer p {
   opacity: 0;
   filter: blur(6px);
   transform: translateY(34px);
-  transition: opacity 780ms var(--ease-out), filter 780ms var(--ease-out),
-    transform 780ms var(--ease-out);
+  transition: color 240ms ease, opacity 780ms var(--ease-out),
+    filter 780ms var(--ease-out), transform 780ms var(--ease-out);
 }
 
 .motion-ready [data-reveal].is-visible {
   opacity: 1;
   filter: blur(0);
   transform: translateY(0);
+}
+
+.motion-ready [data-reveal] > :is(h1, h2, h3, p, time, div) {
+  transform: translateY(14px);
+  transition: color 240ms ease, transform 620ms var(--ease-out);
+}
+
+.motion-ready [data-reveal].is-visible > :is(h1, h2, h3, p, time, div) {
+  transform: translateY(0);
+}
+
+.motion-ready
+  [data-reveal].is-visible
+  > :is(h1, h2, h3, p, time, div):nth-child(2) {
+  transition-delay: 90ms;
+}
+
+.motion-ready
+  [data-reveal].is-visible
+  > :is(h1, h2, h3, p, time, div):nth-child(3) {
+  transition-delay: 160ms;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .motion-ready :is(h2, p)[data-reveal].is-visible:hover,
+  .motion-ready [data-reveal].is-visible > :is(h1, h3, p, time):hover {
+    color: var(--accent);
+    transform: translateX(6px);
+  }
 }
 
 .motion-ready .timeline li:nth-child(2),
