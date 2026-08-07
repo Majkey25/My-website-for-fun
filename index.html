@@ -27,7 +27,6 @@
         : systemTheme;
   </script>
   <script src="menu.js" defer></script>
-  <script src="projects.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -217,27 +216,116 @@
       <header class="projects-heading" data-reveal>
         <h2 id="projects-title">Projects</h2>
         <p class="projects-source">
-          <span>github.com/Majkey25/*</span>
+          <span>Featured GitHub projects</span>
         </p>
       </header>
-      <p
-        id="projects-status"
-        class="projects-status"
-        role="status"
-        aria-live="polite"
+      <ol class="projects-list" aria-label="Featured projects">
+        <li class="project-item" data-reveal>
+          <a
+            class="project-link"
+            href="https://github.com/StudentTraineeCenter/music-analyzer"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="project-number">01</span>
+            <div class="project-copy">
+              <h3 class="project-name">StudentTraineeCenter/music-analyzer</h3>
+              <span class="project-description">Music Analyzer separates songs into stems and provides practical tools for listening and music editing.</span>
+            </div>
+            <span class="project-metadata">Python</span>
+            <span class="project-arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="project-item" data-reveal>
+          <a
+            class="project-link"
+            href="https://github.com/Majkey25/scrollit"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="project-number">02</span>
+            <div class="project-copy">
+              <h3 class="project-name">scrollit</h3>
+              <span class="project-description">Simple floating auto-scroll utility.</span>
+            </div>
+            <span class="project-metadata">Kotlin</span>
+            <span class="project-arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="project-item" data-reveal>
+          <a
+            class="project-link"
+            href="https://github.com/Majkey25/gh-issues-pr-export"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="project-number">03</span>
+            <div class="project-copy">
+              <h3 class="project-name">gh-issues-pr-export</h3>
+              <span class="project-description">Export GitHub issues and pull requests to clean, deterministic Markdown.</span>
+            </div>
+            <span class="project-metadata">Python</span>
+            <span class="project-arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="project-item" data-reveal>
+          <a
+            class="project-link"
+            href="https://github.com/Majkey25/ScanIt"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="project-number">04</span>
+            <div class="project-copy">
+              <h3 class="project-name">ScanIt</h3>
+              <span class="project-description">Simple, ad-free Android document scanner for saving and sharing PDFs.</span>
+            </div>
+            <span class="project-metadata">Kotlin</span>
+            <span class="project-arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="project-item" data-reveal>
+          <a
+            class="project-link"
+            href="https://github.com/Majkey25/Project-Guard"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="project-number">05</span>
+            <div class="project-copy">
+              <h3 class="project-name">Project-Guard</h3>
+              <span class="project-description">Audit GitHub issues, pull requests, and Project V2 fields from the command line.</span>
+            </div>
+            <span class="project-metadata">Python</span>
+            <span class="project-arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="project-item" data-reveal>
+          <a
+            class="project-link"
+            href="https://github.com/Majkey25/tab-copy-extension"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="project-number">06</span>
+            <div class="project-copy">
+              <h3 class="project-name">tab-copy-extension</h3>
+              <span class="project-description">Minimal browser extension for copying selected tab URLs.</span>
+            </div>
+            <span class="project-metadata">JavaScript</span>
+            <span class="project-arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+      </ol>
+      <a
+        class="projects-cta"
+        href="https://github.com/Majkey25?tab=repositories"
+        target="_blank"
+        rel="noopener noreferrer"
       >
-        <a
-          href="https://github.com/Majkey25?tab=repositories"
-          target="_blank"
-          rel="noopener noreferrer"
-        >View public repositories on GitHub.</a>
-      </p>
-      <ol
-        id="projects-list"
-        class="projects-list"
-        aria-label="Public repositories"
-        aria-busy="true"
-      ></ol>
+        <span>View all repositories</span>
+        <span aria-hidden="true">↗</span>
+      </a>
     </section>
 
     <section class="section education" aria-labelledby="education-title">
@@ -297,7 +385,7 @@
         <a
           class="contact-email"
           href="mailto:majkeylab@gmail.com"
-        >majkeylab@gmail.com</a>
+        >Gmail</a>
         <a
           href="https://www.linkedin.com/in/matejteply/"
           target="_blank"
