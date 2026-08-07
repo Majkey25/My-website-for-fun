@@ -26,7 +26,7 @@ Descriptions and languages use metadata verified from the GitHub REST API on 202
 
 ## Motion
 
-- Loop a restrained typing treatment on the Projects source line so it remains noticeable after page load.
+- Trigger one restrained 2.2s typing animation when the Projects heading enters view; end with the full `Featured GitHub projects` text (24ch) visible and the caret stopped.
 - Stagger project entrances when the section scrolls into view.
 - Move the external-link arrow slightly on hover or keyboard focus.
 - Disable typing and entrance motion when `prefers-reduced-motion: reduce` is active.

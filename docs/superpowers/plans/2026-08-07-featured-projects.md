@@ -56,7 +56,7 @@ Use two equal columns above the existing mobile breakpoint and one column below 
 
 - [ ] **Step 2: Keep motion visible and restrained**
 
-Loop the existing source-line typing keyframes with a pause, stagger `.project-item` reveal delays, retain the arrow hover, and make all project motion static under `prefers-reduced-motion: reduce`.
+Trigger one 2.2s typing animation when the Projects heading enters view. It must finish with all 24ch of `Featured GitHub projects` visible and a stopped caret; do not repeat or type-and-erase it because that would require pause controls. Stagger `.project-item` reveal delays, retain the arrow hover, and make all project motion static under `prefers-reduced-motion: reduce`.
 
 - [ ] **Step 3: Style the GitHub CTA**
 
@@ -91,7 +91,7 @@ Submit `index.html` to the W3C Nu validator and require zero errors.
 
 Serve the repository locally and verify:
 
-1. Desktop/light: six cards in two columns, looping source typing, working links.
+1. Desktop/light: six cards in two columns; when the Projects heading enters view, one 2.2s typing animation ends with the full 24ch `Featured GitHub projects` text visible and the caret stopped; working links.
 2. Mobile/dark: one column, clamped descriptions, no horizontal overflow.
 3. Reduced motion: full source text and cards visible without animation.
 4. Regression: theme toggle, navigation, and Gmail link still work.
