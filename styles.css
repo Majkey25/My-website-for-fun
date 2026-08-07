@@ -752,10 +752,22 @@ footer p {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .motion-ready :is(h2, p)[data-reveal].is-visible:hover,
-  .motion-ready [data-reveal].is-visible > :is(h1, h3, p, time):hover {
-    color: var(--accent);
-    transform: translateX(6px);
+  /* Titles only, and only an accent rule wiping in under them — the same
+     gesture the nav links already use. Body copy is left alone. */
+  .motion-ready :is(h2, h3):not(.project-name) {
+    /* Both fit-content values keep the rule on the text: grid stretches these
+       headings well past their line box otherwise. */
+    width: fit-content;
+    height: fit-content;
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0 2px;
+    transition: background-size 340ms var(--ease-out);
+  }
+
+  .motion-ready :is(h2, h3):not(.project-name):hover {
+    background-size: 100% 2px;
   }
 }
 
