@@ -342,7 +342,9 @@ h3 {
 .profile-links a:hover,
 .profile-links a:focus-visible,
 .contact-links a:hover,
-.contact-links a:focus-visible {
+.contact-links a:focus-visible,
+.contact-links .contact-email:hover,
+.contact-links .contact-email:focus-visible {
   background: var(--background);
   color: var(--text);
   transform: translateY(-2px);
@@ -654,18 +656,54 @@ h3 {
   gap: 10px;
 }
 
-.contact-links a {
+.contact-links a,
+.contact-links .contact-email {
   min-width: 112px;
   padding: 11px 16px;
   border: 1px solid var(--strong-line);
   border-radius: 0;
   background: var(--text);
   color: var(--background);
+  cursor: pointer;
   font-size: 1rem;
   font-weight: 600;
   text-align: center;
   transition: background-color 220ms ease, color 220ms ease,
     transform 220ms var(--ease-out);
+}
+
+.contact-email {
+  position: relative;
+}
+
+.contact-links .contact-email[data-copied] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: spark 520ms var(--ease-out) forwards;
+}
+
+@keyframes spark {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(0.4);
+  }
 }
 
 footer {
@@ -1108,7 +1146,8 @@ button:not(.theme-toggle, .menu-toggle) {
     width: 100%;
   }
 
-  .contact-links a {
+  .contact-links a,
+  .contact-links .contact-email {
     width: 100%;
   }
 

@@ -146,5 +146,50 @@ if ('IntersectionObserver' in window && navigationLinks.length > 0) {
   observedSections.forEach((section) => sectionObserver.observe(section));
 }
 
+const emailButton = document.querySelector('[data-copy-email]');
+
+if (emailButton) {
+  const defaultLabel = emailButton.textContent;
+  const SPARK_COUNT = 10;
+  let resetTimer = 0;
+
+  const sparkle = () => {
+    if (reducedMotion.matches) return;
+    for (let index = 0; index < SPARK_COUNT; index += 1) {
+      const spark = document.createElement('span');
+      spark.className = 'spark';
+      const angle = (index / SPARK_COUNT) * 2 * Math.PI;
+      const distance = 26 + Math.random() * 18;
+      spark.style.setProperty('--x', `${Math.cos(angle) * distance}px`);
+      spark.style.setProperty('--y', `${Math.sin(angle) * distance}px`);
+      spark.addEventListener('animationend', () => spark.remove());
+      emailButton.append(spark);
+    }
+  };
+
+  emailButton.addEventListener('click', async () => {
+    const email = emailButton.dataset.copyEmail;
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(email);
+      copied = true;
+    } catch {
+      // Clipboard access can be blocked; show the address so it can be copied by hand.
+    }
+
+    clearTimeout(resetTimer);
+    emailButton.textContent = copied ? 'Copied!' : email;
+    if (copied) {
+      emailButton.dataset.copied = '';
+      sparkle();
+    }
+
+    resetTimer = setTimeout(() => {
+      emailButton.textContent = defaultLabel;
+      delete emailButton.dataset.copied;
+    }, 1800);
+  });
+}
+
 const year = document.getElementById('year');
 if (year) year.textContent = String(new Date().getFullYear());
