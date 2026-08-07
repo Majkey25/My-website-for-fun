@@ -668,10 +668,6 @@ h3 {
     transform 220ms var(--ease-out);
 }
 
-.contact-links .contact-email {
-  flex-basis: 100%;
-}
-
 footer {
   padding: 30px 44px 44px;
 }
@@ -856,6 +852,7 @@ button:not(.theme-toggle, .menu-toggle) {
   background: var(--surface);
   border: 1px solid var(--line);
   cursor: crosshair;
+  touch-action: none;
 }
 
 .sketch-controls {
@@ -929,6 +926,7 @@ button:not(.theme-toggle, .menu-toggle) {
 
   .menu-toggle {
     display: block;
+    padding: 10px 4px;
   }
 
   .theme-toggle {
@@ -1035,9 +1033,9 @@ button:not(.theme-toggle, .menu-toggle) {
 
   .nav-bar #menu-toggle {
     display: block;
-    width: 40px;
-    height: 40px;
-    padding: 9px;
+    width: 44px;
+    height: 44px;
+    padding: 11px;
     border: 0;
     background: transparent;
     color: var(--text);
@@ -1057,6 +1055,18 @@ button:not(.theme-toggle, .menu-toggle) {
     padding: 16px;
     background: var(--background);
     border-bottom: 1px solid var(--line);
+  }
+
+  body > nav.open .nav-links a {
+    display: block;
+    padding: 11px 0;
+  }
+}
+
+@media (pointer: coarse) {
+  button:not(.theme-toggle, .menu-toggle),
+  .game input {
+    min-height: 44px;
   }
 }
 
