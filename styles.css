@@ -459,8 +459,8 @@ h3 {
   width: 0;
   overflow: hidden;
   border-right: 1px solid currentColor;
-  animation: project-type 1.35s steps(21, end) 180ms forwards,
-    project-caret 600ms step-end 3;
+  animation: project-type 2.2s steps(24, end) 180ms forwards,
+    project-caret 600ms step-end 180ms 3 forwards;
   animation-play-state: paused;
 }
 
@@ -470,7 +470,7 @@ h3 {
 
 @keyframes project-type {
   to {
-    width: 21ch;
+    width: 24ch;
   }
 }
 
@@ -478,37 +478,39 @@ h3 {
   50% {
     border-color: transparent;
   }
-}
 
-.projects-status {
-  margin: 0 0 18px;
-  color: var(--muted);
-  font-size: 0.92rem;
-}
-
-.projects-status a {
-  color: var(--text);
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  to {
+    border-color: transparent;
+  }
 }
 
 .projects-list {
   margin: 0;
   padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   border-top: 1px solid var(--strong-line);
+  border-left: 1px solid var(--line);
   list-style: none;
 }
 
 .project-item {
+  min-width: 0;
+  border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
 
 .project-link {
-  padding: 30px 0;
+  min-height: 208px;
+  height: 100%;
+  padding: 24px;
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto 24px;
-  align-items: center;
-  gap: 28px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "number language arrow"
+    "copy copy copy";
+  align-content: space-between;
+  gap: 24px 14px;
 }
 
 .project-number,
@@ -517,7 +519,12 @@ h3 {
   font-size: 0.8rem;
 }
 
+.project-number {
+  grid-area: number;
+}
+
 .project-copy {
+  grid-area: copy;
   min-width: 0;
 }
 
@@ -528,19 +535,23 @@ h3 {
 }
 
 .project-description {
-  max-width: 760px;
   margin-top: 8px;
-  display: block;
+  display: -webkit-box;
+  overflow: hidden;
   color: var(--muted);
   line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow-wrap: anywhere;
 }
 
 .project-metadata {
+  grid-area: language;
   white-space: nowrap;
 }
 
 .project-arrow {
+  grid-area: arrow;
   font-size: 1.25rem;
   transition: transform 220ms var(--ease-out);
 }
@@ -554,6 +565,31 @@ h3 {
 
 .project-link:hover .project-arrow,
 .project-link:focus-visible .project-arrow {
+  transform: translate(3px, -3px);
+}
+
+.projects-cta {
+  width: 100%;
+  min-height: 64px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border: 1px solid var(--strong-line);
+  border-top: 0;
+  background: var(--text);
+  color: var(--background);
+  font-weight: 600;
+}
+
+.projects-cta span:last-child {
+  font-size: 1.25rem;
+  transition: transform 220ms var(--ease-out);
+}
+
+.projects-cta:hover span:last-child,
+.projects-cta:focus-visible span:last-child {
   transform: translate(3px, -3px);
 }
 
@@ -698,6 +734,26 @@ footer p {
 .motion-ready .timeline li:nth-child(3),
 .motion-ready .skills-grid article:nth-child(3) {
   transition-delay: 180ms;
+}
+
+.motion-ready .projects-list .project-item:nth-child(2) {
+  transition-delay: 70ms;
+}
+
+.motion-ready .projects-list .project-item:nth-child(3) {
+  transition-delay: 140ms;
+}
+
+.motion-ready .projects-list .project-item:nth-child(4) {
+  transition-delay: 210ms;
+}
+
+.motion-ready .projects-list .project-item:nth-child(5) {
+  transition-delay: 280ms;
+}
+
+.motion-ready .projects-list .project-item:nth-child(6) {
+  transition-delay: 350ms;
 }
 
 ::view-transition-old(root),
@@ -956,19 +1012,11 @@ button:not(.theme-toggle, .menu-toggle) {
   }
 
   .project-link {
-    grid-template-columns: 34px minmax(0, 1fr) 20px;
-    align-items: start;
-    gap: 10px 18px;
+    min-height: 0;
   }
 
-  .project-metadata {
-    grid-column: 2;
-    white-space: normal;
-  }
-
-  .project-arrow {
-    grid-column: 3;
-    grid-row: 1;
+  .projects-list {
+    grid-template-columns: 1fr;
   }
 
   .contact {
@@ -1079,8 +1127,11 @@ button:not(.theme-toggle, .menu-toggle) {
     animation-iteration-count: 1 !important;
   }
 
-  .projects-source span {
-    width: auto;
+  .projects-source span,
+  .motion-ready .projects-source span {
+    display: block;
+    width: 100%;
+    white-space: normal;
     border-right: 0;
     animation: none;
   }
