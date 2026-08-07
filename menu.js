@@ -140,7 +140,10 @@ if ('IntersectionObserver' in window && navigationLinks.length > 0) {
         });
       });
     },
-    { rootMargin: '-25% 0px -65% 0px' }
+    // A 1px band across the middle of the viewport. Sections tile the page, so
+    // exactly one always crosses it — including the last one at the very bottom,
+    // which the old bottom-heavy margin could never reach.
+    { rootMargin: '-50% 0px -50% 0px' }
   );
 
   observedSections.forEach((section) => sectionObserver.observe(section));

@@ -32,7 +32,15 @@
   <a class="skip-link" href="#main-content">Skip to content</a>
 
   <header class="site-header">
-    <a class="brand" href="#top" aria-label="Matěj Teplý, home">Matěj Teplý</a>
+    <a class="brand" href="#top" aria-label="Matěj Teplý, home">
+      <svg class="brand-mark" viewBox="0 0 512 512" aria-hidden="true">
+        <g fill="none" stroke-linejoin="miter" stroke-linecap="butt">
+          <path d="M134 446V66l122 212L378 66v380" stroke="currentColor" stroke-width="102"/>
+          <path class="brand-mark-inline" d="M134 379V150l122 128L378 150v229" stroke-width="30"/>
+        </g>
+      </svg>
+      <span>Matěj Teplý</span>
+    </a>
 
     <button
       id="menu-toggle"
@@ -49,6 +57,8 @@
       <a href="#experience">Experience</a>
       <a href="#skills">Skills</a>
       <a href="#projects">Projects</a>
+      <a href="#education">Education</a>
+      <a href="#spare-time">Spare time</a>
       <a href="#contact">Contact</a>
     </nav>
 
@@ -328,7 +338,7 @@
       </a>
     </section>
 
-    <section class="section education" aria-labelledby="education-title">
+    <section id="education" class="section education" aria-labelledby="education-title">
       <h2 id="education-title" data-reveal>Education</h2>
       <div class="education-list">
         <article data-reveal>
@@ -348,8 +358,12 @@
       </div>
     </section>
 
-    <section class="section layout outside" aria-labelledby="outside-title">
-      <h2 id="outside-title" data-reveal>Outside work</h2>
+    <section
+      id="spare-time"
+      class="section layout outside"
+      aria-labelledby="spare-time-title"
+    >
+      <h2 id="spare-time-title" data-reveal>Spare time</h2>
       <p class="section-copy" data-reveal>
         Music is a core part of who I am, not just a side hobby.<br><br>
         I play drums, guitar, saxophone, and sing. It shapes how I think about
