@@ -247,6 +247,10 @@ h1 {
   font-size: clamp(2.6rem, 4vw, 3.8rem);
 }
 
+.hero-title-long {
+  font-size: clamp(2.2rem, 3.7vw, 3.45rem);
+}
+
 h2 {
   margin-bottom: 0;
   font-size: clamp(2.5rem, 4.5vw, 4.6rem);
@@ -425,6 +429,134 @@ h3 {
   font-size: 1.1rem;
 }
 
+.projects-heading {
+  margin-bottom: clamp(48px, 7vw, 90px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.projects-source,
+.project-number,
+.project-metadata {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+.projects-source {
+  margin: 0 0 0.55rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.projects-source span {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.motion-ready .projects-source span {
+  box-sizing: content-box;
+  width: 0;
+  overflow: hidden;
+  border-right: 1px solid currentColor;
+  animation: project-type 1.35s steps(21, end) 180ms forwards,
+    project-caret 600ms step-end 3;
+  animation-play-state: paused;
+}
+
+.motion-ready .projects-heading.is-visible .projects-source span {
+  animation-play-state: running;
+}
+
+@keyframes project-type {
+  to {
+    width: 21ch;
+  }
+}
+
+@keyframes project-caret {
+  50% {
+    border-color: transparent;
+  }
+}
+
+.projects-status {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.projects-status a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.projects-list {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--strong-line);
+  list-style: none;
+}
+
+.project-item {
+  border-bottom: 1px solid var(--line);
+}
+
+.project-link {
+  padding: 30px 0;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto 24px;
+  align-items: center;
+  gap: 28px;
+}
+
+.project-number,
+.project-metadata {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.project-copy {
+  min-width: 0;
+}
+
+.project-name {
+  margin: 0;
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  overflow-wrap: anywhere;
+}
+
+.project-description {
+  max-width: 760px;
+  margin-top: 8px;
+  display: block;
+  color: var(--muted);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.project-metadata {
+  white-space: nowrap;
+}
+
+.project-arrow {
+  font-size: 1.25rem;
+  transition: transform 220ms var(--ease-out);
+}
+
+.project-link:hover .project-name,
+.project-link:focus-visible .project-name {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+}
+
+.project-link:hover .project-arrow,
+.project-link:focus-visible .project-arrow {
+  transform: translate(3px, -3px);
+}
+
 .education {
   display: grid;
   grid-template-columns: 0.65fr 1.35fr;
@@ -498,6 +630,10 @@ h3 {
   text-align: center;
   transition: background-color 220ms ease, color 220ms ease,
     transform 220ms var(--ease-out);
+}
+
+.contact-links .contact-email {
+  flex-basis: 100%;
 }
 
 footer {
@@ -813,6 +949,28 @@ button:not(.theme-toggle, .menu-toggle) {
     border-left: 0;
   }
 
+  .projects-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .project-link {
+    grid-template-columns: 34px minmax(0, 1fr) 20px;
+    align-items: start;
+    gap: 10px 18px;
+  }
+
+  .project-metadata {
+    grid-column: 2;
+    white-space: normal;
+  }
+
+  .project-arrow {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
   .contact {
     min-height: 380px;
     grid-template-columns: 1fr;
@@ -919,5 +1077,11 @@ button:not(.theme-toggle, .menu-toggle) {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+
+  .projects-source span {
+    width: auto;
+    border-right: 0;
+    animation: none;
   }
 }
