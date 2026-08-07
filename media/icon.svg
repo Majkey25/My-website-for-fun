@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Matěj Teplý">
-  <rect width="512" height="512" rx="112" fill="#1646e8"/>
-  <g fill="none" stroke="#ffffff" stroke-width="42" stroke-linejoin="miter" stroke-linecap="butt">
-    <path d="M109 354V160l63 98 63-98v194"/>
-    <path d="M271 160h132"/>
-    <path d="M337 160v194"/>
+  <rect width="512" height="512" fill="#ffffff"/>
+  <g fill="none" stroke-linejoin="miter" stroke-linecap="butt">
+    <path d="M134 446V66l122 212L378 66v380" stroke="#111111" stroke-width="102"/>
+    <path d="M134 379V150l122 128L378 150v229" stroke="#ffffff" stroke-width="30"/>
   </g>
 </svg>
