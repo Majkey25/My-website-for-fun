@@ -48,6 +48,7 @@ export const OWNER_FILES = new Map([
   ['owner-cv-page-1.md', { title: 'Matej_Teply_CV_EXT_26.pdf | p. 1', url: null }],
   ['owner-cv-page-2.md', { title: 'Matej_Teply_CV_EXT_26.pdf | p. 2', url: null }],
   ['owner-updates.md', { title: 'Owner-confirmed updates', url: null }],
+  ['owner-profile.md', { title: 'Public professional profile | 1 November 2026', url: null }],
 ]);
 
 /** Identifies the crawler to site owners, as robots.txt rules expect. */

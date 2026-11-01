@@ -4,9 +4,12 @@
 // Render it only when the assistant is configured: a site without it then loads none of its
 // markup or script (the global styles below are still inlined).
 import { starters } from '../chat';
+import { getImage } from 'astro:assets';
+import { getCollection } from 'astro:content';
 import Arrow from './Arrow.astro';
 import type { Lang } from '../i18n';
-import { href } from '../site';
+import { href, slug } from '../site';
+import { projectMedia } from '../project-media';
 
 interface Props {
   lang: Lang;
@@ -15,6 +18,26 @@ interface Props {
 }
 const { lang, api, siteKey } = Astro.props;
 const cs = lang === 'cs';
+const media = await Promise.all(
+  (await getCollection('projects')).flatMap(({ data }) => {
+    const item = projectMedia[data.name];
+    if (!item) return [];
+    return [
+      (async () => {
+        const image = await getImage({ src: item.image, width: 640, format: 'webp' });
+        return {
+          name: data.name,
+          alt: item.alt[lang],
+          image: image.src,
+          width: Number(image.attributes.width),
+          height: Number(image.attributes.height),
+          href: href(`work/${slug(data.name)}/`, lang),
+          repo: new URL(item.source).pathname.split('/').slice(0, 3).join('/').toLowerCase(),
+        };
+      })(),
+    ];
+  }),
+);
 const text = cs
   ? {
       launch: 'Zeptejte se mého AI agenta',
@@ -26,10 +49,12 @@ const text = cs
       stop: 'Zastavit',
       close: 'Zavřít',
       reset: 'Nový chat',
+      history: 'Historie chatů',
+      back: 'Zpět',
       note: 'Otázky i obrázky zpracuje OpenAI přes Cloudflare. OpenAI může sdílený obsah použít k trénování modelů. Obrázky se neukládají do místní historie. Nesdílejte citlivé údaje.',
       attach: 'Přiložit obrázek',
       remove: 'Odebrat obrázek',
-      remember: 'Pamatovat text chatu na tomto zařízení 7 dní',
+      remember: 'Uložit tento chat na zařízení na 7 dní',
       privacy: 'Soukromí',
     }
   : {
@@ -42,10 +67,12 @@ const text = cs
       stop: 'Stop',
       close: 'Close',
       reset: 'New chat',
+      history: 'Chat history',
+      back: 'Back',
       note: 'Questions and images go to OpenAI through Cloudflare. OpenAI may use shared content to train models. Images are not saved in local history. Do not share sensitive data.',
       attach: 'Attach an image',
       remove: 'Remove image',
-      remember: 'Remember chat text on this device for 7 days',
+      remember: 'Save this chat on this device for 7 days',
       privacy: 'Privacy',
     };
 // Strings the script needs at runtime.
@@ -53,6 +80,7 @@ const runtime = cs
   ? {
       sources: 'Zdroje',
       searching: 'Hledám na webu…',
+      verifying: 'Ověřuji prohlížeč. Pokud se zobrazí kontrola, potvrďte ji níže.',
       web: 'Prohledávám povolené veřejné zdroje…',
       writing: 'Píšu odpověď…',
       ready: 'Odpověď je hotová.',
@@ -69,10 +97,18 @@ const runtime = cs
       imageLoading: 'Připravuji obrázek…',
       imageInvalid: 'Vyberte JPG, PNG nebo WebP do 10 MB. Obrázek se nepodařilo připravit.',
       historyUnavailable: 'Prohlížeč nedovolil uložit historii. Chat zůstane jen na této stránce.',
+      historyEmpty: 'Zatím nemáte žádné konverzace.',
+      historyFull: 'Máte 10 uložených chatů. Pro nový chat nejprve jeden smažte.',
+      saved: 'Uloženo na 7 dní',
+      tabOnly: 'Pouze v této kartě',
+      untitled: 'Konverzace s obrázkem',
+      delete: 'Smazat chat',
+      followups: 'Na co se zeptat dál',
     }
   : {
       sources: 'Sources',
       searching: 'Searching the site…',
+      verifying: 'Checking your browser. Complete the check below if it appears.',
       web: 'Searching approved public sources…',
       writing: 'Writing…',
       ready: 'Answer ready.',
@@ -91,6 +127,13 @@ const runtime = cs
       imageInvalid: 'Choose a JPG, PNG or WebP under 10 MB. The image could not be prepared.',
       historyUnavailable:
         'Your browser blocked history storage. This chat will last for this page only.',
+      historyEmpty: 'No conversations yet.',
+      historyFull: 'You have 10 saved chats. Delete one before starting another.',
+      saved: 'Saved for 7 days',
+      tabOnly: 'This tab only',
+      untitled: 'Image conversation',
+      delete: 'Delete chat',
+      followups: 'Ask next',
     };
 ---
 
@@ -100,6 +143,7 @@ const runtime = cs
   data-site-key={siteKey}
   data-lang={lang}
   data-text={JSON.stringify(runtime)}
+  data-media={JSON.stringify(media)}
 >
   <button class="chat-launch" type="button" aria-haspopup="dialog" data-chat-open>
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -116,16 +160,35 @@ const runtime = cs
       <button class="chat__icon" type="button" data-chat-reset title={text.reset}>
         <span class="sr-only">{text.reset}</span>
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" />
+          <path d="M12 4v16M4 12h16" />
+        </svg>
+      </button>
+      <button
+        class="chat__icon"
+        type="button"
+        data-chat-history
+        title={text.history}
+        aria-expanded="false"
+        aria-controls="chat-history"
+      >
+        <span class="sr-only">{text.history}</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M3 11a9 9 0 1 1 2.6 7.4M3 5v6h6M12 7v5l3 2" />
         </svg>
       </button>
       <button class="chat__icon" type="button" data-chat-close title={text.close}>
-        <span class="sr-only">{text.close}</span>
+        <span class="sr-only">
+          {text.back} / {text.close}
+        </span>
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path d="M6 6l12 12M18 6 6 18" />
+          <path d="m14 5-7 7 7 7M7 12h14" />
         </svg>
       </button>
     </div>
+    <section class="chat__history" id="chat-history" aria-label={text.history} hidden>
+      <h3>{text.history}</h3>
+      <ul />
+    </section>
     <div class="chat__log" role="log" aria-labelledby="chat-title" tabindex="0">
       <ul class="chat__starters">
         {starters[lang].map((question, i) => (
@@ -138,6 +201,7 @@ const runtime = cs
       </ul>
     </div>
     <p class="chat__status" role="status" />
+    <div class="chat__check" />
     <div class="chat__attachment" hidden>
       <img alt={runtime.image} width="56" height="56" />
       <span>{runtime.image}</span>
@@ -188,16 +252,19 @@ const runtime = cs
     <p class="chat__note">
       {text.note} <a href={href('privacy/', lang)}>{text.privacy}</a>
     </p>
-    <div class="chat__check" />
   </dialog>
 </site-chat>
 
 <script>
   import {
     chatSources,
+    chatFollowups,
     HISTORY_LIMIT,
-    readChatHistory,
-    writeChatHistory,
+    HISTORY_TTL_MS,
+    THREAD_LIMIT,
+    readThreads,
+    writeThreads,
+    type ChatThread,
     type ChatSource as Source,
     type ChatTurn as Stored,
   } from '../chat-history';
@@ -205,6 +272,7 @@ const runtime = cs
   type Runtime = Record<
     | 'sources'
     | 'searching'
+    | 'verifying'
     | 'web'
     | 'writing'
     | 'ready'
@@ -220,12 +288,28 @@ const runtime = cs
     | 'imageExpired'
     | 'imageLoading'
     | 'imageInvalid'
-    | 'historyUnavailable',
+    | 'historyUnavailable'
+    | 'historyEmpty'
+    | 'historyFull'
+    | 'saved'
+    | 'tabOnly'
+    | 'untitled'
+    | 'delete'
+    | 'followups',
     string
   >;
   type Turnstile = {
     render: (box: HTMLElement, options: Record<string, unknown>) => string;
     remove: (id: string) => void;
+  };
+  type ProjectImage = {
+    name: string;
+    alt: string;
+    image: string;
+    width: number;
+    height: number;
+    href: string;
+    repo: string;
   };
 
   const STORE = 'chat:v2';
@@ -343,6 +427,7 @@ const runtime = cs
     #api = this.dataset.api ?? '';
     #lang = this.dataset.lang === 'cs' ? 'cs' : 'en';
     #text = JSON.parse(this.dataset.text ?? '{}') as Runtime;
+    #media = JSON.parse(this.dataset.media ?? '[]') as ProjectImage[];
     #dialog = this.querySelector('dialog')!;
     #log = this.querySelector<HTMLElement>('.chat__log')!;
     #starters = this.querySelector<HTMLElement>('.chat__starters')!;
@@ -352,6 +437,8 @@ const runtime = cs
     #input = this.querySelector('textarea')!;
     #check = this.querySelector<HTMLElement>('.chat__check')!;
     #remember = this.querySelector<HTMLInputElement>('[data-chat-remember]')!;
+    #history = this.querySelector<HTMLElement>('.chat__history')!;
+    #historyButton = this.querySelector<HTMLButtonElement>('[data-chat-history]')!;
     #file = this.querySelector<HTMLInputElement>('[data-chat-file]')!;
     #attach = this.querySelector<HTMLButtonElement>('[data-chat-attach]')!;
     #preview = this.querySelector<HTMLElement>('.chat__attachment')!;
@@ -359,33 +446,37 @@ const runtime = cs
     #imageVersion = 0;
     #preparing = false;
     #turns: Stored[] = [];
+    #threads: ChatThread[] = [];
+    #activeId = '';
     #busy: AbortController | null = null;
     #turnstile: Promise<Turnstile> | null = null;
     #current: Session | null = null;
     #minting: Promise<string> | null = null;
 
     connectedCallback() {
+      let local = null;
+      let session = null;
       try {
-        const saved = localStorage.getItem(STORE);
-        this.#remember.checked = saved !== null;
-        this.#turns = readChatHistory(saved ?? sessionStorage.getItem(STORE));
-        if (!this.#turns.length) localStorage.removeItem(STORE);
-      } catch {
-        try {
-          this.#turns = readChatHistory(sessionStorage.getItem(STORE));
-        } catch {
-          this.#turns = [];
-        }
-      }
-      for (const turn of this.#turns) this.#bubble(turn);
-      this.#sync();
+        local = localStorage.getItem(STORE);
+      } catch {}
+      try {
+        session = sessionStorage.getItem(STORE);
+      } catch {}
+      const history = readThreads(session, local);
+      this.#threads = history.threads;
+      if (history.activeId) this.#selectThread(history.activeId);
+      else this.#newThread();
 
       this.querySelector('[data-chat-open]')?.addEventListener('click', () => this.open());
-      this.querySelector('[data-chat-close]')?.addEventListener('click', () =>
-        this.#dialog.close(),
+      this.querySelector('[data-chat-close]')?.addEventListener('click', () => {
+        if (!this.#history.hidden) this.#showHistory(false);
+        else this.#dialog.close();
+      });
+      this.querySelector('[data-chat-reset]')?.addEventListener('click', () => this.#newThread());
+      this.#historyButton.addEventListener('click', () =>
+        this.#showHistory(!!this.#history.hidden),
       );
-      this.querySelector('[data-chat-reset]')?.addEventListener('click', () => this.#reset());
-      this.#remember.addEventListener('change', () => this.#save());
+      this.#remember.addEventListener('change', () => this.#save(false));
       this.#send.addEventListener('click', (event) => {
         if (!this.#busy) return;
         // Aborting can restore type=submit before the click's default action runs.
@@ -418,7 +509,10 @@ const runtime = cs
       );
       this.addEventListener('click', (e) => {
         const ask = (e.target as HTMLElement).closest<HTMLElement>('[data-chat-ask]');
-        if (ask?.dataset.chatAsk) this.ask(ask.dataset.chatAsk);
+        if (ask?.dataset.chatAsk) {
+          if (this.#busy) this.#input.value = ask.dataset.chatAsk;
+          else this.ask(ask.dataset.chatAsk);
+        }
       });
       this.#form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -445,6 +539,7 @@ const runtime = cs
     }
 
     open() {
+      this.#expireThreads();
       if (this.#dialog.open) return;
       document.documentElement.classList.add('chat-open');
       this.#dialog.showModal();
@@ -454,8 +549,10 @@ const runtime = cs
     }
 
     ask(raw: string) {
+      this.#expireThreads();
       const question = raw.trim().slice(0, 2000);
       if ((!question && !this.#image) || this.#busy || this.#preparing) return;
+      this.#showHistory(false);
       this.#input.value = '';
       this.#log.querySelectorAll('.msg--error').forEach((note) => note.remove());
       const turn: Stored = {
@@ -479,21 +576,55 @@ const runtime = cs
 
     #sync() {
       this.#starters.hidden = this.#turns.length > 0;
+      this.#dialog.classList.toggle('has-messages', this.#turns.length > 0);
     }
 
-    #save() {
+    #save(touched = true) {
       this.#turns = this.#turns.slice(-HISTORY_LIMIT);
+      const active = this.#threads.find((thread) => thread.id === this.#activeId);
+      if (active) {
+        active.turns = this.#turns;
+        active.saved = this.#remember.checked;
+        active.title =
+          this.#turns.find((turn) => turn.role === 'user')?.content.slice(0, 120) ?? '';
+        if (touched) active.updatedAt = Date.now();
+      }
+      let saved = this.#threads.filter((thread) => thread.saved);
+      try {
+        saved = readThreads(null, localStorage.getItem(STORE)).threads.filter(
+          (thread) => thread.id !== this.#activeId,
+        );
+        if (active?.saved) {
+          if (saved.length >= THREAD_LIMIT) {
+            active.saved = false;
+            this.#remember.checked = false;
+            this.#status.textContent = this.#text.historyFull;
+          } else saved.push(active);
+        }
+        const merged = new Map(saved.map((thread) => [thread.id, thread]));
+        // The active conversation belongs to this tab; inactive saved chats come from shared storage.
+        for (const thread of this.#threads)
+          if (!thread.saved || thread.id === this.#activeId) merged.set(thread.id, thread);
+        this.#threads = [...merged.values()]
+          .sort(
+            (a, b) =>
+              Number(b.id === this.#activeId) - Number(a.id === this.#activeId) ||
+              b.updatedAt - a.updatedAt,
+          )
+          .slice(0, THREAD_LIMIT);
+      } catch {
+        // A storage read failure must not discard chats already held in memory.
+      }
       const messages = this.#log.querySelectorAll('.msg');
       for (let i = 0; i < messages.length - HISTORY_LIMIT; i++) messages[i]?.remove();
       this.#sync();
-      const history = writeChatHistory(this.#turns);
       try {
-        sessionStorage.setItem(STORE, history);
+        sessionStorage.setItem(STORE, writeThreads(this.#threads, this.#activeId));
       } catch {
         // Storage blocked: the conversation lasts for this page only.
       }
       try {
-        if (this.#remember.checked) localStorage.setItem(STORE, history);
+        if (saved.length) localStorage.setItem(STORE, writeThreads(saved, this.#activeId, true));
         else localStorage.removeItem(STORE);
       } catch {
         if (this.#remember.checked) this.#status.textContent = this.#text.historyUnavailable;
@@ -566,17 +697,131 @@ const runtime = cs
       }
     }
 
-    #reset() {
-      // Detach the running answer first, so it cannot write into the new conversation.
+    #selectThread(id: string) {
+      this.#expireThreads();
+      const thread = this.#threads.find((entry) => entry.id === id);
+      if (!thread) return;
+      if (this.#activeId) this.#save(false);
+      // Detach the old stream before changing its conversation.
       const running = this.#busy;
       this.#setBusy(null);
       running?.abort();
-      this.#turns = [];
+      this.#activeId = id;
+      this.#turns = thread.turns;
+      this.#remember.checked = thread.saved;
       this.#clearImage();
+      this.#input.value = '';
       this.#log.querySelectorAll('.msg').forEach((m) => m.remove());
+      for (const turn of this.#turns) this.#bubble(turn);
       this.#status.textContent = '';
-      this.#save();
-      this.#input.focus();
+      this.#showHistory(false);
+      this.#save(false);
+      if (this.#dialog.open) this.#input.focus();
+    }
+
+    #expireThreads() {
+      const now = Date.now();
+      this.#threads = this.#threads.filter((thread) => now - thread.updatedAt < HISTORY_TTL_MS);
+      if (this.#activeId && !this.#threads.some((thread) => thread.id === this.#activeId)) {
+        const running = this.#busy;
+        this.#setBusy(null);
+        running?.abort();
+        this.#activeId = '';
+        this.#turns = [];
+        this.#newThread();
+      }
+    }
+
+    #newThread() {
+      this.#expireThreads();
+      const empty = this.#threads.find((thread) => !thread.turns.length);
+      if (empty) return this.#selectThread(empty.id);
+      if (this.#threads.length >= THREAD_LIMIT) {
+        const oldest = this.#threads
+          .filter((thread) => !thread.saved)
+          .sort((a, b) => a.updatedAt - b.updatedAt)[0];
+        if (!oldest) {
+          this.#showHistory(true);
+          this.#status.textContent = this.#text.historyFull;
+          return;
+        }
+        this.#threads = this.#threads.filter((thread) => thread.id !== oldest.id);
+      }
+      const id = crypto.randomUUID();
+      this.#threads.push({ id, title: '', updatedAt: Date.now(), saved: false, turns: [] });
+      this.#selectThread(id);
+      if (this.#dialog.open) this.#input.focus();
+    }
+
+    #showHistory(show: boolean) {
+      this.#expireThreads();
+      if (show) this.#save(false);
+      this.#history.hidden = !show;
+      this.#log.hidden = show;
+      this.#dialog.classList.toggle('show-history', show);
+      this.#historyButton.setAttribute('aria-expanded', String(show));
+      if (!show) return;
+      const list = this.#history.querySelector('ul')!;
+      list.replaceChildren();
+      for (const thread of [...this.#threads].sort((a, b) => b.updatedAt - a.updatedAt)) {
+        if (!thread.turns.length) continue;
+        const row = document.createElement('li');
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'chat__thread';
+        open.setAttribute('aria-current', String(thread.id === this.#activeId));
+        const title = document.createElement('strong');
+        title.textContent = thread.title || this.#text.untitled;
+        const detail = document.createElement('span');
+        detail.textContent = `${new Intl.DateTimeFormat(this.#lang, { dateStyle: 'short', timeStyle: 'short' }).format(thread.updatedAt)} · ${thread.saved ? this.#text.saved : this.#text.tabOnly}`;
+        open.append(title, detail);
+        open.addEventListener('click', () => this.#selectThread(thread.id));
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'chat__icon';
+        remove.textContent = '×';
+        remove.setAttribute(
+          'aria-label',
+          `${this.#text.delete}: ${thread.title || this.#text.untitled}`,
+        );
+        remove.addEventListener('click', () => {
+          if (thread.id === this.#activeId) {
+            const running = this.#busy;
+            this.#setBusy(null);
+            running?.abort();
+            this.#activeId = '';
+            this.#turns = [];
+          }
+          this.#threads = this.#threads.filter((entry) => entry.id !== thread.id);
+          try {
+            const saved = readThreads(null, localStorage.getItem(STORE));
+            localStorage.setItem(
+              STORE,
+              writeThreads(
+                saved.threads.filter((entry) => entry.id !== thread.id),
+                null,
+                true,
+              ),
+            );
+          } catch {
+            this.#status.textContent = this.#text.historyUnavailable;
+          }
+          if (!this.#activeId) {
+            if (this.#threads[0]) this.#selectThread(this.#threads[0].id);
+            else this.#newThread();
+          }
+          this.#save(false);
+          this.#showHistory(true);
+          this.#historyButton.focus();
+        });
+        row.append(open, remove);
+        list.append(row);
+      }
+      if (!list.children.length) {
+        const empty = document.createElement('li');
+        empty.textContent = this.#text.historyEmpty;
+        list.append(empty);
+      }
     }
 
     #bubble(turn: Stored) {
@@ -617,6 +862,42 @@ const runtime = cs
         return;
       }
       const cited = sources.filter((s) => turn.content.includes(`[${s.id}]`));
+      if (cited.length && !item.querySelector('.msg__media')) {
+        const projects = this.#media
+          .filter((project) =>
+            cited.some((source) => {
+              if (!source.url) return false;
+              const url = new URL(source.url);
+              const path = url.pathname.toLowerCase();
+              if (url.hostname === 'github.com' || url.hostname === 'raw.githubusercontent.com')
+                return path.split('/').slice(0, 3).join('/') === project.repo;
+              return (
+                url.origin === location.origin &&
+                path.replace('/cs/', '/') === project.href.replace('/cs/', '/')
+              );
+            }),
+          )
+          .slice(0, 2);
+        if (projects.length) {
+          const previews = document.createElement('div');
+          previews.className = 'msg__media';
+          for (const project of projects) {
+            const link = document.createElement('a');
+            link.href = project.href;
+            const image = document.createElement('img');
+            image.src = project.image;
+            image.alt = project.alt;
+            image.width = project.width;
+            image.height = project.height;
+            image.loading = 'lazy';
+            const caption = document.createElement('span');
+            caption.textContent = project.name;
+            link.append(image, caption);
+            previews.append(link);
+          }
+          item.append(previews);
+        }
+      }
       if (cited.length && !item.querySelector('.msg__sources')) {
         const list = document.createElement('ol');
         list.className = 'msg__sources';
@@ -662,6 +943,21 @@ const runtime = cs
         });
         item.append(copy);
       }
+      if (turn.followups?.length && !item.querySelector('.msg__followups')) {
+        const questions = document.createElement('ul');
+        questions.className = 'msg__followups';
+        questions.setAttribute('aria-label', this.#text.followups);
+        for (const question of turn.followups) {
+          const li = document.createElement('li');
+          const ask = document.createElement('button');
+          ask.type = 'button';
+          ask.dataset.chatAsk = question;
+          ask.textContent = question;
+          li.append(ask);
+          questions.append(li);
+        }
+        item.append(questions);
+      }
       if (following) this.#log.scrollTop = this.#log.scrollHeight;
     }
 
@@ -679,21 +975,25 @@ const runtime = cs
 
     #widget(): Promise<Turnstile> {
       this.#turnstile ??= new Promise<Turnstile>((resolve, reject) => {
+        const existing = (window as unknown as { turnstile?: Turnstile }).turnstile;
+        if (existing) return resolve(existing);
         const script = document.createElement('script');
         script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
         script.async = true;
-        script.onload = () => {
-          const api = (window as unknown as { turnstile?: Turnstile }).turnstile;
-          if (api) resolve(api);
-          else {
-            this.#turnstile = null;
-            reject(new ChatError('challenge'));
-          }
-        };
-        script.onerror = () => {
+        const fail = () => {
+          clearTimeout(timer);
+          script.remove();
           this.#turnstile = null;
           reject(new ChatError('challenge'));
         };
+        const timer = setTimeout(fail, 15_000);
+        script.onload = () => {
+          clearTimeout(timer);
+          const api = (window as unknown as { turnstile?: Turnstile }).turnstile;
+          if (api) resolve(api);
+          else fail();
+        };
+        script.onerror = fail;
         document.head.append(script);
       });
       return this.#turnstile;
@@ -712,15 +1012,19 @@ const runtime = cs
       }
       const pending = (this.#minting ??= this.#mint().finally(() => (this.#minting = null)));
       return new Promise<string>((resolve, reject) => {
-        signal.addEventListener('abort', () => reject(new ChatError('stopped')), { once: true });
-        pending.then(resolve, reject);
+        const abort = () => reject(new ChatError('stopped'));
+        if (signal.aborted) return abort();
+        signal.addEventListener('abort', abort, { once: true });
+        pending.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
       });
     }
 
     async #mint(): Promise<string> {
       const turnstile = await this.#widget();
       let id = '';
+      let timer: ReturnType<typeof setTimeout>;
       const proof = await new Promise<string>((resolve, reject) => {
+        timer = setTimeout(() => reject(new ChatError('challenge')), 120_000);
         id = turnstile.render(this.#check, {
           sitekey: this.dataset.siteKey,
           language: this.#lang,
@@ -730,11 +1034,15 @@ const runtime = cs
           'timeout-callback': () => reject(new ChatError('challenge')),
           'unsupported-callback': () => reject(new ChatError('challenge')),
         });
-      }).finally(() => setTimeout(() => turnstile.remove(id)));
+      }).finally(() => {
+        clearTimeout(timer);
+        setTimeout(() => turnstile.remove(id));
+      });
       const res = await fetch(`${this.#api}/session`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ turnstile: proof }),
+        signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) throw new ChatError(res.status === 429 ? 'busy' : 'challenge');
       const session = (await res.json()) as Session;
@@ -749,11 +1057,15 @@ const runtime = cs
 
     async #post(body: string, signal: AbortSignal): Promise<Response> {
       for (const fresh of [false, true]) {
+        this.#status.textContent = this.#text.verifying;
+        const token = await this.#session(signal, fresh);
+        signal.throwIfAborted();
+        this.#status.textContent = this.#text.searching;
         const res = await fetch(`${this.#api}/chat`, {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
-            authorization: `Bearer ${await this.#session(signal, fresh)}`,
+            authorization: `Bearer ${token}`,
           },
           body,
           signal,
@@ -773,10 +1085,11 @@ const runtime = cs
       dots.className = 'msg__dots';
       dots.append(...Array.from({ length: 3 }, () => document.createElement('i')));
       item.querySelector('.msg__body')!.append(dots);
-      this.#status.textContent = this.#text.searching;
+      this.#status.textContent = this.#text.verifying;
       let frame = 0;
       const paint = () => {
         frame = 0;
+        if (this.#busy !== controller) return;
         this.#fill(item, turn, true);
       };
       // A reset or a newer answer replaced this one; it must not touch the conversation.
@@ -811,11 +1124,16 @@ const runtime = cs
             const event = /^event: (.+)$/m.exec(block)?.[1];
             const data = JSON.parse(/^data: (.*)$/m.exec(block)?.[1] ?? 'null') as unknown;
             if (event === 'sources') turn.sources = chatSources(data);
+            else if (event === 'suggestions')
+              turn.followups = chatFollowups((data as { questions?: unknown } | null)?.questions);
             else if (event === 'status' && (data as { stage?: string } | null)?.stage === 'web')
               this.#status.textContent = this.#text.web;
             else if (event === 'delta') {
+              const delta = (data as { text?: unknown } | null)?.text;
+              if (typeof delta !== 'string' || turn.content.length + delta.length > MAX_ASSISTANT)
+                throw new ChatError('unavailable');
               if (!turn.content) this.#status.textContent = this.#text.writing;
-              turn.content += (data as { text: string }).text;
+              turn.content += delta;
               frame ||= requestAnimationFrame(paint);
             } else if (event === 'done') done = true;
             else if (event === 'error') throw new ChatError((data as { code: string }).code);
@@ -850,7 +1168,7 @@ const runtime = cs
             this.#fill(item, turn);
             this.#turns.push(turn);
           }
-          this.#save();
+          this.#save(!failed);
           this.#setBusy(null);
         }
       }
@@ -998,6 +1316,9 @@ const runtime = cs
   }
 
   @media (width < 40rem) {
+    .chat.has-messages .chat__head p {
+      display: none;
+    }
     body:has(site-chat) {
       padding-bottom: calc(5rem + env(safe-area-inset-bottom));
     }
@@ -1033,6 +1354,7 @@ const runtime = cs
   }
 
   .chat__head {
+    grid-row: 1;
     display: flex;
     align-items: flex-start;
     gap: 0.25rem;
@@ -1100,6 +1422,7 @@ const runtime = cs
   /* ---------- Conversation ---------- */
 
   .chat__log {
+    grid-area: 2 / 1;
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -1111,6 +1434,57 @@ const runtime = cs
 
   .chat__log:focus-visible {
     outline-offset: -2px;
+  }
+
+  .chat__history {
+    grid-area: 2 / 1;
+    padding: 0.5rem var(--gap) 1rem;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .chat__history h3 {
+    margin-bottom: 1rem;
+  }
+  .chat__history ul {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .chat__history li {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .chat__thread {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.8rem;
+    border: 1px solid var(--rule);
+    border-radius: 0.8rem;
+    background: var(--surface);
+    text-align: left;
+  }
+  .chat__thread[aria-current='true'] {
+    border-color: var(--accent);
+  }
+  .chat__thread strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .chat__thread span {
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+  .chat__history[hidden],
+  .chat__log[hidden] {
+    display: none;
+  }
+  .chat.show-history :is(.chat__form, .chat__attachment, .chat__remember) {
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .chat__starters[hidden] {
@@ -1281,6 +1655,48 @@ const runtime = cs
     gap: 0.4rem;
   }
 
+  .msg__media {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
+    gap: 0.6rem;
+  }
+  .msg__media a {
+    display: grid;
+    gap: 0.4rem;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+  }
+  .msg__media img {
+    width: 100%;
+    height: 10rem;
+    object-fit: contain;
+    border: 1px solid var(--rule);
+    border-radius: 0.7rem;
+    background: var(--surface);
+  }
+  .msg__media span {
+    font-size: 0.8125rem;
+  }
+  .msg__followups {
+    display: grid;
+    gap: 0.4rem;
+  }
+  .msg__followups button {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--rule);
+    border-radius: 0.7rem;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 0.8125rem;
+    text-align: left;
+    transition: border-color 160ms ease;
+  }
+  .msg__followups button:is(:hover, :focus-visible) {
+    border-color: var(--accent);
+  }
+
   .msg__sources li {
     animation: rise 300ms var(--ease-out) both;
     animation-delay: calc(var(--i) * 45ms);
@@ -1379,6 +1795,7 @@ const runtime = cs
   }
 
   .chat__status {
+    grid-row: 3;
     min-height: 1.25rem;
     padding-inline: var(--gap);
     color: var(--muted);
@@ -1388,6 +1805,7 @@ const runtime = cs
   /* ---------- Composer ---------- */
 
   .chat__form {
+    grid-row: 6;
     display: flex;
     align-items: flex-end;
     gap: 0.5rem;
@@ -1451,9 +1869,9 @@ const runtime = cs
       transform 220ms var(--ease-out);
   }
 
-  .chat__stop-icon {
+  .chat__send .chat__stop-icon {
     fill: currentColor;
-    stroke: none !important;
+    stroke: none;
   }
 
   .chat__form:not(.is-busy) .chat__stop-icon,
@@ -1464,6 +1882,7 @@ const runtime = cs
   }
 
   .chat__note {
+    grid-row: 8;
     padding: 0.7rem var(--gap) var(--gap);
     color: var(--muted);
     font-size: 0.75rem;
@@ -1472,6 +1891,7 @@ const runtime = cs
   }
 
   .chat__attachment {
+    grid-row: 5;
     display: flex;
     align-items: center;
     gap: 0.7rem;
@@ -1499,6 +1919,7 @@ const runtime = cs
     border-radius: 0.6rem;
   }
   .chat__remember {
+    grid-row: 7;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -1532,8 +1953,20 @@ const runtime = cs
     }
   }
 
+  @media (width < 24rem) {
+    .chat__head p {
+      display: none;
+    }
+  }
+
   .chat__check:empty {
     display: none;
+  }
+
+  .chat__check {
+    grid-row: 4;
+    max-width: 100%;
+    justify-self: center;
   }
 
   @keyframes rise {

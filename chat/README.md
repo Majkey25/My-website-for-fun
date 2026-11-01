@@ -44,10 +44,18 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
   6,000 per answer, 30,000 in total). Text-only requests are unchanged.
 - Events: `status` (`{ "stage": "search" }`, then `{ "stage": "web" }` when a web search runs),
   `sources` (sent again with the web results appended; the last list is the complete one),
-  `delta`, then `done` or `error`. Citations `[S1]`…`[S10]` refer to the last `sources` list.
-- The browser keeps at most 24 text turns in session storage. Visitors can opt into local
-  history, which expires after seven days without a message. Images stay in memory; restored
+  `delta`, then `suggestions` (`{ "questions": ["…", "…", "…"] }`) and `done`, or `error`.
+  Provider safety refusals may omit suggestions. Citations `[S1]`…`[S10]` refer to the last `sources` list.
+- One structured model response streams the answer first and returns three contextual follow-up
+  questions, without another generation call. The browser adds at most two authentic project
+  screenshots from its build-time registry when the answer cites their page or repository.
+- The browser keeps up to 10 conversations of 24 text turns each in session storage. The plus
+  starts a separate chat; history reopens or deletes threads. Visitors can save individual chats
+  on the device for seven days after their last message. At capacity a new chat evicts the oldest
+  unsaved thread; saved threads require explicit deletion. Images stay in bounded memory; restored
   turns show that the attachment is unavailable. Interrupted answers are never saved as complete.
+- Browser verification has its own visible state and bounded wait, before retrieval starts.
+  Logs record retrieval, first-token, optional web-search and total timing without message text.
 - Client cancellation or the 60-second deadline aborts the stream and upstream generation.
   AI Search has no cancellation parameter: the Worker stops awaiting it and does not start an
   answer afterward, but the binding may finish its search in the background.
@@ -171,7 +179,10 @@ Edit `src/sources.ts`:
 - `OWNER_PAGES` is the fixed list of the owner's profiles and sites that live web search may
   cite, taken from `src/site.ts` and `src/data/projects.yaml`. A test fails when either file
   links somewhere outside it. The Worker never fetches these pages itself; OpenAI's search does.
-- `OWNER_FILES` names uploaded documents, cited by filename and a source excerpt.
+- `OWNER_FILES` names uploaded documents, cited by filename and a source excerpt. This includes
+  sanitized CV pages, a separately dated owner correction, and a sourced professional profile.
+  The private profile records public source URLs, CV page provenance, research date, conflicting
+  dates and unavailable facts. Refresh it when its source facts change; it is not a live feed.
 
 What does not work: the `robots.txt` of LinkedIn, X and Instagram ends with `User-agent: *`,
 `Disallow: /` (checked 2026-10-31), so they are not in the crawl lists, and web search finds a

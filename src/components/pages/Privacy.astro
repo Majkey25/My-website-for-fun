@@ -46,11 +46,12 @@ const t = ui[lang];
         <p>
           Zvolený světlý nebo tmavý režim se ukládá do local storage, dokud nesmažete data tohoto
           webu v prohlížeči. Session storage si do zavření karty pamatuje odemčený režim Matrix,
-          přehrání úvodní animace a konverzaci s asistentem webu a jeho krátkodobý přístupový token.
-          Volitelná funkce zapamatování ukládá text chatu do local storage na 7 dní od poslední
-          zprávy. Obrázky se do úložiště prohlížeče neukládají. Nový chat historii vymaže. Web
-          nenastavuje reklamní ani analytické cookies. Tyto údaje lze smazat v nastavení dat webů v
-          prohlížeči. Procházení funguje i při blokovaném úložišti.
+          přehrání úvodní animace, až 10 konverzací s asistentem a jeho krátkodobý přístupový token.
+          Vybrané chaty lze uložit do local storage na 7 dní od jejich poslední zprávy. Obrázky se
+          do úložiště prohlížeče neukládají. Nový chat zachová předchozí konverzace; jednotlivé
+          chaty smažete v historii. Po naplnění limitu nový chat nahradí nejstarší neuloženou
+          konverzaci. Web nenastavuje reklamní ani analytické cookies. Tyto údaje lze smazat v
+          nastavení dat webů v prohlížeči. Procházení funguje i při blokovaném úložišti.
         </p>
         <h2>Asistent webu</h2>
         <p>
@@ -127,11 +128,13 @@ const t = ui[lang];
         <p>
           Your chosen light or dark theme is saved in local storage until you clear this site's
           browser data. Session storage remembers, until the tab closes, the unlocked Matrix theme,
-          that the intro has played and your conversation with the site assistant, plus its
-          short-lived access token. Optional history saves chat text in local storage for 7 days
-          after the last message. Images are never saved to browser storage. New chat clears the
-          history. The site does not set advertising or analytics cookies. Your browser's site-data
-          controls can remove this data; browsing still works when storage is blocked.
+          that the intro has played and up to 10 assistant conversations, plus its short-lived
+          access token. Selected chats can be saved in local storage for 7 days after their last
+          message. Images are never saved to browser storage. New chat preserves previous
+          conversations; delete individual chats in history. At capacity, a new chat replaces the
+          oldest unsaved conversation. The site does not set advertising or analytics cookies. Your
+          browser's site-data controls can remove this data; browsing still works when storage is
+          blocked.
         </p>
         <h2>Site assistant</h2>
         <p>
