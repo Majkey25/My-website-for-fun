@@ -254,7 +254,7 @@ test('chat streams status, sources, text, suggestions and done with metadata-onl
   assert.equal(upstream.stream, true);
 });
 
-test('retrieval rewrites verbose first questions and preserves follow-up context', async (t) => {
+test('retrieval isolates the latest question while retaining bounded follow-up context', async (t) => {
   stubFetch(t, () =>
     sse([
       { type: 'response.output_text.delta', delta: structuredAnswer('A bounded answer.') },
@@ -269,6 +269,12 @@ test('retrieval rewrites verbose first questions and preserves follow-up context
   for (const messages of [
     [{ role: 'user', content: 'Tell me briefly about SeliaScan and show its project screenshot.' }],
     [...previous, { role: 'user', content: 'What was it called before?' }],
+    [
+      ...previous,
+      { role: 'user', content: 'What does ByteNoise do, and is it encryption?' },
+      { role: 'assistant', content: 'It is reversible obfuscation, not encryption.' },
+      { role: 'user', content: 'When did AI Safety & Red Teaming and STC participation end?' },
+    ],
   ]) {
     let searched = false;
     const response = await worker.fetch(
@@ -282,12 +288,22 @@ test('retrieval rewrites verbose first questions and preserves follow-up context
       env({
         AI_SEARCH: {
           search: async (input: {
-            messages: unknown[];
-            ai_search_options: { query_rewrite: { enabled: boolean } };
+            messages: { role: string; content: string }[];
+            ai_search_options: {
+              query_rewrite: { enabled: boolean; rewrite_prompt: string };
+              retrieval: { keyword_match_mode: string };
+            };
           }) => {
             searched = true;
-            assert.deepEqual(input.messages, messages);
+            assert.equal(input.messages.length, 1);
+            assert.equal(input.messages[0]?.role, 'user');
+            assert.deepEqual(JSON.parse(input.messages[0]!.content), {
+              history: messages.slice(-4, -1),
+              latest_question: messages.at(-1)?.content,
+            });
             assert.equal(input.ai_search_options.query_rewrite.enabled, true);
+            assert.ok(input.ai_search_options.query_rewrite.rewrite_prompt);
+            assert.equal(input.ai_search_options.retrieval.keyword_match_mode, 'or');
             return { chunks: [] };
           },
         },
@@ -653,7 +669,9 @@ test('the uploaded CV has a real document label and excerpt, and images never re
     }),
   );
   const stream = await events(res);
-  assert.deepEqual(searched, [{ role: 'user', content: 'Experience?' }]);
+  assert.deepEqual(searched, [
+    { role: 'user', content: JSON.stringify({ history: [], latest_question: 'Experience?' }) },
+  ]);
   assert.deepEqual(stream[1]?.data, [
     { id: 'S1', title: 'Matej_Teply_CV_EXT_26.pdf | p. 1', url: null, excerpt: 'Experience...' },
   ]);
