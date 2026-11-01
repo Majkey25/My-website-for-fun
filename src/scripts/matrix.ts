@@ -14,9 +14,14 @@ export function startMatrix(canvas: HTMLCanvasElement, color?: string) {
   const theme = () => {
     ink = color ?? getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
   };
-  const resize = () => {
-    width = canvas.width = Math.min(canvas.clientWidth, 1920);
-    height = canvas.height = Math.min(canvas.clientHeight, 1200);
+  const resize = (bounds: DOMRectReadOnly) => {
+    const nextWidth = Math.min(bounds.width, 1920);
+    const nextHeight = Math.min(bounds.height, 1200);
+    if (width === nextWidth && height === nextHeight) return;
+    width = nextWidth;
+    height = nextHeight;
+    canvas.width = width;
+    canvas.height = height;
     size = width < 600 ? 18 : 22;
     context.font = `${size - 4}px monospace`;
     streams = Array.from({ length: Math.ceil(width / size) }, () => ({
@@ -48,7 +53,6 @@ export function startMatrix(canvas: HTMLCanvasElement, color?: string) {
     cancelAnimationFrame(frame);
     last = -40;
     if (!document.hidden && !motion.matches) {
-      resize();
       frame = requestAnimationFrame(draw);
     }
   };
@@ -59,13 +63,17 @@ export function startMatrix(canvas: HTMLCanvasElement, color?: string) {
       attributeFilter: ['data-theme'],
     });
   theme();
+  // ResizeObserver supplies layout results without forcing a synchronous geometry read.
+  const sizing = new ResizeObserver(([entry]) => {
+    if (entry) resize(entry.contentRect);
+  });
+  sizing.observe(canvas);
   run();
-  addEventListener('resize', resize);
   document.addEventListener('visibilitychange', run);
   motion.addEventListener('change', run);
   return () => {
     cancelAnimationFrame(frame);
-    removeEventListener('resize', resize);
+    sizing.disconnect();
     document.removeEventListener('visibilitychange', run);
     motion.removeEventListener('change', run);
     observer.disconnect();

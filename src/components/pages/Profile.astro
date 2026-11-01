@@ -270,7 +270,12 @@ const skills = cs
     ];
 ---
 
-<Base lang={lang} title={t[page]} description={summary}>
+<Base
+  lang={lang}
+  title={t[page]}
+  description={summary}
+  ogType={page === 'about' ? 'profile' : 'website'}
+>
   <section class="hero frame" aria-labelledby="hero-title">
     <h1 id="hero-title" class="name" data-enter style="--i: 0">
       <GlitchText text={page === 'about' ? 'Matěj Teplý' : t[page]} scramble />

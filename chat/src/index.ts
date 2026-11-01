@@ -1,6 +1,6 @@
 // The site assistant's API.
 //   POST /api/session  Turnstile token in, short-lived bearer token out.
-//   POST /api/chat     Conversation in, server-sent events out: status, sources, delta, done | error.
+//   POST /api/chat     Conversation in, server-sent events out: status, sources, delta, suggestions, done | error.
 // The cron trigger refreshes the knowledge index (ingest.ts).
 
 import {
@@ -148,11 +148,11 @@ async function withAbort<T>(work: () => Promise<T>, signal: AbortSignal): Promis
 
 /** Best chunks grouped per document, numbered S1, S2, ... in rank order. */
 async function retrieve(env: Env, turns: Turn[]): Promise<Source[]> {
+  if (!turns.at(-1)?.content.trim()) return [];
   const messages = turns
     .slice(-4)
     .filter(({ content }) => content.trim())
     .map(({ role, content }) => ({ role, content }));
-  if (!messages.some(({ role }) => role === 'user')) return [];
   try {
     const { chunks } = await env.AI_SEARCH.get('init').search({
       // The last few turns let the query rewrite resolve follow-ups like "and the second one?".
@@ -170,7 +170,8 @@ async function retrieve(env: Env, turns: Turn[]): Promise<Source[]> {
         },
         // The reranker filtered known English and Czech CV hits in the live probes.
         reranking: { enabled: false },
-        query_rewrite: { enabled: true },
+        // Standalone questions already contain their query; rewrite only conversational follow-ups.
+        query_rewrite: { enabled: turns.length > 1 },
       },
     });
     console.log(
@@ -242,6 +243,10 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
   if (signal.aborted) abortWriter();
   void writer.closed.catch(() => stop.abort());
 
+  const started = Date.now();
+  let retrievalMs: number | null = null;
+  let firstTokenMs: number | null = null;
+  let webMs: number | null = null;
   const listSources = (sources: Source[]) =>
     send(
       'sources',
@@ -259,6 +264,7 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
     let step = await answer.next();
     while (!step.done) {
       wrote ||= step.value.trim().length > 0;
+      if (wrote) firstTokenMs ??= Date.now() - started;
       await send('delta', { text: step.value });
       step = await answer.next();
     }
@@ -266,10 +272,11 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
   };
 
   const run = async () => {
-    const started = Date.now();
     try {
       await send('status', { stage: 'search' });
+      const retrievalStarted = Date.now();
       const sources = await withAbort(() => retrieve(env, turns), signal);
+      retrievalMs = Date.now() - retrievalStarted;
       await listSources(sources);
       const usage: Outcome['usage'][] = [];
       let outcome = await relay(sources, true);
@@ -278,7 +285,9 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
       let web = 0;
       if (outcome.query && !outcome.wrote) {
         await send('status', { stage: 'web' });
+        const webStarted = Date.now();
         const found = await searchWeb(env, outcome.query, sources.length, signal);
+        webMs = Date.now() - webStarted;
         web = found.length;
         sources.push(...found);
         await listSources(sources);
@@ -286,11 +295,15 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
         usage.push(outcome.usage);
       }
       if (!outcome.wrote) throw new UpstreamError('unavailable');
+      if (outcome.followups) await send('suggestions', { questions: outcome.followups });
       await send('done', {});
       console.log(
         JSON.stringify({
           event: 'answer',
           ms: Date.now() - started,
+          retrievalMs,
+          firstTokenMs,
+          webMs,
           sources: sources.length,
           web,
           images: turns.reduce((sum, turn) => sum + (turn.images?.length ?? 0), 0),
@@ -304,7 +317,15 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
         error instanceof UpstreamError ? error.code : timedOut ? 'timeout' : 'unavailable';
       const status = error instanceof UpstreamError ? error.status : 0;
       console.error(
-        JSON.stringify({ event: 'answer_failed', code, status, ms: Date.now() - started }),
+        JSON.stringify({
+          event: 'answer_failed',
+          code,
+          status,
+          ms: Date.now() - started,
+          retrievalMs,
+          firstTokenMs,
+          webMs,
+        }),
       );
       await send('error', { code }).catch(() => undefined);
     } finally {

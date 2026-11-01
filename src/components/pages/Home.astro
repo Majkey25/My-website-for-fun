@@ -210,14 +210,21 @@ const pages = [
       if (question) send(question);
     });
   const reel = document.querySelector<HTMLElement>('.work-reel');
-  const warmImages = async () => {
-    await document.fonts.ready;
-    reel?.querySelectorAll<HTMLImageElement>('img[loading="lazy"]').forEach((image) => {
-      image.loading = 'eager';
-    });
-  };
-  if (document.readyState === 'complete') void warmImages();
-  else addEventListener('load', warmImages, { once: true });
+  // Warm the visible panel and its next neighbour before sideways scrolling reveals it.
+  const panels = new IntersectionObserver(
+    (entries, observer) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        for (const panel of [entry.target, entry.target.nextElementSibling]) {
+          const image = panel?.querySelector('img');
+          if (image) image.loading = 'eager';
+        }
+        observer.unobserve(entry.target);
+      }
+    },
+    { rootMargin: '200px 0px' },
+  );
+  reel?.querySelectorAll('li').forEach((panel) => panels.observe(panel));
   const showcase = document.querySelector<HTMLElement>('.work-showcase');
   const stage = document.querySelector<HTMLElement>('.work-stage');
   const viewport = document.querySelector<HTMLElement>('.work-viewport');
@@ -284,7 +291,6 @@ const pages = [
     observer.observe(stage);
     observer.observe(header);
   }
-  measure();
   const move = (direction: number, behavior: ScrollBehavior) => {
     if (!reel) return;
     const distance =

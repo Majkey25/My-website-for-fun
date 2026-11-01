@@ -56,6 +56,13 @@ const sse = (events: object[]) =>
     headers: { 'content-type': 'text/event-stream' },
   });
 
+const followups = [
+  'What other projects has Matěj built?',
+  'How does Matěj work with AI?',
+  'How can I contact Matěj?',
+];
+const structuredAnswer = (answer: string) => JSON.stringify({ answer, followups });
+
 /** Replaces fetch for one test and records the upstream requests. */
 function stubFetch(t: test.TestContext, handler: (url: string, init: RequestInit) => Response) {
   const calls: { url: string; body: unknown }[] = [];
@@ -181,11 +188,15 @@ test('a session is issued only after Turnstile passes', async (t) => {
   assert.ok(await verifySession(SECRET, token));
 });
 
-test('chat streams status, sources, text and done', async (t) => {
+test('chat streams status, sources, text, suggestions and done with metadata-only timing', async (t) => {
+  const logs = t.mock.method(console, 'log', () => {});
   const calls = stubFetch(t, () =>
     sse([
-      { type: 'response.output_text.delta', delta: 'CzechCore is ' },
-      { type: 'response.output_text.delta', delta: 'a proofreader [S1].' },
+      { type: 'response.output_text.delta', delta: '{"answer":"CzechCore is ' },
+      {
+        type: 'response.output_text.delta',
+        delta: `a proofreader [S1].","followups":${JSON.stringify(followups)}}`,
+      },
       { type: 'response.completed', response: { usage: { input_tokens: 10, output_tokens: 5 } } },
     ]),
   );
@@ -205,11 +216,37 @@ test('chat streams status, sources, text and done', async (t) => {
   const stream = await events(res);
   assert.deepEqual(
     stream.map((e) => e.event),
-    ['status', 'sources', 'delta', 'delta', 'done'],
+    ['status', 'sources', 'delta', 'delta', 'suggestions', 'done'],
   );
   assert.deepEqual(stream[1]?.data, [
     { id: 'S1', title: 'CzechCore', url: 'https://github.com/Majkey25/CzechCore' },
   ]);
+  assert.deepEqual(stream[4]?.data, { questions: followups });
+  assert.equal(
+    stream
+      .filter(({ event }) => event === 'delta')
+      .map(({ data }) => data.text)
+      .join(''),
+    'CzechCore is a proofreader [S1].',
+  );
+  const timing = logs.mock.calls
+    .map(({ arguments: [line] }) => JSON.parse(String(line)) as Record<string, unknown>)
+    .find(({ event }) => event === 'answer');
+  assert.ok(timing);
+  assert.deepEqual(Object.keys(timing).sort(), [
+    'event',
+    'firstTokenMs',
+    'images',
+    'ms',
+    'retrievalMs',
+    'sources',
+    'usage',
+    'web',
+    'webMs',
+  ]);
+  for (const key of ['retrievalMs', 'firstTokenMs', 'ms'])
+    assert.ok(typeof timing[key] === 'number' && timing[key] >= 0);
+  assert.equal(timing.webMs, null);
   const upstream = calls[0]?.body as Record<string, unknown>;
   assert.equal(upstream.model, 'gpt-6-luna');
   assert.deepEqual(upstream.reasoning, { effort: 'low' });
@@ -217,10 +254,54 @@ test('chat streams status, sources, text and done', async (t) => {
   assert.equal(upstream.stream, true);
 });
 
+test('standalone retrieval skips rewriting while follow-ups retain conversation context', async (t) => {
+  stubFetch(t, () =>
+    sse([
+      { type: 'response.output_text.delta', delta: structuredAnswer('A bounded answer.') },
+      { type: 'response.completed', response: {} },
+    ]),
+  );
+  const { token } = await issueSession(SECRET);
+  const previous = [
+    { role: 'user', content: 'Tell me about SeliaScan.' },
+    { role: 'assistant', content: 'It scans documents.' },
+  ];
+  for (const messages of [
+    [{ role: 'user', content: 'Tell me about SeliaScan.' }],
+    [...previous, { role: 'user', content: 'What was it called before?' }],
+  ]) {
+    let searched = false;
+    const response = await worker.fetch(
+      post(
+        '/api/chat',
+        { lang: 'en', messages },
+        {
+          authorization: `Bearer ${token}`,
+        },
+      ),
+      env({
+        AI_SEARCH: {
+          search: async (input: {
+            messages: unknown[];
+            ai_search_options: { query_rewrite: { enabled: boolean } };
+          }) => {
+            searched = true;
+            assert.deepEqual(input.messages, messages);
+            assert.equal(input.ai_search_options.query_rewrite.enabled, messages.length > 1);
+            return { chunks: [] };
+          },
+        },
+      }),
+    );
+    assert.equal((await events(response)).at(-1)?.event, 'done');
+    assert(searched);
+  }
+});
+
 test('retrieval uses the newest indexed version of each source URL', async (t) => {
   const calls = stubFetch(t, () =>
     sse([
-      { type: 'response.output_text.delta', delta: 'Current project [S1].' },
+      { type: 'response.output_text.delta', delta: structuredAnswer('Current project [S1].') },
       { type: 'response.completed', response: {} },
     ]),
   );
@@ -268,7 +349,9 @@ test('an empty completed answer is an error, including whitespace-only deltas', 
   let whitespace = false;
   stubFetch(t, () =>
     sse([
-      ...(whitespace ? [{ type: 'response.output_text.delta', delta: ' \n' }] : []),
+      ...(whitespace
+        ? [{ type: 'response.output_text.delta', delta: structuredAnswer(' \n') }]
+        : []),
       { type: 'response.completed', response: {} },
     ]),
   );
@@ -289,13 +372,14 @@ test('an empty completed answer is an error, including whitespace-only deltas', 
     const stream = await events(response);
     assert.deepEqual(stream.at(-1), { event: 'error', data: { code: 'unavailable' } });
     assert(!stream.some(({ event }) => event === 'done'));
+    assert(!stream.some(({ event }) => event === 'suggestions'));
   }
 });
 
 test('an incomplete upstream answer never emits done', async (t) => {
   stubFetch(t, () =>
     sse([
-      { type: 'response.output_text.delta', delta: 'An unfinished answer' },
+      { type: 'response.output_text.delta', delta: '{"answer":"An unfinished answer' },
       {
         type: 'response.incomplete',
         response: { incomplete_details: { reason: 'max_output_tokens' } },
@@ -314,6 +398,8 @@ test('an incomplete upstream answer never emits done', async (t) => {
   const stream = await events(response);
   assert.equal(stream.at(-1)?.event, 'error');
   assert(!stream.some((event) => event.event === 'done'));
+  assert(!stream.some((event) => event.event === 'suggestions'));
+  assert.equal(stream.find(({ event }) => event === 'delta')?.data.text, 'An unfinished answer');
 });
 
 test('chat needs a valid session and reports spent credit as quota', async (t) => {
@@ -487,7 +573,7 @@ test('the uploaded CV has a real document label and excerpt, and images never re
   let searched: unknown;
   stubFetch(t, () =>
     sse([
-      { type: 'response.output_text.delta', delta: 'He builds AI tools [S1].' },
+      { type: 'response.output_text.delta', delta: structuredAnswer('He builds AI tools [S1].') },
       { type: 'response.completed', response: {} },
     ]),
   );
@@ -537,34 +623,42 @@ test('the uploaded CV has a real document label and excerpt, and images never re
   ]);
 });
 
-test('image-only questions skip retrieval instead of sending an empty search message', async (t) => {
+test('image-only questions skip retrieval even after earlier text dialogue', async (t) => {
   let searches = 0;
   stubFetch(t, () =>
     sse([
-      { type: 'response.output_text.delta', delta: 'A visual observation.' },
+      { type: 'response.output_text.delta', delta: structuredAnswer('A visual observation.') },
       { type: 'response.completed', response: {} },
     ]),
   );
   const { token } = await issueSession(SECRET);
-  const response = await worker.fetch(
-    post(
-      '/api/chat',
-      { lang: 'en', messages: [{ role: 'user', content: '', images: [png()] }] },
-      { authorization: `Bearer ${token}` },
-    ),
-    env({
-      AI_SEARCH: {
-        search: async () => {
-          searches++;
-          throw new Error('No text query');
+  for (const history of [
+    [],
+    [
+      { role: 'user', content: 'What is CzechCore?' },
+      { role: 'assistant', content: 'An offline proofreader.' },
+    ],
+  ]) {
+    const response = await worker.fetch(
+      post(
+        '/api/chat',
+        { lang: 'en', messages: [...history, { role: 'user', content: '', images: [png()] }] },
+        { authorization: `Bearer ${token}` },
+      ),
+      env({
+        AI_SEARCH: {
+          search: async () => {
+            searches++;
+            throw new Error('No text query');
+          },
         },
-      },
-    }),
-  );
-  const stream = await events(response);
-  assert.equal(searches, 0);
-  assert.deepEqual(stream[1]?.data, []);
-  assert.equal(stream.at(-1)?.event, 'done');
+      }),
+    );
+    const stream = await events(response);
+    assert.equal(searches, 0);
+    assert.deepEqual(stream[1]?.data, []);
+    assert.equal(stream.at(-1)?.event, 'done');
+  }
 });
 
 test('one web search runs on request, and only owner-page facts reach the answer', async (t) => {
@@ -617,7 +711,10 @@ test('one web search runs on request, and only owner-page facts reach the answer
         { type: 'response.completed', response: {} },
       ]);
     return sse([
-      { type: 'response.output_text.delta', delta: 'It compares three models [S2].' },
+      {
+        type: 'response.output_text.delta',
+        delta: structuredAnswer('It compares three models [S2].'),
+      },
       { type: 'response.completed', response: {} },
     ]);
   });
@@ -636,7 +733,7 @@ test('one web search runs on request, and only owner-page facts reach the answer
   const stream = await events(res);
   assert.deepEqual(
     stream.map((e) => e.event),
-    ['status', 'sources', 'status', 'sources', 'delta', 'done'],
+    ['status', 'sources', 'status', 'sources', 'delta', 'suggestions', 'done'],
   );
   assert.deepEqual(stream[2]?.data, { stage: 'web' });
   assert.deepEqual(stream[3]?.data, [
@@ -644,6 +741,7 @@ test('one web search runs on request, and only owner-page facts reach the answer
     { id: 'S2', title: 'Selia-Weather', url: 'https://github.com/Majkey25/Selia-Weather' },
   ]);
   assert.equal(calls.length, 3);
+  assert.deepEqual(stream[5]?.data, { questions: followups });
   const [first, search, answer] = calls.map((c) => c.body as Record<string, unknown>);
   assert.equal((first?.tools as { name: string }[])[0]?.name, 'search_web');
   assert.equal(first?.parallel_tool_calls, false);
@@ -676,7 +774,7 @@ test('a failed web search still ends with an answer from the sources', async (t)
     if (call === 2)
       return Response.json({ error: { message: 'tool not supported' } }, { status: 400 });
     return sse([
-      { type: 'response.output_text.delta', delta: 'I do not know.' },
+      { type: 'response.output_text.delta', delta: structuredAnswer('I do not know.') },
       { type: 'response.completed', response: {} },
     ]);
   });
