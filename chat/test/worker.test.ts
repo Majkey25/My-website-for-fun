@@ -3,8 +3,13 @@ import test from 'node:test';
 import { buildInput, readEvents } from '../src/answer.ts';
 import worker, { HttpError, parseChat } from '../src/index.ts';
 import { issueSession, verifySession } from '../src/session.ts';
+import { MAX_CHAT_BYTES, MAX_FILE_BYTES } from '../../src/chat-file.ts';
 
 const SECRET = 'x'.repeat(40);
+const documentFile = {
+  filename: 'brief.txt',
+  file_data: 'data:text/plain;base64,UHJvamVjdCBicmllZg==',
+};
 const ORIGIN = 'https://majkey25.github.io';
 const pass = { limit: async () => ({ success: true }) };
 
@@ -496,7 +501,7 @@ test('invalid chat bodies cannot spend the shared answer allowance', async (t) =
       400,
     ],
     ['{}', 'text/plain', 415],
-    ['x'.repeat(5 * 1024 * 1024 + 1), 'application/json', 413],
+    ['x'.repeat(MAX_CHAT_BYTES + 1), 'application/json', 413],
   ] as const)
     assert.equal((await worker.fetch(request(body, type), bindings)).status, status);
   assert.equal(shared, 0);
@@ -552,7 +557,7 @@ test('oversized bodies are refused', async () => {
       ),
       env(),
     );
-  assert.equal((await send('x'.repeat(5 * 1024 * 1024))).status, 413);
+  assert.equal((await send('x'.repeat(MAX_CHAT_BYTES + 1))).status, 413);
   // Under the byte cap, text is still held to the character limits.
   assert.equal((await send('x'.repeat(40_000))).status, 400);
   const session = await worker.fetch(
@@ -621,6 +626,48 @@ test('image turns become input_image parts; text turns stay plain', () => {
   assert.deepEqual((input[2]?.content as unknown[])[1], { type: 'input_image', image_url: image });
 });
 
+test('documents are user-only bounded attachments and retain native input_file parts', () => {
+  const turns = [
+    { role: 'user', content: '', files: [documentFile] },
+    { role: 'assistant', content: 'A response.' },
+    { role: 'user', content: 'How does this relate to Matěj’s projects?' },
+  ];
+  const parsed = parseChat({ lang: 'en', messages: turns });
+  assert.deepEqual(parsed.turns, turns);
+  assert.deepEqual(buildInput(parsed.turns, [], 'en')[0]?.content, [
+    { type: 'input_text', text: '' },
+    { type: 'input_file', ...documentFile },
+  ]);
+  for (const messages of [
+    [{ role: 'assistant', content: 'x', files: [documentFile] }, turns[2]],
+    [{ role: 'user', content: '', files: [] }],
+    [{ role: 'user', content: 'x', files: [documentFile, documentFile] }],
+    [{ role: 'user', content: 'x', files: [documentFile], images: [png()] }],
+    [
+      {
+        role: 'user',
+        content: 'x',
+        files: [{ ...documentFile, file_data: 'https://example.com/a.txt' }],
+      },
+    ],
+    [{ role: 'user', content: 'x', files: [{ ...documentFile, filename: 'run.exe' }] }],
+    [
+      {
+        role: 'user',
+        content: 'x',
+        files: [{ ...documentFile, file_url: 'https://example.com/private' }],
+      },
+    ],
+    [
+      { role: 'user', content: 'x', images: [png()] },
+      { role: 'user', content: 'x', files: [documentFile] },
+      { role: 'user', content: 'x', files: [documentFile] },
+      { role: 'user', content: 'x', files: [documentFile] },
+    ],
+  ])
+    assert.throws(() => parseChat({ lang: 'en', messages }), HttpError);
+});
+
 test('the uploaded CV has a real document label and excerpt, and images never reach the index', async (t) => {
   let searched: unknown;
   stubFetch(t, () =>
@@ -677,7 +724,7 @@ test('the uploaded CV has a real document label and excerpt, and images never re
   ]);
 });
 
-test('image-only questions skip retrieval even after earlier text dialogue', async (t) => {
+test('attachment-only questions skip retrieval even after earlier text dialogue', async (t) => {
   let searches = 0;
   stubFetch(t, () =>
     sse([
@@ -686,33 +733,119 @@ test('image-only questions skip retrieval even after earlier text dialogue', asy
     ]),
   );
   const { token } = await issueSession(SECRET);
-  for (const history of [
-    [],
-    [
-      { role: 'user', content: 'What is CzechCore?' },
-      { role: 'assistant', content: 'An offline proofreader.' },
-    ],
-  ]) {
-    const response = await worker.fetch(
-      post(
-        '/api/chat',
-        { lang: 'en', messages: [...history, { role: 'user', content: '', images: [png()] }] },
-        { authorization: `Bearer ${token}` },
-      ),
-      env({
-        AI_SEARCH: {
-          search: async () => {
-            searches++;
-            throw new Error('No text query');
+  for (const attachment of [{ images: [png()] }, { files: [documentFile] }])
+    for (const history of [
+      [],
+      [
+        { role: 'user', content: 'What is CzechCore?' },
+        { role: 'assistant', content: 'An offline proofreader.' },
+      ],
+    ]) {
+      const response = await worker.fetch(
+        post(
+          '/api/chat',
+          { lang: 'en', messages: [...history, { role: 'user', content: '', ...attachment }] },
+          { authorization: `Bearer ${token}` },
+        ),
+        env({
+          AI_SEARCH: {
+            search: async () => {
+              searches++;
+              throw new Error('No text query');
+            },
           },
+        }),
+      );
+      const stream = await events(response);
+      assert.equal(searches, 0);
+      assert.deepEqual(stream[1]?.data, []);
+      assert.equal(stream.at(-1)?.event, 'done');
+    }
+});
+
+test('document data reaches generation but never retrieval or response source metadata', async (t) => {
+  const calls = stubFetch(t, () =>
+    sse([
+      { type: 'response.output_text.delta', delta: structuredAnswer('A grounded response.') },
+      { type: 'response.completed', response: {} },
+    ]),
+  );
+  let searched = false;
+  const { token } = await issueSession(SECRET);
+  const response = await worker.fetch(
+    post(
+      '/api/chat',
+      {
+        lang: 'en',
+        messages: [
+          { role: 'user', content: 'Could Matěj help with this brief?', files: [documentFile] },
+        ],
+      },
+      { authorization: `Bearer ${token}` },
+    ),
+    env({
+      AI_SEARCH: {
+        search: async (input: unknown) => {
+          searched = true;
+          assert(!JSON.stringify(input).includes(documentFile.file_data));
+          assert(!JSON.stringify(input).includes(documentFile.filename));
+          return { chunks: [] };
         },
-      }),
-    );
-    const stream = await events(response);
-    assert.equal(searches, 0);
-    assert.deepEqual(stream[1]?.data, []);
-    assert.equal(stream.at(-1)?.event, 'done');
-  }
+      },
+    }),
+  );
+  const stream = await events(response);
+  assert(searched);
+  assert.equal(stream.at(-1)?.event, 'done');
+  assert(!JSON.stringify(stream).includes(documentFile.file_data));
+  const upstream = calls[0]?.body as { input: { content: unknown }[] };
+  const parts = upstream.input.at(-1)?.content as {
+    type: string;
+    filename?: string;
+    file_data?: string;
+  }[];
+  assert.deepEqual(parts[1], { type: 'input_file', ...documentFile });
+});
+
+test('three maximum-size documents fit the body cap and all reach generation', async (t) => {
+  const data = '%PDF-1.4\n' + ' '.repeat(MAX_FILE_BYTES - 15) + '%%EOF\n';
+  assert.equal(Buffer.byteLength(data), MAX_FILE_BYTES);
+  const files = [1, 2, 3].map((number) => ({
+    filename: `document-${number}.pdf`,
+    file_data: `data:application/pdf;base64,${Buffer.from(data).toString('base64')}`,
+  }));
+  const calls = stubFetch(t, () =>
+    sse([
+      {
+        type: 'response.output_text.delta',
+        delta: structuredAnswer('A response about the supplied brief.'),
+      },
+      { type: 'response.completed', response: {} },
+    ]),
+  );
+  const { token } = await issueSession(SECRET);
+  const response = await worker.fetch(
+    post(
+      '/api/chat',
+      {
+        lang: 'en',
+        messages: files.map((file) => ({ role: 'user', content: '', files: [file] })),
+      },
+      { authorization: `Bearer ${token}` },
+    ),
+    env(),
+  );
+  assert.equal(response.status, 200);
+  assert.equal((await events(response)).at(-1)?.event, 'done');
+  const upstream = calls[0]?.body as {
+    input: { content: { type: string; filename?: string }[] }[];
+  };
+  assert.deepEqual(
+    upstream.input.flatMap((turn) =>
+      turn.content.filter((part) => part.type === 'input_file').map((part) => part.filename),
+    ),
+    files.map((file) => file.filename),
+  );
 });
 
 test('one web search runs on request, and only owner-page facts reach the answer', async (t) => {

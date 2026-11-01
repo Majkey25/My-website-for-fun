@@ -20,17 +20,25 @@ const thread = (
   turns: ChatTurn[] = [{ role: 'user', content: 'Hello' }],
 ): ChatThread => ({ id, title: id, updatedAt, saved, turns });
 
-test('stored history strips image payloads and credentials but retains markers and followups', () => {
+test('stored history strips attachment payloads and credentials but retains markers and followups', () => {
   const followups = ['What projects?', 'What technologies?', 'What experience?'];
   const value = thread('image-chat', now, false, [
     { role: 'user', content: '', images: ['private-image'] },
     { role: 'assistant', content: 'A visual observation.', followups },
+    {
+      role: 'user',
+      content: '',
+      files: [{ filename: 'private-name.txt', file_data: 'private-file' }],
+    },
   ]);
   const raw = writeThreads([value], value.id, false, now);
   assert(!raw.includes('private-image'));
+  assert(!raw.includes('private-file'));
+  assert(!raw.includes('private-name'));
   assert.deepEqual(readThreads(raw, null, now).threads[0]?.turns, [
     { role: 'user', content: '', sources: [], imageExpired: true },
     { role: 'assistant', content: 'A visual observation.', sources: [], followups },
+    { role: 'user', content: '', sources: [], imageExpired: true },
   ]);
   const corrupt = JSON.stringify({
     version: 3,

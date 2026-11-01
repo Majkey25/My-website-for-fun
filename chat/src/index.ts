@@ -13,15 +13,13 @@ import {
   type Turn,
 } from './answer.ts';
 import { isImage } from './image.ts';
+import { isChatFile, MAX_ATTACHMENTS, MAX_CHAT_BYTES } from '../../src/chat-file.ts';
 import { ingest } from './ingest.ts';
 import { hasStrongSecret, issueSession, verifySession } from './session.ts';
 import { OWNER_FILES } from './sources.ts';
 import { ownerUrl, searchWeb } from './web.ts';
 
 const MAX_BODY_BYTES = 32 * 1024;
-/** Room for up to three re-encoded images; text stays bounded by the character limits. */
-const MAX_CHAT_BYTES = 5 * 1024 * 1024;
-const MAX_IMAGES = 3;
 const MAX_TURNS = 12;
 const MAX_USER_CHARS = 2000;
 const MAX_ASSISTANT_CHARS = 6000;
@@ -85,24 +83,42 @@ export function parseChat(body: unknown): { turns: Turn[]; lang: Lang } {
   if (lang !== 'cs' && lang !== 'en') throw invalid;
   const turns = body.messages.map((message: unknown): Turn => {
     if (!isRecord(message) || typeof message.content !== 'string') throw invalid;
-    const { role, images } = message;
+    const { role, images, files } = message;
     if (role !== 'user' && role !== 'assistant') throw invalid;
     const content = message.content.trim();
     if (content.length > (role === 'user' ? MAX_USER_CHARS : MAX_ASSISTANT_CHARS)) throw invalid;
-    if (images === undefined) {
+    if (images === undefined && files === undefined) {
       if (!content) throw invalid;
       return { role, content };
     }
-    // One image per visitor turn; an answer never carries one.
-    if (role !== 'user' || !Array.isArray(images) || images.length > 1 || !images.every(isImage))
+    // One attachment per visitor turn; an answer never carries one.
+    if (role !== 'user') throw invalid;
+    if (
+      images !== undefined &&
+      (!Array.isArray(images) || images.length > 1 || !images.every(isImage))
+    )
       throw invalid;
-    if (!content && !images.length) throw invalid;
-    return images.length ? { role, content, images } : { role, content };
+    if (
+      files !== undefined &&
+      (!Array.isArray(files) || files.length > 1 || !files.every(isChatFile))
+    )
+      throw invalid;
+    const count = (images?.length ?? 0) + (files?.length ?? 0);
+    if (count > 1 || (!content && !count)) throw invalid;
+    return {
+      role,
+      content,
+      ...(images?.length ? { images } : {}),
+      ...(files?.length ? { files } : {}),
+    };
   });
   const total = turns.reduce((sum, turn) => sum + turn.content.length, 0);
-  const pictures = turns.reduce((sum, turn) => sum + (turn.images?.length ?? 0), 0);
+  const attachments = turns.reduce(
+    (sum, turn) => sum + (turn.images?.length ?? 0) + (turn.files?.length ?? 0),
+    0,
+  );
   if (!turns.length || turns.length > MAX_TURNS || total > MAX_TOTAL_CHARS) throw invalid;
-  if (pictures > MAX_IMAGES) throw invalid;
+  if (attachments > MAX_ATTACHMENTS) throw invalid;
   if (turns[turns.length - 1]?.role !== 'user') throw invalid;
   return { turns, lang };
 }
@@ -157,7 +173,7 @@ async function retrieve(env: Env, turns: Turn[]): Promise<Source[]> {
   try {
     const { chunks } = await env.AI_SEARCH.get('init').search({
       // A single envelope prevents the binding from rewriting an earlier user turn.
-      // Text only: images never leave for the index.
+      // Text only: attachments never leave for the index.
       messages: [{ role: 'user', content: JSON.stringify({ history, latest_question: question }) }],
       ai_search_options: {
         retrieval: {

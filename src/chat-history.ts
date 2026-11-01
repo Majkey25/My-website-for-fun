@@ -1,10 +1,14 @@
-// Stored chat text is untrusted. Images stay in memory and never enter browser storage.
+import type { ChatFile } from './chat-file.ts';
+
+// Stored chat text is untrusted. Attachments stay in memory, never browser storage.
 export type ChatSource = { id: string; title: string; url: string | null; excerpt?: string };
 export type ChatTurn = {
   role: 'user' | 'assistant';
   content: string;
   sources?: ChatSource[];
   images?: string[];
+  files?: ChatFile[];
+  /** Legacy v3 marker also covers documents, so older tabs retain attachment-only turns. */
   imageExpired?: true;
   followups?: string[];
 };
@@ -231,13 +235,15 @@ export function writeThreads(
       saved: thread.saved,
       turns: thread.turns
         .slice(-HISTORY_LIMIT)
-        .map(({ role, content, sources, images, imageExpired, followups }) => {
+        .map(({ role, content, sources, images, files, imageExpired, followups }) => {
           const questions = role === 'assistant' ? chatFollowups(followups) : [];
           return {
             role,
             content: content.slice(0, role === 'user' ? 2000 : 6000),
             ...(sources?.length ? { sources: chatSources(sources) } : {}),
-            ...(role === 'user' && (images?.length || imageExpired) ? { imageExpired: true } : {}),
+            ...(role === 'user' && (images?.length || files?.length || imageExpired)
+              ? { imageExpired: true }
+              : {}),
             ...(questions.length ? { followups: questions } : {}),
           };
         }),
