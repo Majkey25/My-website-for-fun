@@ -297,9 +297,41 @@ export async function ingest(env: Pick<Env, 'AI_SEARCH' | 'ASSETS'>) {
       report.deleted++;
     }
   };
-  // Rotate every six-hour refresh so redirects or a growing corpus cannot starve the same tail.
+  // Removing a listed document is an explicit withdrawal, even during a partial site crawl.
+  for (const [id, versions] of existing) {
+    const withdrawn = versions.filter((item) => {
+      const source = item.metadata?.url;
+      if (typeof source !== 'string' || urls.has(source)) return false;
+      try {
+        const target = new URL(source);
+        return !scopes.some(
+          (scope) => target.origin === scope.origin && target.pathname.startsWith(scope.pathname),
+        );
+      } catch {
+        return false;
+      }
+    });
+    try {
+      await remove(withdrawn);
+      const remaining = versions.filter((item) => !withdrawn.includes(item));
+      if (remaining.length) existing.set(id, remaining);
+      else existing.delete(id);
+    } catch (error) {
+      report.failed++;
+      complete = false;
+      console.error(JSON.stringify({ event: 'ingest_delete_failed', id, error: `${error}` }));
+    }
+  }
+  // Start each refresh at the next batch, reserving a fetch per uncached robots.txt.
   const queue = [...urls];
-  const offset = Math.floor(Date.now() / 21_600_000) % queue.length;
+  const robotHosts = new Set(
+    queue.map((url) => new URL(url).host).filter((host) => !robots.has(host)),
+  );
+  const batchSize = Math.max(1, budget - robotHosts.size);
+  const batches = Math.max(1, Math.ceil(queue.length / batchSize));
+  const run = Math.floor(Date.now() / 21_600_000);
+  // Move the sweep by one page too, so redirect-heavy batches cannot always miss the same ends.
+  const offset = ((run % batches) * batchSize + Math.floor(run / batches)) % queue.length;
   for (let step = 0; step < queue.length; step++) {
     const url = queue[(offset + step) % queue.length]!;
     const id = (await hex(url)).slice(0, 16);
@@ -334,22 +366,34 @@ export async function ingest(env: Pick<Env, 'AI_SEARCH' | 'ASSETS'>) {
     // The title lives outside <main>, so it is part of what counts as a change.
     const digest = await hex(await new Blob([doc.title, '\n', doc.body]).arrayBuffer());
     const name = `${id}-${digest.slice(0, 16)}.${doc.ext}`;
-    const versions = existing.get(id) ?? [];
+    let versions = [...(existing.get(id) ?? [])].sort(
+      (a, b) => (Date.parse(b.created_at ?? '') || 0) - (Date.parse(a.created_at ?? '') || 0),
+    );
     try {
       let current = versions.find((item) => item.key === name);
       if (current && ['error', 'skipped', 'outdated'].includes(current.status)) {
         await remove([current]);
+        versions = versions.filter((item) => item.key !== name);
         current = undefined;
       }
       if (!current) {
+        const fallback =
+          versions.find((item) => item.status === 'completed') ??
+          versions.find((item) => item.status === 'queued' || item.status === 'running');
+        // Failed cleanup must block new uploads, rather than grow another queued version.
+        await remove(versions.filter((item) => item.id !== fallback?.id));
+        versions = fallback ? [fallback] : [];
         current = await index.items.upload(name, new Blob([doc.body], { type: doc.type }), {
           metadata: { url, title: doc.title },
         });
         report.uploaded++;
       }
-      // Upload acceptance is not indexing success; keep the last working version until ready.
-      if (current.status === 'completed')
-        await remove(versions.filter((item) => item.key !== name));
+      // Keep one working fallback and the current candidate; superseded queues cannot accumulate.
+      const fallback =
+        current.status === 'completed'
+          ? undefined
+          : versions.find((item) => item.status === 'completed');
+      await remove(versions.filter((item) => item.key !== name && item.id !== fallback?.id));
     } catch (error) {
       // One bad document must not stop the crawl; deletions wait for a clean run.
       report.failed++;

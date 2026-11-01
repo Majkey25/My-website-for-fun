@@ -29,28 +29,28 @@ export const projectMedia: Record<
   SeliaScan: {
     image: scan,
     alt: {
-      en: 'SeliaScan, formerly ScanIt: document capture, PDF sharing, file details and signatures.',
-      cs: 'SeliaScan, dříve ScanIt: skenování dokumentu, sdílení PDF, podrobnosti souboru a podpisy.',
+      en: 'Earlier ScanIt result screen with a scanned document and PDF sharing controls. The app is now called SeliaScan.',
+      cs: 'Starší obrazovka výsledku ScanIt s dokumentem a sdílením PDF. Aplikace se nyní jmenuje SeliaScan.',
     },
-    source: 'https://github.com/Majkey25/ScanIt/blob/HEAD/docs/images/scanit-current-overview.png',
+    source: 'https://github.com/Majkey25/ScanIt/blob/HEAD/docs/images/screenshots/result.png',
   },
   Intoniva: {
     image: tuner,
     alt: {
-      en: 'Intoniva store artwork showing its instrument tuner and pitch display.',
-      cs: 'Veřejný obrázek Intonivy s ladičkou nástrojů a zobrazením výšky tónu.',
+      en: 'Intoniva tuner screen showing guitar strings, detected pitch and cents deviation.',
+      cs: 'Obrazovka ladičky Intoniva se strunami kytary, rozpoznaným tónem a odchylkou v centech.',
     },
     source:
-      'https://github.com/Majkey25/TuneItAll/blob/HEAD/fastlane/metadata/android/en-US/images/phoneScreenshots/1_tuner.png',
+      'https://github.com/Majkey25/Intoniva/blob/HEAD/docs/store/source-captures/2026-10-03/en-US/1_tuner.png',
   },
   'Selia Weather': {
     image: weather,
     alt: {
-      en: 'Selia Weather store artwork showing current conditions and an hourly forecast.',
-      cs: 'Veřejný obrázek Selia Weather s aktuálním počasím a hodinovou předpovědí.',
+      en: 'Selia Weather app showing current conditions in Prague and an hourly forecast.',
+      cs: 'Aplikace Selia Weather s aktuálním počasím v Praze a hodinovou předpovědí.',
     },
     source:
-      'https://github.com/Majkey25/Selia-Weather/blob/HEAD/fastlane/metadata/android/en-US/images/phoneScreenshots/01-weather.png',
+      'https://github.com/Majkey25/Selia-Weather/blob/HEAD/docs/store/captures/2026-10-11/en-US/01-weather.png',
   },
   WeTheGods: {
     image: band,

@@ -20,8 +20,8 @@ const cs = lang === 'cs';
 const t = ui[lang];
 const summary = {
   services: cs
-    ? 'AI strategie, integrace, praktické školení a vývoj softwaru pro váš tým.'
-    : 'AI strategy, integration, practical training and software development for your team.',
+    ? 'Konzultace a vývoj AI systémů, aplikací a prototypů.'
+    : 'Consulting and development for AI systems, applications and prototypes.',
   about: cs
     ? 'Vývoj AI a softwaru, zkušenosti, vzdělání a hudba.'
     : 'AI and software engineering, experience, education and music.',
@@ -54,58 +54,57 @@ const status = cs
 const services = cs
   ? [
       {
-        area: 'AI management',
-        text: 'Převádím potřeby firmy na konkrétní využití, priority a plán dodání. Porovnávám vlastní vývoj s hotovým řešením, kvalitu modelů, cenu, rychlost, hosting a rizika dodavatele. Stanovuji kritéria hodnocení a dohled člověka.',
+        area: 'AI strategie a konzultace',
+        text: 'Pomohu posoudit, kde má AI smysl. Porovnám modely, náklady a technická rizika a navrhnu postup ověření.',
       },
       {
         area: 'Integrace',
-        text: 'Navrhuji a propojuji LLM asistenty, RAG, agenty a interní automatizaci se stávajícími API, databázemi a postupy. Vybírám cloudové nebo lokální modely podle požadavků na soukromí, přístup a údržbu.',
+        text: 'Vyvíjím asistenty, vyhledávání v dokumentech a automatizace. Propojuji je s firemními API, databázemi a aplikacemi.',
       },
       {
         area: 'AI školení',
-        text: 'Praktické kurzy, workshopy a individuální tutoring pro technické i netechnické zaměstnance. Učím efektivní zadávání promptů, každodenní postupy, ověřování výstupů a bezpečnou práci s firemními daty na příkladech z práce daného týmu.',
+        text: 'Praktické workshopy a individuální konzultace. Zaměřuji se na zadávání úloh, kontrolu odpovědí a bezpečné zacházení s daty na příkladech z práce týmu.',
       },
       {
         area: 'Vývoj webů',
         text: 'Tvořím responzivní weby a webové aplikace. Propojuji uživatelské rozhraní s backendem a API a zajišťuji nasazení.',
       },
       {
-        area: 'Výzkum a produkty',
-        text: 'Zkoumám nové oblasti, porovnávám přístupy a stavím ověřovací prototypy. Pracuji s adaptací malých modelů, úlohami v češtině, počítačovým viděním/OCR, audio ML i full-stack produkty.',
+        area: 'Prototypy a AI/ML',
+        text: 'Ověřuji nejasná zadání menším funkčním prototypem. Pracuji s OCR, obrazem, zvukem a adaptací menších jazykových modelů.',
       },
       {
         area: 'Bezpečnost AI',
-        text: 'Vyhodnocuji halucinace, selhání a úniky dat. Vymezuji autorizované bezpečnostní prověrky a obranné postupy s AI s jasnými oprávněními, lidskou kontrolou a pravidly schvalování.',
+        text: 'Pomohu vymezit přístup k datům, oprávnění agentů a testování selhání modelů. Bezpečnostní práce musí mít jasný rozsah a souhlas odpovědných osob.',
       },
     ]
   : [
       {
-        area: 'AI management',
-        text: 'Turn business needs into use cases, priorities and delivery plans. Compare build-versus-buy, model quality, cost, speed, hosting and vendor risk. Define evaluation criteria and human oversight.',
+        area: 'AI strategy and consulting',
+        text: 'Assess where AI can help. Compare models, costs and technical risks, then decide what to test before committing to development.',
       },
       {
         area: 'Integration',
-        text: 'Design and integrate LLM assistants, RAG, agents and internal automation with existing APIs, databases and workflows. Choose hosted or local models around privacy, access and maintenance needs.',
+        text: 'Build assistants, document search and automations connected to company APIs, databases and applications.',
       },
       {
         area: 'AI training',
-        text: "Hands-on courses, workshops and individual tutoring for technical and non-technical employees. Teach effective prompting, everyday workflows, output verification and safe handling of company data, using examples relevant to the team's work.",
+        text: 'Practical workshops and individual consulting on task design, checking answers and handling data safely, using examples from the team’s work.',
       },
       {
         area: 'Website development',
         text: 'Build responsive websites and web applications. Connect user interfaces to backends and APIs, and deploy the finished site.',
       },
       {
-        area: 'R&D and products',
-        text: 'Explore unfamiliar domains, compare approaches and build proofs of concept. Work across small-model adaptation, Czech-language tasks, computer vision/OCR, audio ML and full-stack products.',
+        area: 'Prototypes and AI/ML',
+        text: 'Test uncertain ideas with a small working prototype. Work includes OCR, image and audio processing, and adaptation of smaller language models.',
       },
       {
         area: 'AI safety',
-        text: 'Evaluate hallucinations, failure modes and data exposure. Scope authorized security reviews and defensive AI workflows with clear permissions, human review and approval requirements.',
+        text: 'Define data access, agent permissions and tests for model failures. Security work requires a clear scope and authorization from the responsible people.',
       },
     ];
-// Highlights of the certifications and courses on LinkedIn; certTotal is a lower bound.
-const certTotal = 55;
+// Certifications and completed courses are labelled separately.
 const certs = [
   {
     org: 'Microsoft',
@@ -196,7 +195,7 @@ const experience = [
     logo: schoolLogo,
   },
   {
-    when: cs ? 'leden 2023 – červen 2025' : 'Jan 2023 – Jun 2025',
+    when: cs ? 'listopad 2022 – únor 2025' : 'Nov 2022 – Feb 2025',
     role: cs ? 'Student programování v Azure' : 'Student Azure Programming',
     org: 'Student Trainee Center (STC)',
     logo: stcLogo,
@@ -210,11 +209,11 @@ const experience = [
     role: 'Full-Stack AI/ML Engineer & Backend Developer',
     org: 'OKsystem',
     note: cs
-      ? 'Vyvíjím LLM chatboty a RAG pipeline s Python službami, API, databázemi, automatizací a propojením s frontendem. Pracuji na dotrénování českých malých modelů a s inovačním týmem ověřuji nové AI přístupy. Při jednom srovnání modelů klesly odhadované náklady přibližně ze 40 na 2 USD za 1 000 dotazů při pozorované vyšší kvalitě odpovědí. Jde o odhady, nikoli auditované úspory v produkci.'
-      : 'Build LLM chatbots and RAG pipelines with Python services, APIs, databases, automation and frontend integration. Work on Czech small-model fine-tuning and prototype new AI approaches with the innovation team. In one model comparison, estimated model cost fell from about $40 to $2 per 1,000 queries, with better observed answer quality. These are estimates, not audited production savings.',
+      ? 'Vyvíjím LLM chatboty a RAG systémy. Pracuji s Python službami, API, databázemi a integracemi. V inovačním týmu také experimentuji s modely, jejich hodnocením a adaptací na české jazykové úlohy.'
+      : 'Build LLM chatbots and RAG systems with Python services, APIs, databases and integrations. In the innovation team I also experiment with model evaluation and adaptation for Czech-language tasks.',
   },
   {
-    when: cs ? 'září 2025 – květen 2030 (předpoklad)' : 'Sep 2025 – May 2030 (expected)',
+    when: cs ? 'září 2025 – dosud' : 'Sep 2025 – present',
     role: cs ? 'Softwarové inženýrství' : 'Software Engineering',
     org: cs ? 'Univerzita Tomáše Bati ve Zlíně' : 'Tomas Bata University in Zlín',
     logo: utbLogo,
@@ -277,7 +276,7 @@ const skills = cs
   ogType={page === 'about' ? 'profile' : 'website'}
 >
   <section class="hero frame" aria-labelledby="hero-title">
-    <h1 id="hero-title" class="name" data-enter style="--i: 0">
+    <h1 id="hero-title" class={page === 'about' ? 'name' : 'title'} data-enter style="--i: 0">
       <GlitchText text={page === 'about' ? 'Matěj Teplý' : t[page]} scramble />
     </h1>
     <p class="statement" data-enter style="--i: 1">
@@ -288,22 +287,17 @@ const skills = cs
         <p class="lead" data-enter style="--i: 2">
           {cs ? (
             <>
-              Propojuji aplikovanou AI/ML, vývoj produktů a zavádění AI do praxe. Z otevřených
-              problémů vytvářím prototypy, ověřený software a konkrétní plány. V OKsystemu vyvíjím
-              LLM/RAG systémy a pracuji na dotrénování českých malých modelů. Firmám také pomáhám
-              vybírat modely, plánovat bezpečnou integraci AI a řídit realizaci. Nabízím praktické
-              kurzy a tutoring, aby zaměstnanci uměli AI nástroje používat efektivně, chránit
-              citlivá data a ověřovat výsledky. Mé projekty zahrnují Android, web, OCR a audio ML.
+              Jsem AI/ML inženýr a technologický konzultant ze Zlína. V OKsystemu vyvíjím chatboty a
+              vyhledávání v dokumentech. Ve vlastních projektech pracuji také s Androidem,
+              zpracováním obrazu a zvuku. Baví mě zorientovat se v novém problému, vybrat vhodné
+              nástroje a ověřit řešení v praxi.
             </>
           ) : (
             <>
-              I'm a technical generalist working across applied AI/ML, product development and AI
-              adoption. I turn open-ended problems into prototypes, tested software and practical
-              plans. At OKsystem I build LLM/RAG systems and work on Czech small-model fine-tuning.
-              I also help organizations choose models, plan safe AI integration and manage delivery.
-              I offer hands-on courses and tutoring so employees can use AI tools effectively,
-              protect sensitive data and check the results. My projects span Android, web, OCR and
-              audio ML.
+              I’m an AI/ML engineer and technology consultant in Zlín. At OKsystem I build chatbots
+              and document search systems. My own projects also cover Android apps, image and audio
+              processing. I enjoy working through an unfamiliar problem, choosing suitable tools and
+              testing a solution in practice.
             </>
           )}
         </p>
@@ -348,15 +342,13 @@ const skills = cs
       <p class="muted intro">
         {cs ? (
           <>
-            Pomáhám týmům převádět potřeby firmy na funkční AI systémy a učím lidi s nimi pracovat.
-            Nabízím samostatné konzultace, projektovou i průběžnou spolupráci na částečný úvazek,
-            také pro firmy bez vlastního AI týmu.
+            Spolupráce může začít konzultací nebo malým prototypem. Rozsah, termín a cenu domluvíme
+            podle zadání, dostupných dat a mojí kapacity.
           </>
         ) : (
           <>
-            I help teams turn business needs into workable AI systems and teach people how to use
-            them. Open to independent, project-based and fractional consulting, including companies
-            without an in-house AI team.
+            Start with a consultation or a small prototype. Scope, timing and price depend on the
+            problem, available data and my capacity.
           </>
         )}
       </p>
@@ -505,8 +497,8 @@ const skills = cs
           <GlitchText
             text={
               cs
-                ? `Přes ${certTotal} s identifikátory na LinkedIn`
-                : `Over ${certTotal} with credential IDs on LinkedIn`
+                ? 'Certifikace a absolvované kurzy na LinkedIn'
+                : 'Certifications and completed courses on LinkedIn'
             }
           />
         </a>
@@ -523,17 +515,15 @@ const skills = cs
         <p>
           {cs ? (
             <>
-              Hudba je podstatnou součástí mého života. Hraji na baskytaru a zpívám doprovodné
-              vokály ve WeTheGods, alternativní metalcorové kapele z Uherského Hradiště. Hraji také
-              na kytaru, bicí a saxofon. Hudba ovlivňuje, jak přemýšlím o rytmu, struktuře a
-              tvořivosti, i při programování.
+              Hraji na baskytaru a zpívám doprovodné vokály ve WeTheGods, alternativní metalcorové
+              kapele z Uherského Hradiště. Hraji také na kytaru, bicí a saxofon. Hudba je pro mě
+              hlavně koníček a odpočinek od technologií.
             </>
           ) : (
             <>
-              Music is a core part of who I am, not a side hobby. I play bass and sing backing
-              vocals in WeTheGods, an alternative metalcore band from Uherské Hradiště, and I also
-              play guitar, drums and saxophone. It shapes how I think about rhythm, structure and
-              creativity, even in code.
+              I play bass and sing backing vocals in WeTheGods, an alternative metalcore band from
+              Uherské Hradiště, and I also play guitar, drums and saxophone. Music is a hobby and a
+              way to switch off from technology.
             </>
           )}
         </p>
@@ -586,15 +576,11 @@ const skills = cs
       <h2 id="contact-title" class="label">
         {cs ? 'Spolupráce' : 'Work with me'}
       </h2>
-      <p class="statement">
-        {cs
-          ? 'Pojďme něco vytvořit, naplánovat zavedení AI nebo proškolit váš tým.'
-          : "Let's build something, plan AI adoption or train your team."}
-      </p>
+      <p class="statement">{cs ? 'Co potřebujete vyřešit?' : 'What do you need to solve?'}</p>
       <p class="muted intro">
         {cs
-          ? 'Nabízím AI strategii, integraci, praktické kurzy a tutoring pro zaměstnance, vývoj webů i produktů.'
-          : 'Available for AI strategy, integration, practical employee courses and tutoring, website development, or product development.'}
+          ? 'Stručně popište zadání, současný stav a případná omezení. Konkrétní postup a dostupnost domluvíme přímo.'
+          : 'Describe the problem, the current setup and any constraints. We can discuss the approach and availability directly.'}
       </p>
       <ContactForm lang={lang} accessKey={profile.web3formsAccessKey} />
       <p class="mail">

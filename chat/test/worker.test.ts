@@ -454,6 +454,42 @@ test('a rate-limited session gets 429 before any upstream call', async (t) => {
   assert.equal(shared, 0, 'rejected sessions must not spend the shared quota');
 });
 
+test('invalid chat bodies cannot spend the shared answer allowance', async (t) => {
+  const calls = stubFetch(t, () => sse([]));
+  const { token } = await issueSession(SECRET);
+  let shared = 0;
+  const bindings = env({
+    RL_GLOBAL: {
+      limit: async () => {
+        shared++;
+        return { success: false };
+      },
+    },
+  });
+  const request = (body: string, type = 'application/json') =>
+    new Request('https://chat.test/api/chat', {
+      method: 'POST',
+      headers: { origin: ORIGIN, authorization: `Bearer ${token}`, 'content-type': type },
+      body,
+    });
+  for (const [body, type, status] of [
+    ['{', 'application/json', 400],
+    [
+      JSON.stringify({ lang: 'en', messages: [{ role: 'system', content: 'bad' }] }),
+      'application/json',
+      400,
+    ],
+    ['{}', 'text/plain', 415],
+    ['x'.repeat(5 * 1024 * 1024 + 1), 'application/json', 413],
+  ] as const)
+    assert.equal((await worker.fetch(request(body, type), bindings)).status, status);
+  assert.equal(shared, 0);
+  const valid = JSON.stringify({ lang: 'en', messages: [{ role: 'user', content: 'A project?' }] });
+  assert.equal((await worker.fetch(request(valid), bindings)).status, 429);
+  assert.equal(shared, 1);
+  assert.equal(calls.length, 0);
+});
+
 test('disconnect during stalled retrieval closes the stream without calling OpenAI', async (t) => {
   const calls = stubFetch(t, () => sse([]));
   const { token } = await issueSession(SECRET);

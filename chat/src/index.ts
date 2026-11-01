@@ -223,8 +223,8 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
   const session = token ? await verifySession(env.SESSION_SECRET, token) : null;
   if (!session) throw new HttpError(401, 'session');
   if (!(await env.RL_CHAT.limit({ key: session })).success) throw new HttpError(429, 'busy');
-  if (!(await env.RL_GLOBAL.limit({ key: 'global' })).success) throw new HttpError(429, 'busy');
   const { turns, lang } = parseChat(await readJson(request, MAX_CHAT_BYTES));
+  if (!(await env.RL_GLOBAL.limit({ key: 'global' })).success) throw new HttpError(429, 'busy');
 
   const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
   const writer = writable.getWriter();

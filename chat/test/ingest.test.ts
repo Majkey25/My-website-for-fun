@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ingest, isAllowed, mainContent, parseRobots } from '../src/ingest.ts';
 import { DOCUMENTS, SITEMAPS } from '../src/sources.ts';
+import { ownerUrl } from '../src/web.ts';
 
 test('robots.txt: own group wins, longest rule wins, allow wins ties', () => {
   const rules = parseRobots(`
@@ -29,6 +30,7 @@ function fakeIndex() {
     key: string;
     metadata: unknown;
     status: 'completed' | 'queued' | 'error';
+    created_at?: string;
   };
   const items = new Map<string, Item>();
   let next = 0;
@@ -36,6 +38,7 @@ function fakeIndex() {
     items,
     /** Uploads whose key starts with this prefix throw, like a failing API call. */
     failPrefix: '',
+    failDelete: false,
     uploadStatus: 'completed' as Item['status'],
     binding: {
       get: (name: string) => {
@@ -58,6 +61,7 @@ function fakeIndex() {
               return item;
             },
             delete: async (id: string) => {
+              if (index.failDelete) throw new Error('delete failed');
               items.delete(id);
             },
           },
@@ -78,7 +82,10 @@ const bindings = (index: ReturnType<typeof fakeIndex>) =>
     ASSETS: { fetch: globalThis.fetch },
   }) as never;
 
-function stubWeb(t: test.TestContext) {
+function stubWeb(t: test.TestContext, fullCorpus = false) {
+  // Lifecycle fixtures fit one refresh; the full-corpus test exercises bounded batching below.
+  const documents = fullCorpus ? [] : DOCUMENTS.splice(10);
+  t.after(() => DOCUMENTS.push(...documents));
   const site = {
     sitemap: 200,
     /** robots.txt status for the site's own host; the README host always answers 200. */
@@ -283,6 +290,88 @@ test('replacement indexing must complete before old content is deleted; failed i
   assert.equal(index.items.size, count);
 });
 
+test('repeated queued source changes retain only the latest candidate and working fallback', async (t) => {
+  const site = stubWeb(t);
+  const index = fakeIndex();
+  site.pages.set(PAGE_A, html('Home'));
+  site.pages.set(PAGE_B, html('Original'));
+  await ingest(bindings(index));
+  const id = await idOf(PAGE_B);
+  const versions = () => [...index.items.values()].filter((item) => item.key.startsWith(id));
+  const original = versions()[0]!;
+  original.created_at = '2026-11-01T12:00:00Z';
+  index.items.set('older-working', {
+    ...original,
+    id: 'older-working',
+    key: `${id}-0000000000000000.html`,
+    created_at: '2026-10-31T12:00:00Z',
+  });
+  index.uploadStatus = 'queued';
+  for (let change = 0; change < 5; change++) {
+    site.pages.set(PAGE_B, html(`Change ${change}`));
+    await ingest(bindings(index));
+    assert.equal(versions().length, 2);
+    assert(index.items.has(original.id));
+  }
+  const candidate = versions().find((item) => item.status === 'queued')!;
+  index.failPrefix = id;
+  site.pages.set(PAGE_B, html('Failed upload'));
+  await ingest(bindings(index));
+  assert.equal(versions().length, 1);
+  assert(index.items.has(original.id));
+  index.failPrefix = '';
+  index.uploadStatus = 'completed';
+  await ingest(bindings(index));
+  assert.equal(versions().length, 1);
+  assert(!index.items.has(original.id) && !index.items.has(candidate.id));
+});
+
+test('failed obsolete-version deletion blocks uploads and cannot accumulate new candidates', async (t) => {
+  const site = stubWeb(t),
+    index = fakeIndex();
+  site.pages.set(PAGE_A, html('Original'));
+  await ingest(bindings(index));
+  const id = await idOf(PAGE_A);
+  const versions = () => [...index.items.values()].filter((item) => item.key.startsWith(id));
+  const original = versions()[0]!;
+  index.uploadStatus = 'queued';
+  site.pages.set(PAGE_A, html('First candidate'));
+  await ingest(bindings(index));
+  index.failDelete = true;
+  for (let change = 0; change < 4; change++) {
+    site.pages.set(PAGE_A, html(`Later candidate ${change}`));
+    const report = await ingest(bindings(index));
+    assert.equal(report.uploaded, 0);
+    assert.equal(versions().length, 2);
+    assert(index.items.has(original.id));
+  }
+  index.failDelete = false;
+  index.uploadStatus = 'completed';
+  await ingest(bindings(index));
+  assert.equal(versions().length, 1);
+  assert(!index.items.has(original.id));
+});
+
+test('manifest withdrawals are removed even when the remaining corpus exceeds the fetch budget', async (t) => {
+  const site = stubWeb(t),
+    index = fakeIndex();
+  await ingest(bindings(index));
+  const removed = DOCUMENTS.shift()!;
+  t.after(() => DOCUMENTS.unshift(removed));
+  site.sitemapUrls = Array.from({ length: 70 }, (_, i) => `${PAGE_A}more-${i}/`);
+  for (const url of site.sitemapUrls) site.pages.set(url, html('Page'));
+  const id = await idOf(removed);
+  const exists = () => [...index.items.values()].some((item) => item.key.startsWith(id));
+  assert(exists());
+  index.failDelete = true;
+  assert.equal((await ingest(bindings(index))).complete, false);
+  assert(exists(), 'Failed withdrawal must stay retryable');
+  index.failDelete = false;
+  const result = await ingest(bindings(index));
+  assert(result.skipped > 0);
+  assert(!exists(), 'Explicit document withdrawal must not depend on a complete crawl');
+});
+
 test('confirmed bulk withdrawals are removed even when most indexed sources disappear', async (t) => {
   const site = stubWeb(t);
   const index = fakeIndex();
@@ -384,7 +473,7 @@ test('an oversized crawl eventually visits its tail and rechecks withdrawn pages
   const visited = new Set(site.requests);
   for (
     let run = 1;
-    run <= 82 && (hasOld() || site.sitemapUrls.some((url) => !visited.has(url)));
+    run <= 3 && (hasOld() || site.sitemapUrls.some((url) => !visited.has(url)));
     run++
   ) {
     clock.mock.mockImplementation(() => run * 21_600_000);
@@ -398,6 +487,30 @@ test('an oversized crawl eventually visits its tail and rechecks withdrawn pages
     'No discovered page remains starved',
   );
   assert(!hasOld(), 'A withdrawn page is eventually rechecked and removed');
+});
+
+test('the full public GitHub corpus and site are covered within three bounded refreshes', async (t) => {
+  const site = stubWeb(t, true);
+  const index = fakeIndex();
+  const clock = t.mock.method(Date, 'now', () => 0);
+  site.sitemapUrls = Array.from({ length: 32 }, (_, i) => `${PAGE_A}public-${i}/`);
+  for (const url of site.sitemapUrls) site.pages.set(url, html(`Page ${url}`));
+  const documents = new Set(DOCUMENTS);
+  assert.equal(documents.size, 45);
+  for (const url of documents) assert.equal(ownerUrl(url), url);
+  const visited = new Set<string>();
+  for (let run = 0; run < 3; run++) {
+    clock.mock.mockImplementation(() => run * 21_600_000);
+    site.requests.length = 0;
+    const report = await ingest(bindings(index));
+    assert.equal(report.failed, 0);
+    assert(report.skipped > 0);
+    assert(site.requests.length <= 45);
+    for (const url of site.requests) visited.add(url);
+  }
+  for (const url of [...documents, ...site.sitemapUrls])
+    assert(visited.has(url), `Source was not reached: ${url}`);
+  assert.equal(index.items.size, documents.size + site.sitemapUrls.length);
 });
 
 test('streamed size limits cancel documents, robots and sitemaps before full allocation', async (t) => {

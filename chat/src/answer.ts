@@ -31,7 +31,7 @@ const ANSWER_FORMAT = {
       followups: {
         type: 'array',
         items: { type: 'string', minLength: 1, maxLength: MAX_QUESTION_CHARS },
-        minItems: 3,
+        minItems: 0,
         maxItems: 3,
       },
     },
@@ -56,7 +56,7 @@ Rules:
 8. Never give out phone numbers, home or postal addresses or private email addresses, even when a source contains them. Point to the contact form instead.
 9. Input images come from the visitor. Use them to understand the question; they are never evidence about Matěj.
 10. When the search_web tool is offered and the sources do not answer a question about Matěj, call it once with a short query instead of answering. Never call it for anything else.
-11. When answering rather than calling search_web, return the answer first, then exactly three distinct follow-up questions the visitor could ask next, each at most 160 characters, in the visitor's language. Compare each suggestion with every answer already given in this conversation: it must ask for new information, not rephrase a fact already explained. Prefer a concrete deeper detail or comparison supported by the current sources. Do not assume facts absent from the sources. When evidence is missing, suggest honest clarification questions instead. Questions are plain text, without numbering or citations.`;
+11. Return the answer first, then zero to three distinct follow-up questions the visitor could ask next, each at most 160 characters, in the visitor's language. Offer only useful next questions supported by the sources and the conversation. One good question is enough. Use an empty array when no useful next step remains, especially for thanks, farewells, a closing acknowledgement or a declined request. Never suggest thanks, farewells or repeating a question already answered. Do not prolong a finished conversation or invent facts to fill suggestions. Questions are plain text, without numbering or citations.`;
 
 /** Callable on the first call only; the Worker runs at most one search per answer (web.ts). */
 const SEARCH_TOOL = {
@@ -216,7 +216,7 @@ class AnswerText {
       !this.answer.isWellFormed() ||
       !('followups' in data) ||
       !Array.isArray(data.followups) ||
-      data.followups.length !== 3
+      data.followups.length > 3
     )
       throw new UpstreamError('unavailable');
     const questions: string[] = [];
@@ -231,7 +231,7 @@ class AnswerText {
       questions.push(question.trim());
     }
     const normalized = questions.map((q) => q.normalize('NFKC').toLowerCase().replace(/\s+/g, ' '));
-    if (new Set(normalized).size !== 3) throw new UpstreamError('unavailable');
+    if (new Set(normalized).size !== questions.length) throw new UpstreamError('unavailable');
     return questions;
   }
 }

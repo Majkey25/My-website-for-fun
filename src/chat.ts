@@ -12,13 +12,11 @@ export const chat =
 export const starters: Record<Lang, string[]> = {
   en: [
     'What does Matěj build with AI?',
-    'Which projects show measured results?',
     'Can he train my team to use AI safely?',
     'How do I start working with him?',
   ],
   cs: [
     'Co Matěj vyvíjí s pomocí AI?',
-    'Které projekty mají změřené výsledky?',
     'Může proškolit můj tým v bezpečném používání AI?',
     'Jak s ním začít spolupracovat?',
   ],

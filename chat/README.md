@@ -46,9 +46,10 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
   `sources` (sent again with the web results appended; the last list is the complete one),
   `delta`, then `suggestions` (`{ "questions": ["…", "…", "…"] }`) and `done`, or `error`.
   Provider safety refusals may omit suggestions. Citations `[S1]`…`[S10]` refer to the last `sources` list.
-- One structured model response streams the answer first and returns three contextual follow-up
-  questions, without another generation call. The browser adds at most two authentic project
-  screenshots from its build-time registry when the answer cites their page or repository.
+- One structured model response streams the answer first and returns zero to three useful follow-up
+  questions, without another generation call. Closing replies need no suggestions. Only the latest
+  suggestions appear above the composer. The browser inserts at most two authentic project
+  screenshots beside relevant cited paragraphs, at their natural aspect ratio.
 - The browser keeps up to 10 conversations of 24 text turns each in session storage. The plus
   starts a separate chat; history reopens or deletes threads. Visitors can save individual chats
   on the device for seven days after their last message. At capacity a new chat evicts the oldest
@@ -64,6 +65,12 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
   answer afterward, but the binding may finish its search in the background.
 
 ## What protects it
+
+The source manifest includes the owner's 43 public repository READMEs discovered on 1 November 2026,
+Weather research notes and Music Analyzer. The sitemap supplies the site's public pages. Crawls
+advance in batches within the 45-fetch limit, including robots and redirects; changed documents keep
+their working index version until the replacement completes. New repositories require a manifest
+update. Two discovered repositories without a README are described only in the owner-curated catalog.
 
 | Layer            | Mechanism                                                                                                                                                                                                                                |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -125,8 +132,8 @@ workflow. For local development put secrets in `chat/.dev.vars` (ignored by Git;
    security checks pass; that mode requires the remaining secrets and uses `wrangler.jsonc`.
    AI mode uploads secrets before publishing code. If deployment verification fails, rerun with
    `enable_ai=false` to restore the static site.
-5. The cron (minute 17 of every sixth hour) fills the index on its first run; until then answers
-   say the information is missing.
+5. The cron (minute 17 of every sixth hour) fills the index in bounded batches. The current
+   manifest and sitemap need multiple refreshes; incomplete indexing can leave facts unavailable.
 6. Optional, the CV: extract public professional content into one Markdown file per PDF page,
    named `owner-cv-page-1.md` and `owner-cv-page-2.md`. Include the original filename and page
    number in each file; omit phone numbers, addresses and private emails. Upload them in the dashboard (AI
@@ -183,7 +190,10 @@ Edit `src/sources.ts`:
   cite, taken from `src/site.ts` and `src/data/projects.yaml`. A test fails when either file
   links somewhere outside it. The Worker never fetches these pages itself; OpenAI's search does.
 - `OWNER_FILES` names uploaded documents, cited by filename and a source excerpt. This includes
-  sanitized CV pages, a separately dated owner correction, and a sourced professional profile.
+  sanitized CV pages, a separately dated owner correction, a sourced professional profile and
+  an owner-curated public repository inventory. Upload only material approved for public answers:
+  retrieved excerpts are visible to visitors before model generation. The model privacy prompt
+  is not a substitute for reviewing uploads, and cannot make a private document safe to publish.
   The private profile records public source URLs, CV page provenance, research date, conflicting
   dates and unavailable facts. Refresh it when its source facts change; it is not a live feed.
 
