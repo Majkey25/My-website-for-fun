@@ -525,6 +525,7 @@ const structured = {
   }
 
   .header__nav a {
+    position: relative;
     display: inline-flex;
     align-items: center;
     min-height: 2.75rem;
@@ -539,15 +540,27 @@ const structured = {
   }
 
   .header__nav a:hover {
-    background: var(--surface);
+    background: color-mix(in oklab, var(--accent) 12%, transparent);
     color: var(--ink);
   }
 
   .header__nav a[aria-current='page'] {
     color: var(--ink);
-    text-decoration: underline;
-    text-decoration-color: var(--accent);
-    text-underline-offset: 0.5rem;
+  }
+
+  .header__nav a::after {
+    content: '';
+    position: absolute;
+    inset: auto 0.7rem 0.35rem;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 180ms var(--ease);
+  }
+
+  .header__nav a:is(:hover, :focus-visible, [aria-current='page'])::after {
+    transform: scaleX(1);
   }
 
   .language-nav {

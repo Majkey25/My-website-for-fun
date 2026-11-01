@@ -76,7 +76,7 @@ test('answer text streams before completion and returns three questions in the s
   assert.deepEqual(body.text.format.schema.required, ['answer', 'followups']);
   assert.deepEqual(Object.keys(body.text.format.schema.properties), ['answer', 'followups']);
   assert.equal(body.text.format.strict, true);
-  assert.equal(body.text.format.schema.properties.followups.minItems, 3);
+  assert.equal(body.text.format.schema.properties.followups.minItems, 0);
   assert.equal(body.text.format.schema.properties.followups.maxItems, 3);
   assert.equal(body.tools[0].name, 'search_web');
   assert.equal(body.tool_choice, 'auto');
@@ -84,6 +84,15 @@ test('answer text streams before completion and returns three questions in the s
   assert.equal(body.store, false);
   assert.equal(body.stream, true);
 });
+
+for (const count of [0, 1, 2])
+  test(`a complete answer accepts ${count} useful follow-up questions without padding`, async (t) => {
+    const followups = questions.slice(0, count);
+    stub(t, sse([delta(JSON.stringify({ answer: 'Answer.', followups })), completed]));
+    const result = await collect();
+    assert.equal(result.text, 'Answer.');
+    assert.deepEqual(result.outcome.followups, followups);
+  });
 
 test('split JSON escapes, Czech text and surrogate pairs never expose JSON or broken characters', async (t) => {
   const text = 'Matěj řekl: "Ahoj".\nC:\\code\t\b\f\r 🕶️ 😀 [S1]';
@@ -140,7 +149,10 @@ test('a provider refusal remains readable text without fabricated questions', as
 const badPayloads: [string, string][] = [
   ['empty answer', JSON.stringify({ answer: ' \n', followups: questions })],
   ['missing questions', JSON.stringify({ answer: 'Answer.' })],
-  ['two questions', JSON.stringify({ answer: 'Answer.', followups: questions.slice(0, 2) })],
+  [
+    'too many questions',
+    JSON.stringify({ answer: 'Answer.', followups: [...questions, 'One more?'] }),
+  ],
   ['empty question', JSON.stringify({ answer: 'Answer.', followups: [' ', 'B?', 'C?'] })],
   ['duplicate questions', JSON.stringify({ answer: 'Answer.', followups: ['A?', ' a? ', 'C?'] })],
   [

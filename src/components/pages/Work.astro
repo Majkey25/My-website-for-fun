@@ -31,7 +31,7 @@ const cases = projects.filter((p) => p.problem && p.approach && p.result).length
       : 'Public projects by Matěj Teplý, grouped: AI and language, developer tools, web, Android apps and browser extensions.'
   }
 >
-  <section class="head wrap" aria-labelledby="work-title">
+  <section class="head frame" aria-labelledby="work-title">
     <p class="meta" data-enter style="--i: 0">
       <a href={href()}>~</a> / {t.work.toLowerCase()}
     </p>
@@ -41,14 +41,13 @@ const cases = projects.filter((p) => p.problem && p.approach && p.result).length
     <p class="lead" data-enter style="--i: 2">
       {cs ? (
         <>
-          Veřejné projekty podle zaměření. Neveřejné zdrojové kódy jsou označené. U {cases} projektů
-          je celá případová studie. <a href={href('#work')}>Vybrané projekty</a> najdete na úvodní
-          stránce.
+          Aplikace, nástroje a experimenty. U {cases} projektů popisuji zadání, svůj podíl a
+          výsledek. Další dokumentaci najdete v odkazovaných repozitářích.
         </>
       ) : (
         <>
-          Public projects, grouped by what they are. Private sources are marked; {cases} have a full
-          case study, and the <a href={href('#work')}>pinned ones</a> lead the home page.
+          Apps, tools and experiments. {cases} case studies explain the problem, my contribution and
+          the result. Linked repositories contain further documentation.
         </>
       )}
     </p>
@@ -140,7 +139,7 @@ const cases = projects.filter((p) => p.problem && p.approach && p.result).length
   .head {
     display: grid;
     gap: 1.1rem;
-    padding-block: clamp(3rem, 10vw, 6rem) 0;
+    padding-block: clamp(3rem, 9vw, 6.5rem) 0;
   }
 
   .head a {

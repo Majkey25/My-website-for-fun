@@ -42,9 +42,9 @@ const text = cs
   ? {
       launch: 'Zeptejte se mého AI agenta',
       title: 'Zeptejte se na mou práci',
-      sub: 'Odpovědi čerpají z mých projektů, profesního profilu a vybraných veřejných zdrojů.',
+      sub: 'Odpovědi vycházejí z mých veřejných projektů, profilu a schválených veřejných zdrojů.',
       label: 'Vaše otázka',
-      placeholder: 'Projekty, služby, zkušenosti…',
+      placeholder: 'Napište otázku…',
       send: 'Odeslat',
       stop: 'Zastavit',
       close: 'Zavřít',
@@ -53,6 +53,7 @@ const text = cs
       back: 'Zpět',
       note: 'Otázky i obrázky zpracuje OpenAI přes Cloudflare. OpenAI může sdílený obsah použít k trénování modelů. Obrázky se neukládají do místní historie. Nesdílejte citlivé údaje.',
       attach: 'Přiložit obrázek',
+      image: 'Obrázek',
       remove: 'Odebrat obrázek',
       remember: 'Uložit tento chat na zařízení na 7 dní',
       privacy: 'Soukromí',
@@ -60,9 +61,9 @@ const text = cs
   : {
       launch: 'Ask my AI agent',
       title: 'Ask about my work',
-      sub: 'Answers draw on my projects, professional profile and selected public sources.',
+      sub: 'Answers use my public projects, profile and approved public sources.',
       label: 'Your question',
-      placeholder: 'Projects, services, experience…',
+      placeholder: 'Ask a question…',
       send: 'Send',
       stop: 'Stop',
       close: 'Close',
@@ -71,6 +72,7 @@ const text = cs
       back: 'Back',
       note: 'Questions and images go to OpenAI through Cloudflare. OpenAI may use shared content to train models. Images are not saved in local history. Do not share sensitive data.',
       attach: 'Attach an image',
+      image: 'Image',
       remove: 'Remove image',
       remember: 'Save this chat on this device for 7 days',
       privacy: 'Privacy',
@@ -103,7 +105,7 @@ const runtime = cs
       tabOnly: 'Pouze v této kartě',
       untitled: 'Konverzace s obrázkem',
       delete: 'Smazat chat',
-      followups: 'Na co se zeptat dál',
+      followups: 'Navrhované otázky',
     }
   : {
       sources: 'Sources',
@@ -133,7 +135,7 @@ const runtime = cs
       tabOnly: 'This tab only',
       untitled: 'Image conversation',
       delete: 'Delete chat',
-      followups: 'Ask next',
+      followups: 'Suggested questions',
     };
 ---
 
@@ -144,6 +146,7 @@ const runtime = cs
   data-lang={lang}
   data-text={JSON.stringify(runtime)}
   data-media={JSON.stringify(media)}
+  data-starters={JSON.stringify(starters[lang])}
 >
   <button class="chat-launch" type="button" aria-haspopup="dialog" data-chat-open>
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -189,17 +192,7 @@ const runtime = cs
       <h3>{text.history}</h3>
       <ul />
     </section>
-    <div class="chat__log" role="log" aria-labelledby="chat-title" tabindex="0">
-      <ul class="chat__starters">
-        {starters[lang].map((question, i) => (
-          <li style={`--i: ${i}`}>
-            <button type="button" data-chat-ask={question}>
-              {question}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <div class="chat__log" role="log" aria-labelledby="chat-title" tabindex="0" />
     <p class="chat__status" role="status" />
     <div class="chat__check" />
     <div class="chat__attachment" hidden>
@@ -212,13 +205,21 @@ const runtime = cs
         </svg>
       </button>
     </div>
+    <ul class="chat__suggest" aria-label={runtime.followups} hidden />
     <form class="chat__form">
       <input type="file" accept="image/jpeg,image/png,image/webp" data-chat-file hidden />
-      <button class="chat__icon chat__attach" type="button" data-chat-attach title={text.attach}>
-        <span class="sr-only">{text.attach}</span>
+      <button
+        class="chat__icon chat__attach"
+        type="button"
+        data-chat-attach
+        aria-label={text.attach}
+        title={text.attach}
+      >
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-          <path d="m8 12 6-6a3 3 0 0 1 4 4l-8 8a5 5 0 0 1-7-7l9-9M7 15l9-9" />
+          <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M16 5h6M19 2v6M3 16l5-5 5 5 3-3 5 5" />
+          <circle cx="8" cy="7" r="1" />
         </svg>
+        <span aria-hidden="true">{text.image}</span>
       </button>
       <label class="sr-only" for="chat-input">
         {text.label}
@@ -431,7 +432,8 @@ const runtime = cs
     #media = JSON.parse(this.dataset.media ?? '[]') as ProjectImage[];
     #dialog = this.querySelector('dialog')!;
     #log = this.querySelector<HTMLElement>('.chat__log')!;
-    #starters = this.querySelector<HTMLElement>('.chat__starters')!;
+    #suggest = this.querySelector<HTMLElement>('.chat__suggest')!;
+    #startList = chatFollowups(JSON.parse(this.dataset.starters ?? '[]'));
     #status = this.querySelector<HTMLElement>('.chat__status')!;
     #form = this.querySelector('form')!;
     #send = this.querySelector<HTMLButtonElement>('.chat__send')!;
@@ -518,6 +520,7 @@ const runtime = cs
         if (ask?.dataset.chatAsk) {
           if (this.#busy) this.#input.value = ask.dataset.chatAsk;
           else this.ask(ask.dataset.chatAsk);
+          this.#log.focus({ preventScroll: true });
         }
       });
       this.#form.addEventListener('submit', (e) => {
@@ -581,8 +584,34 @@ const runtime = cs
     }
 
     #sync() {
-      this.#starters.hidden = this.#turns.length > 0;
       this.#dialog.classList.toggle('has-messages', this.#turns.length > 0);
+      this.#syncSuggestions();
+    }
+
+    #syncSuggestions() {
+      const last = this.#turns.at(-1);
+      const questions = this.#busy
+        ? []
+        : !last
+          ? this.#startList
+          : last.role === 'assistant'
+            ? (last.followups ?? [])
+            : [];
+      const key = JSON.stringify(questions);
+      if (this.#suggest.dataset.questions === key) return;
+      this.#suggest.dataset.questions = key;
+      this.#suggest.hidden = !questions.length;
+      this.#suggest.replaceChildren(
+        ...questions.map((question) => {
+          const li = document.createElement('li');
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.dataset.chatAsk = question;
+          button.textContent = question;
+          li.append(button);
+          return li;
+        }),
+      );
     }
 
     #save(touched = true) {
@@ -860,37 +889,39 @@ const runtime = cs
       return item;
     }
 
+    #owns(project: ProjectImage, source: string) {
+      const url = new URL(source);
+      const path = url.pathname.toLowerCase();
+      if (url.hostname === 'github.com' || url.hostname === 'raw.githubusercontent.com')
+        return path.split('/').slice(0, 3).join('/') === project.repo;
+      return (
+        url.origin === location.origin &&
+        path.replace('/cs/', '/') === project.href.replace('/cs/', '/')
+      );
+    }
+
     /** Renders an assistant answer, its cited sources and the copy action. */
     #fill(item: HTMLElement, turn: Stored, streaming = false) {
       const following = this.#log.scrollHeight - this.#log.scrollTop - this.#log.clientHeight < 120;
       const sources = turn.sources ?? [];
-      item.querySelector('.msg__body')!.replaceChildren(...markdown(turn.content, sources));
+      const body = item.querySelector<HTMLElement>('.msg__body')!;
+      body.replaceChildren(...markdown(turn.content, sources));
       item.classList.toggle('is-streaming', streaming);
       if (streaming) {
         if (following) this.#log.scrollTop = this.#log.scrollHeight;
         return;
       }
       const cited = sources.filter((s) => turn.content.includes(`[${s.id}]`));
-      if (cited.length && !item.querySelector('.msg__media')) {
+      if (cited.length) {
         const projects = this.#media
           .filter((project) =>
-            cited.some((source) => {
-              if (!source.url) return false;
-              const url = new URL(source.url);
-              const path = url.pathname.toLowerCase();
-              if (url.hostname === 'github.com' || url.hostname === 'raw.githubusercontent.com')
-                return path.split('/').slice(0, 3).join('/') === project.repo;
-              return (
-                url.origin === location.origin &&
-                path.replace('/cs/', '/') === project.href.replace('/cs/', '/')
-              );
-            }),
+            cited.some((source) => source.url && this.#owns(project, source.url)),
           )
           .slice(0, 2);
         if (projects.length) {
-          const previews = document.createElement('div');
-          previews.className = 'msg__media';
           for (const project of projects) {
+            const figure = document.createElement('figure');
+            figure.className = 'msg__media';
             const link = document.createElement('a');
             link.href = project.href;
             const image = document.createElement('img');
@@ -899,12 +930,17 @@ const runtime = cs
             image.width = project.width;
             image.height = project.height;
             image.loading = 'lazy';
-            const caption = document.createElement('span');
+            const caption = document.createElement('figcaption');
             caption.textContent = project.name;
-            link.append(image, caption);
-            previews.append(link);
+            link.append(image);
+            figure.append(link, caption);
+            const cite = Array.from(body.querySelectorAll<HTMLAnchorElement>('a.chat__cite')).find(
+              (link) => this.#owns(project, link.href),
+            );
+            const block = cite?.closest('.msg__body > *');
+            if (block) block.after(figure);
+            else body.append(figure);
           }
-          item.append(previews);
         }
       }
       if (cited.length && !item.querySelector('.msg__sources')) {
@@ -952,21 +988,6 @@ const runtime = cs
         });
         item.append(copy);
       }
-      if (turn.followups?.length && !item.querySelector('.msg__followups')) {
-        const questions = document.createElement('ul');
-        questions.className = 'msg__followups';
-        questions.setAttribute('aria-label', this.#text.followups);
-        for (const question of turn.followups) {
-          const li = document.createElement('li');
-          const ask = document.createElement('button');
-          ask.type = 'button';
-          ask.dataset.chatAsk = question;
-          ask.textContent = question;
-          li.append(ask);
-          questions.append(li);
-        }
-        item.append(questions);
-      }
       if (following) this.#log.scrollTop = this.#log.scrollHeight;
     }
 
@@ -978,6 +999,7 @@ const runtime = cs
       this.#attach.disabled = !!busy || this.#preparing;
       this.querySelector<HTMLElement>('[data-send-label]')!.hidden = !!busy;
       this.querySelector<HTMLElement>('[data-stop-label]')!.hidden = !busy;
+      this.#syncSuggestions();
     }
 
     // ---------- Network ----------
@@ -1280,7 +1302,7 @@ const runtime = cs
       0 0 0 1px var(--rule),
       0 32px 80px -24px rgb(0 0 0 / 0.5);
     display: none;
-    grid-template-rows: auto minmax(0, 1fr) auto auto auto auto auto auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto auto auto auto auto;
     overflow: hidden;
     opacity: 0;
     transform: translateX(1.25rem) scale(0.98);
@@ -1491,48 +1513,67 @@ const runtime = cs
   .chat__log[hidden] {
     display: none;
   }
-  .chat.show-history :is(.chat__form, .chat__attachment, .chat__remember) {
+  .chat.show-history :is(.chat__form, .chat__attachment, .chat__suggest, .chat__remember) {
     visibility: hidden;
     pointer-events: none;
   }
 
-  .chat__starters[hidden] {
+  .chat__suggest[hidden] {
     display: none;
   }
 
-  .chat__starters {
-    display: grid;
+  .chat__suggest {
+    grid-row: 6;
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
-    margin-top: auto;
+    min-width: 0;
+    padding: 0.4rem var(--gap);
   }
 
-  .chat__starters button {
-    width: 100%;
-    padding: 0.8rem 1rem;
-    border: 0;
-    border-radius: 0.9rem;
+  .chat__suggest li {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .chat__suggest button {
+    display: block;
+    max-width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--rule);
+    border-radius: 0.7rem;
     background: var(--surface);
-    font-size: 0.9375rem;
+    color: var(--ink);
+    font-size: 0.8125rem;
     line-height: 1.35;
     text-align: left;
     transition:
-      background-color 160ms ease,
-      transform 160ms var(--ease-out);
+      background-color 180ms ease-out,
+      border-color 180ms ease-out;
   }
 
-  .chat__starters button:active {
-    transform: scale(0.98);
+  .chat__suggest button:is(:hover, :focus-visible) {
+    border-color: var(--accent);
+    background: color-mix(in oklab, var(--accent) 14%, var(--surface));
   }
 
-  @media (hover: hover) and (pointer: fine) {
-    .chat__starters button:hover {
-      background: color-mix(in oklab, var(--accent) 14%, var(--surface));
+  @media (width < 40rem) {
+    .chat__suggest {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scroll-padding-inline: var(--gap);
     }
-  }
-
-  .chat[open] .chat__starters li {
-    animation: rise 360ms var(--ease-out) both;
-    animation-delay: calc(120ms + var(--i) * 50ms);
+    .chat__suggest li {
+      flex: none;
+      max-width: 85%;
+    }
+    .chat__suggest button {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   .msg {
@@ -1666,44 +1707,25 @@ const runtime = cs
 
   .msg__media {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
+    justify-items: start;
     gap: 0.6rem;
+    margin: 0.4rem 0;
   }
   .msg__media a {
-    display: grid;
-    gap: 0.4rem;
-    min-width: 0;
+    display: block;
+    max-width: 100%;
     color: inherit;
     text-decoration: none;
   }
   .msg__media img {
-    width: 100%;
-    height: 10rem;
-    object-fit: contain;
-    border: 1px solid var(--rule);
-    border-radius: 0.7rem;
-    background: var(--surface);
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: min(24rem, 45svh);
+    border-radius: 0.6rem;
   }
-  .msg__media span {
+  .msg__media figcaption {
     font-size: 0.8125rem;
-  }
-  .msg__followups {
-    display: grid;
-    gap: 0.4rem;
-  }
-  .msg__followups button {
-    width: 100%;
-    padding: 0.6rem 0.8rem;
-    border: 1px solid var(--rule);
-    border-radius: 0.7rem;
-    background: var(--surface);
-    color: var(--ink);
-    font-size: 0.8125rem;
-    text-align: left;
-    transition: border-color 160ms ease;
-  }
-  .msg__followups button:is(:hover, :focus-visible) {
-    border-color: var(--accent);
   }
 
   .msg__sources li {
@@ -1814,12 +1836,12 @@ const runtime = cs
   /* ---------- Composer ---------- */
 
   .chat__form {
-    grid-row: 6;
+    grid-row: 7;
     display: flex;
     align-items: flex-end;
     gap: 0.5rem;
     margin: 0.4rem var(--gap) 0;
-    padding: 0.4rem 0.4rem 0.4rem 1rem;
+    padding: 0.4rem;
     border-radius: 1.4rem;
     background: var(--surface);
     transition: box-shadow 200ms ease;
@@ -1891,7 +1913,7 @@ const runtime = cs
   }
 
   .chat__note {
-    grid-row: 8;
+    grid-row: 9;
     padding: 0.7rem var(--gap) var(--gap);
     color: var(--muted);
     font-size: 0.75rem;
@@ -1928,7 +1950,7 @@ const runtime = cs
     border-radius: 0.6rem;
   }
   .chat__remember {
-    grid-row: 7;
+    grid-row: 8;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -1949,6 +1971,22 @@ const runtime = cs
   .chat__attach:disabled {
     opacity: 0.5;
     cursor: default;
+  }
+
+  .chat__attach {
+    display: flex;
+    gap: 0.4rem;
+    width: auto;
+    padding: 0.5rem;
+    border-radius: 1rem;
+    color: var(--ink);
+    font-size: 0.8125rem;
+  }
+
+  @media (width < 40rem) {
+    .chat__attach span {
+      display: none;
+    }
   }
 
   @media (height < 34rem) {

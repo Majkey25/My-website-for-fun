@@ -56,8 +56,25 @@ test('stored history strips image payloads and credentials but retains markers a
   assert(!rewritten.includes('private-token'));
   assert(!rewritten.includes('private-image'));
   assert.deepEqual(chatFollowups(['Same', 'Same', 'Other']), []);
-  assert.deepEqual(chatFollowups(['First', 'Second']), []);
+  assert.deepEqual(chatFollowups(['Same', ' same ']), []);
+  assert.deepEqual(chatFollowups(['First', 'Second', 'Third', 'Fourth']), []);
   assert.deepEqual(chatFollowups(['First', 'Second', 'x'.repeat(161)]), []);
+});
+
+test('history retains zero to three followups without reviving older suggestions', () => {
+  for (const count of [0, 1, 2, 3]) {
+    const followups = ['First?', 'Second?', 'Third?'].slice(0, count);
+    const turns: ChatTurn[] = [
+      { role: 'user', content: 'A project?' },
+      { role: 'assistant', content: 'Answer.', followups },
+      { role: 'user', content: 'Thank you.' },
+      { role: 'assistant', content: 'You are welcome.', followups: [] },
+    ];
+    const raw = writeThreads([thread('questions', now, true, turns)], 'questions', true, now);
+    const restored = readThreads(null, raw, now).threads[0]!.turns;
+    assert.deepEqual(chatFollowups(restored[1]?.followups), followups);
+    assert.deepEqual(chatFollowups(restored.at(-1)?.followups), []);
+  }
 });
 
 test('version 2 history migrates without losing text, image markers or an existing save choice', () => {

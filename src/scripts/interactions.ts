@@ -12,12 +12,17 @@ function decode(label: HTMLElement, duration: number, done = () => {}) {
     label.closest<HTMLElement>('[data-text]')?.dataset.text ?? label.textContent?.trim() ?? '';
   const letters = Array.from(original);
   const opening = label.hasAttribute('data-scramble');
+  const whiteSpace = label.style.whiteSpace;
+  // Wider scramble glyphs must not turn a one-line label into a clipped second line.
+  if (label.getBoundingClientRect().height < parseFloat(getComputedStyle(label).lineHeight) * 1.5)
+    label.style.whiteSpace = 'nowrap';
   const start = performance.now();
   let frame = 0;
   let last = -40;
   const reset = () => {
     cancelAnimationFrame(frame);
     label.textContent = original;
+    label.style.whiteSpace = whiteSpace;
     done();
   };
   const tick = (now: number) => {

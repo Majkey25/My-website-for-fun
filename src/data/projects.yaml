@@ -288,7 +288,7 @@
         label: Google Play,
         href: 'https://play.google.com/store/apps/details?id=com.tuneitall.tuner',
       }
-    - { label: Repository, href: 'https://github.com/Majkey25/TuneItAll' }
+    - { label: Repository, href: 'https://github.com/Majkey25/Intoniva' }
 
 - name: SeliaSheets
   cs:

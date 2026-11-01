@@ -57,14 +57,19 @@ export function chatSources(value: unknown): ChatSource[] {
 export function chatFollowups(value: unknown): string[] {
   if (
     !Array.isArray(value) ||
-    value.length !== 3 ||
+    value.length > 3 ||
     !value.every(
-      (question) => typeof question === 'string' && question.trim() && question.length <= 160,
+      (question) =>
+        typeof question === 'string' &&
+        question.trim() &&
+        question.length <= 160 &&
+        question.isWellFormed(),
     )
   )
     return [];
   const questions = value.map((question: string) => question.trim());
-  return new Set(questions).size === 3 ? questions : [];
+  const normalized = questions.map((q) => q.normalize('NFKC').toLowerCase().replace(/\s+/g, ' '));
+  return new Set(normalized).size === questions.length ? questions : [];
 }
 
 function readTurns(value: unknown): ChatTurn[] | null {
