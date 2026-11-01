@@ -35,12 +35,24 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
 }
 ```
 
-- `images` is optional and allowed on `user` turns only: at most 1 per turn and 3 per request,
+- `images` is optional and allowed on `user` turns only,
   each a `data:image/jpeg|png|webp;base64,` URL of at most 1.5 MiB and 2048 px on the longer
   side. The Worker reads each file header and refuses remote URLs, other types, animated WebP,
   bytes that do not match the declared type and truncated headers. Re-encoding is the browser's
-  job. `content` stays a required string, but may be empty when a valid image is attached.
-- The body may be up to 5 MiB; text keeps its limits (12 turns, 2,000 characters per question,
+  job.
+- `files` accepts `[{ "filename": "brief.pdf", "file_data": "data:application/pdf;base64,…" }]`
+  on user turns. Allowed documents: PDF, DOCX, XLSX and PPTX up to 2 MiB, plus UTF-8 TXT, MD,
+  CSV, JSON, YAML/YML and LOG up to 128 KiB. The server checks extension, MIME, decoded bytes
+  and file structure. Office archives are screened without extraction, with at most 256 entries
+  and 8 MiB declared expanded size; encryption and VBA macros are rejected. This is structural
+  screening, not malware scanning. Documents go directly to Responses `input_file`, without a
+  Files API upload. Office embedded images are not read; use PDF for visual content.
+  Native spreadsheet parsing covers at most the first 1,000 rows per sheet, as documented in
+  [OpenAI file inputs](https://developers.openai.com/api/docs/guides/file-inputs).
+- One image or document per user turn, at most three attachments across retained turns. `content`
+  remains a required string but can be empty with a valid attachment. Visitor files are untrusted
+  conversation context, never authoritative facts about the owner or additions to the search index.
+- The body may be up to 9 MiB, including base64 overhead for all three documents; text keeps its limits (12 turns, 2,000 characters per question,
   6,000 per answer, 30,000 in total). Text-only requests are unchanged.
 - Events: `status` (`{ "stage": "search" }`, then `{ "stage": "web" }` when a web search runs),
   `sources` (sent again with the web results appended; the last list is the complete one),
@@ -53,7 +65,7 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
 - The browser keeps up to 10 conversations of 24 text turns each in session storage. The plus
   starts a separate chat; history reopens or deletes threads. Visitors can save individual chats
   on the device for seven days after their last message. At capacity a new chat evicts the oldest
-  unsaved thread; saved threads require explicit deletion. Images stay in bounded memory; restored
+  unsaved thread; saved threads require explicit deletion. Attachments stay in bounded memory; restored
   turns show that the attachment is unavailable. Interrupted answers are never saved as complete.
 - History uses a separate version 3 storage key so older open tabs cannot overwrite saved threads.
   Existing data migrates only when the current key is absent; old keys are retired after successful
@@ -80,10 +92,10 @@ update. Two discovered repositories without a README are described only in the o
 | Bots             | Cloudflare Turnstile before any session is issued                                                                                                                                                                                        |
 | Sessions         | HMAC-SHA256 token with expiry, verified without storage; a secret under 32 characters fails closed                                                                                                                                       |
 | Abuse and cost   | Per-IP session limits and per-session/shared answer limits, counted per Cloudflare location; rejected sessions do not spend shared quota. A separate enforced provider spend limit is required.                                          |
-| Input            | Origin allowlist, body cap counted in bytes (5 MiB for chat, 32 KiB for sessions), at most 12 turns of `user`/`assistant` text, the last one a question; images as in the contract above                                                 |
-| Prompt injection | Source delimiters are escaped, and sources, images and history are marked as untrusted data. The model has no privileged mutation tools. Prompt instructions do not guarantee semantic isolation.                                        |
+| Input            | Origin allowlist, body cap counted in bytes (9 MiB for chat, 32 KiB for sessions), at most 12 turns of `user`/`assistant` text, the last one a question; attachments as in the contract above                                            |
+| Prompt injection | Source delimiters are escaped, and sources, attachments and history are marked as untrusted data. The model has no privileged mutation tools. Prompt instructions do not guarantee semantic isolation.                                   |
 | Web search       | One search per answer at most, `max_tool_calls: 2`, domain filter from `OWNER_PAGES`. Only the query is sent, never the conversation or images. A fact is kept only when every page it cites is an owner page                            |
-| Privacy          | The model is told never to give out phone numbers, postal addresses or private email addresses, even when a source holds them. Images are not stored or logged and never reach AI Search                                                 |
+| Privacy          | The model is told never to give out phone numbers, postal addresses or private email addresses, even when a source holds them. Attachment contents are not stored or logged and never reach AI Search                                    |
 | Output           | The browser builds DOM nodes from a Markdown subset, never `innerHTML`; links must be `https`; citations map to server-sent sources only                                                                                                 |
 | Errors           | Clients get codes (`busy`, `quota`, `unavailable`), never upstream messages; logs hold timings and token counts, never question text                                                                                                     |
 | Crawl            | Every redirect hop stays on listed hosts and respects robots. Reads are bounded; working versions survive pending/failed indexing. Confirmed withdrawals are deleted; uncertain mass omissions are deferred. Hand uploads are untouched. |

@@ -47,7 +47,7 @@ const t = ui[lang];
           Zvolený světlý nebo tmavý režim se ukládá do local storage, dokud nesmažete data tohoto
           webu v prohlížeči. Session storage si do zavření karty pamatuje odemčený režim Matrix,
           přehrání úvodní animace, až 10 konverzací s asistentem a jeho krátkodobý přístupový token.
-          Vybrané chaty lze uložit do local storage na 7 dní od jejich poslední zprávy. Obrázky se
+          Vybrané chaty lze uložit do local storage na 7 dní od jejich poslední zprávy. Přílohy se
           do úložiště prohlížeče neukládají. Nový chat zachová předchozí konverzace; jednotlivé
           chaty smažete v historii. Po naplnění limitu nový chat nahradí nejstarší neuloženou
           konverzaci. Web nenastavuje reklamní ani analytické cookies. Tyto údaje lze smazat v
@@ -59,8 +59,9 @@ const t = ui[lang];
           filtrovat automatizované požadavky. Worker vyhledá odpovídající pasáže ve veřejném obsahu
           tohoto webu, mých veřejných repozitářů a profesním výtahu ze životopisu (Cloudflare AI
           Search). Může také prohledat vybrané veřejné profily a projekty pomocí OpenAI web search.
-          Pošle otázku s pasážemi do OpenAI API spolu s nedávnými zprávami a přiloženými obrázky.
-          Obrázky prohlížeč zmenší a znovu zakóduje bez původních metadat. Cloudflare pro
+          Pošle otázku s pasážemi do OpenAI API spolu s nedávnými zprávami a přílohami. Obrázky
+          prohlížeč zmenší a znovu zakóduje bez původních metadat. Dokumenty předává v původní
+          podobě včetně metadat; nepřidává je do znalostní databáze asistenta. Cloudflare pro
           vyhledávání zpracovává text nedávných zpráv. Aplikace nemá vlastní serverovou historii
           konverzací a do svých záznamů zapisuje dobu odpovědi a počty tokenů, nikoli text otázek.
           Sdílení vstupů a výstupů s OpenAI je zapnuté; OpenAI může sdílený obsah využít k vývoji a
@@ -130,7 +131,7 @@ const t = ui[lang];
           browser data. Session storage remembers, until the tab closes, the unlocked Matrix theme,
           that the intro has played and up to 10 assistant conversations, plus its short-lived
           access token. Selected chats can be saved in local storage for 7 days after their last
-          message. Images are never saved to browser storage. New chat preserves previous
+          message. Attachments are never saved to browser storage. New chat preserves previous
           conversations; delete individual chats in history. At capacity, a new chat replaces the
           oldest unsaved conversation. The site does not set advertising or analytics cookies. Your
           browser's site-data controls can remove this data; browsing still works when storage is
@@ -142,12 +143,13 @@ const t = ui[lang];
           screens automated requests. The Worker looks up matching passages in this site's public
           content, my public repositories and a professional extract from my CV (Cloudflare AI
           Search). It can also search selected public profiles and projects through OpenAI web
-          search. It sends the question, recent messages, attached images and matching passages to
-          the OpenAI API. The browser resizes and re-encodes images without their original metadata.
-          Cloudflare processes recent message text for retrieval. The app has no server-side
-          conversation history. Its logs record response times and token counts, not question text.
-          Input/output sharing with OpenAI is enabled; OpenAI may use shared content to develop and
-          train models. OpenAI's{' '}
+          search. It sends the question, recent messages, attachments and matching passages to the
+          OpenAI API. The browser resizes and re-encodes images without their original metadata.
+          Documents are sent unchanged, including metadata; they are not added to the assistant's
+          knowledge database. Cloudflare processes recent message text for retrieval. The app has no
+          server-side conversation history. Its logs record response times and token counts, not
+          question text. Input/output sharing with OpenAI is enabled; OpenAI may use shared content
+          to develop and train models. OpenAI's{' '}
           <a href="https://platform.openai.com/docs/guides/your-data">API data controls</a> and
           Cloudflare's <a href="https://www.cloudflare.com/privacypolicy/">privacy policy</a>
           describe their processing. Do not enter personal or sensitive information.

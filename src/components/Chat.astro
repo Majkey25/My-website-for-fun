@@ -10,6 +10,7 @@ import Arrow from './Arrow.astro';
 import type { Lang } from '../i18n';
 import { href, slug } from '../site';
 import { projectMedia } from '../project-media';
+import { FILE_TYPES } from '../chat-file';
 
 interface Props {
   lang: Lang;
@@ -51,10 +52,10 @@ const text = cs
       reset: 'Nový chat',
       history: 'Historie chatů',
       back: 'Zpět',
-      note: 'Otázky i obrázky zpracuje OpenAI přes Cloudflare. OpenAI může sdílený obsah použít k trénování modelů. Obrázky se neukládají do místní historie. Nesdílejte citlivé údaje.',
-      attach: 'Přiložit obrázek',
-      image: 'Obrázek',
-      remove: 'Odebrat obrázek',
+      note: 'Otázky i přílohy zpracuje OpenAI přes Cloudflare. OpenAI může sdílený obsah použít k trénování modelů. Přílohy se neukládají do místní historie. Nesdílejte citlivé údaje.',
+      attach: 'Přiložit soubor',
+      attachment: 'Soubor',
+      remove: 'Odebrat přílohu',
       remember: 'Uložit tento chat na zařízení na 7 dní',
       privacy: 'Soukromí',
     }
@@ -70,10 +71,10 @@ const text = cs
       reset: 'New chat',
       history: 'Chat history',
       back: 'Back',
-      note: 'Questions and images go to OpenAI through Cloudflare. OpenAI may use shared content to train models. Images are not saved in local history. Do not share sensitive data.',
-      attach: 'Attach an image',
-      image: 'Image',
-      remove: 'Remove image',
+      note: 'Questions and attachments go to OpenAI through Cloudflare. OpenAI may use shared content to train models. Attachments are not saved in local history. Do not share sensitive data.',
+      attach: 'Attach a file',
+      attachment: 'File',
+      remove: 'Remove attachment',
       remember: 'Save this chat on this device for 7 days',
       privacy: 'Privacy',
     };
@@ -95,15 +96,18 @@ const runtime = cs
       unavailable: 'Odpověď nedorazila. Zkuste to znovu.',
       stopped: 'Zastaveno.',
       image: 'Přiložený obrázek',
-      imageExpired: 'Obrázek se do historie neukládá. Pro další otázku ho přiložte znovu.',
-      imageLoading: 'Připravuji obrázek…',
-      imageInvalid: 'Vyberte JPG, PNG nebo WebP do 10 MB. Obrázek se nepodařilo připravit.',
+      attachmentExpired:
+        'Přílohy se do historie neukládají. Pro další otázku soubor přiložte znovu.',
+      attachmentLoading: 'Připravuji přílohu…',
+      attachmentInvalid:
+        'Přílohu nelze načíst. Dokumenty: PDF, DOCX, XLSX, PPTX do 2 MB; TXT, MD, CSV, JSON, YAML, LOG v UTF-8 do 128 KB; obrázky JPG, PNG, WebP do 10 MB.',
+      file: 'Přiložený soubor',
       historyUnavailable: 'Prohlížeč nedovolil uložit historii. Chat zůstane jen na této stránce.',
       historyEmpty: 'Zatím nemáte žádné konverzace.',
       historyFull: 'Máte 10 uložených chatů. Pro nový chat nejprve jeden smažte.',
       saved: 'Uloženo na 7 dní',
       tabOnly: 'Pouze v této kartě',
-      untitled: 'Konverzace s obrázkem',
+      untitled: 'Konverzace s přílohou',
       delete: 'Smazat chat',
       followups: 'Navrhované otázky',
     }
@@ -124,16 +128,19 @@ const runtime = cs
       unavailable: 'The answer did not arrive. Try again.',
       stopped: 'Stopped.',
       image: 'Attached image',
-      imageExpired: 'Images are not saved in history. Attach it again for another question.',
-      imageLoading: 'Preparing image…',
-      imageInvalid: 'Choose a JPG, PNG or WebP under 10 MB. The image could not be prepared.',
+      attachmentExpired:
+        'Attachments are not saved in history. Attach the file again for another question.',
+      attachmentLoading: 'Preparing attachment…',
+      attachmentInvalid:
+        'Cannot read this file. Documents: PDF, DOCX, XLSX, PPTX up to 2 MB; UTF-8 TXT, MD, CSV, JSON, YAML, LOG up to 128 KB; JPG, PNG, WebP images up to 10 MB.',
+      file: 'Attached file',
       historyUnavailable:
         'Your browser blocked history storage. This chat will last for this page only.',
       historyEmpty: 'No conversations yet.',
       historyFull: 'You have 10 saved chats. Delete one before starting another.',
       saved: 'Saved for 7 days',
       tabOnly: 'This tab only',
-      untitled: 'Image conversation',
+      untitled: 'Attachment conversation',
       delete: 'Delete chat',
       followups: 'Suggested questions',
     };
@@ -197,7 +204,7 @@ const runtime = cs
     <div class="chat__check" />
     <div class="chat__attachment" hidden>
       <img alt={runtime.image} width="56" height="56" />
-      <span>{runtime.image}</span>
+      <span data-chat-attachment-label>{runtime.image}</span>
       <button class="chat__icon" type="button" data-chat-remove title={text.remove}>
         <span class="sr-only">{text.remove}</span>
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -207,7 +214,14 @@ const runtime = cs
     </div>
     <ul class="chat__suggest" aria-label={runtime.followups} hidden />
     <form class="chat__form">
-      <input type="file" accept="image/jpeg,image/png,image/webp" data-chat-file hidden />
+      <input
+        type="file"
+        accept={`image/jpeg,image/png,image/webp,${Object.keys(FILE_TYPES)
+          .map((ext) => `.${ext}`)
+          .join(',')}`}
+        data-chat-file
+        hidden
+      />
       <button
         class="chat__icon chat__attach"
         type="button"
@@ -216,10 +230,9 @@ const runtime = cs
         title={text.attach}
       >
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-          <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M16 5h6M19 2v6M3 16l5-5 5 5 3-3 5 5" />
-          <circle cx="8" cy="7" r="1" />
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6ZM14 2v6h6M8 15h8M12 11v8" />
         </svg>
-        <span aria-hidden="true">{text.image}</span>
+        <span aria-hidden="true">{text.attachment}</span>
       </button>
       <label class="sr-only" for="chat-input">
         {text.label}
@@ -258,6 +271,14 @@ const runtime = cs
 
 <script>
   import {
+    FILE_TYPES,
+    MAX_FILE_BYTES,
+    MAX_ATTACHMENTS,
+    MAX_CHAT_BYTES,
+    isChatFile,
+    type ChatFile,
+  } from '../chat-file';
+  import {
     chatSources,
     chatFollowups,
     HISTORY_LIMIT,
@@ -286,9 +307,10 @@ const runtime = cs
     | 'unavailable'
     | 'stopped'
     | 'image'
-    | 'imageExpired'
-    | 'imageLoading'
-    | 'imageInvalid'
+    | 'attachmentExpired'
+    | 'attachmentLoading'
+    | 'attachmentInvalid'
+    | 'file'
     | 'historyUnavailable'
     | 'historyEmpty'
     | 'historyFull'
@@ -312,6 +334,7 @@ const runtime = cs
     href: string;
     repo: string;
   };
+  type Attachment = { kind: 'image'; data: string } | { kind: 'file'; file: ChatFile };
 
   const STORE = 'chat:v3';
   const LEGACY_STORE = 'chat:v2';
@@ -319,7 +342,6 @@ const runtime = cs
   const MAX_TURNS = 12; // the Worker accepts at most 12
   const MAX_ASSISTANT = 6000;
   const MAX_CHARS = 30_000;
-  const MAX_BYTES = 5 * 1024 * 1024;
 
   class ChatError extends Error {}
 
@@ -445,8 +467,8 @@ const runtime = cs
     #file = this.querySelector<HTMLInputElement>('[data-chat-file]')!;
     #attach = this.querySelector<HTMLButtonElement>('[data-chat-attach]')!;
     #preview = this.querySelector<HTMLElement>('.chat__attachment')!;
-    #image: string | null = null;
-    #imageVersion = 0;
+    #attachment: Attachment | null = null;
+    #attachmentVersion = 0;
     #preparing = false;
     #turns: Stored[] = [];
     #threads: ChatThread[] = [];
@@ -492,8 +514,10 @@ const runtime = cs
         this.#busy.abort();
       });
       this.#attach.addEventListener('click', () => this.#file.click());
-      this.querySelector('[data-chat-remove]')?.addEventListener('click', () => this.#clearImage());
-      this.#file.addEventListener('change', () => void this.#prepareImage());
+      this.querySelector('[data-chat-remove]')?.addEventListener('click', () =>
+        this.#clearAttachment(),
+      );
+      this.#file.addEventListener('change', () => void this.#prepareAttachment());
       // A click on the backdrop closes the panel. The dialog element is also the target of clicks
       // in its own padding and of a text selection dragged out of it, so both the press and the
       // release must land outside its box.
@@ -560,22 +584,30 @@ const runtime = cs
     ask(raw: string) {
       this.#expireThreads();
       const question = raw.trim().slice(0, 2000);
-      if ((!question && !this.#image) || this.#busy || this.#preparing) return;
+      if ((!question && !this.#attachment) || this.#busy || this.#preparing) return;
       this.#showHistory(false);
       this.#input.value = '';
       this.#log.querySelectorAll('.msg--error').forEach((note) => note.remove());
       const turn: Stored = {
         role: 'user',
         content: question,
-        ...(this.#image ? { images: [this.#image] } : {}),
+        ...(this.#attachment?.kind === 'image' ? { images: [this.#attachment.data] } : {}),
+        ...(this.#attachment?.kind === 'file' ? { files: [this.#attachment.file] } : {}),
       };
-      this.#clearImage();
+      this.#clearAttachment();
       this.#turns.push(turn);
-      let images = 0;
+      let attachments = 0;
       for (const previous of [...this.#turns].reverse()) {
-        if (previous.images?.length && ++images > 3) {
-          delete previous.images;
-          previous.imageExpired = true;
+        attachments += (previous.images?.length ?? 0) + (previous.files?.length ?? 0);
+        if (attachments > MAX_ATTACHMENTS) {
+          if (previous.images?.length) {
+            delete previous.images;
+            previous.imageExpired = true;
+          }
+          if (previous.files?.length) {
+            delete previous.files;
+            previous.imageExpired = true;
+          }
         }
       }
       this.#bubble(turn);
@@ -669,50 +701,56 @@ const runtime = cs
       }
     }
 
-    #clearImage() {
-      this.#imageVersion++;
-      this.#image = null;
+    #clearAttachment() {
+      this.#attachmentVersion++;
+      this.#attachment = null;
+      this.#preparing = false;
+      this.#attach.disabled = !!this.#busy;
       this.#file.value = '';
       this.#preview.hidden = true;
       this.#preview.querySelector('img')!.removeAttribute('src');
     }
 
-    async #prepareImage() {
+    async #prepareAttachment() {
       const file = this.#file.files?.[0];
       if (!file || this.#busy) return;
-      this.#clearImage();
-      const version = this.#imageVersion;
+      this.#clearAttachment();
+      const version = this.#attachmentVersion;
       this.#preparing = true;
       this.#attach.disabled = true;
-      this.#status.textContent = this.#text.imageLoading;
+      this.#status.textContent = this.#text.attachmentLoading;
       try {
-        if (
-          !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ||
-          file.size > 10 * 1024 * 1024
-        )
-          throw new Error('Invalid image');
-        const bitmap = await createImageBitmap(file);
+        const image = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type);
         let blob: Blob | null;
-        try {
-          if (bitmap.width * bitmap.height > 16_000_000)
-            throw new Error('Image dimensions too large');
-          const scale = Math.min(1, 1280 / Math.max(bitmap.width, bitmap.height));
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-          canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-          const context = canvas.getContext('2d');
-          if (!context) throw new Error('Image conversion unavailable');
-          context.fillStyle = '#fff';
-          context.fillRect(0, 0, canvas.width, canvas.height);
-          context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-          // Re-encoding strips image metadata before anything leaves the device.
-          blob = await new Promise<Blob | null>((resolve) =>
-            canvas.toBlob(resolve, 'image/jpeg', 0.82),
-          );
-        } finally {
-          bitmap.close();
+        if (image) {
+          if (file.size > 10 * 1024 * 1024) throw new Error('Image too large');
+          const bitmap = await createImageBitmap(file);
+          try {
+            if (bitmap.width * bitmap.height > 16_000_000)
+              throw new Error('Image dimensions too large');
+            const scale = Math.min(1, 1280 / Math.max(bitmap.width, bitmap.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+            canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+            const context = canvas.getContext('2d');
+            if (!context) throw new Error('Image conversion unavailable');
+            context.fillStyle = '#fff';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+            // Re-encoding strips image metadata before anything leaves the device.
+            blob = await new Promise<Blob | null>((resolve) =>
+              canvas.toBlob(resolve, 'image/jpeg', 0.82),
+            );
+          } finally {
+            bitmap.close();
+          }
+          if (!blob || blob.size > 1024 * 1024) throw new Error('Image too large');
+        } else {
+          const extension = file.name.split('.').at(-1)?.toLowerCase() ?? '';
+          const type = FILE_TYPES[extension as keyof typeof FILE_TYPES];
+          if (!type || file.size > MAX_FILE_BYTES) throw new Error('Invalid document');
+          blob = new Blob([await file.arrayBuffer()], { type });
         }
-        if (!blob || blob.size > 1024 * 1024) throw new Error('Image too large');
         const data = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () =>
@@ -722,16 +760,24 @@ const runtime = cs
           reader.onerror = () => reject(new Error('Image read failed'));
           reader.readAsDataURL(blob);
         });
-        if (version !== this.#imageVersion) return;
-        this.#image = data;
-        this.#preview.querySelector('img')!.src = data;
+        if (version !== this.#attachmentVersion) return;
+        const attachmentFile = { filename: file.name, file_data: data };
+        if (!image && !isChatFile(attachmentFile)) throw new Error('Invalid document');
+        this.#attachment = image ? { kind: 'image', data } : { kind: 'file', file: attachmentFile };
+        const preview = this.#preview.querySelector('img')!;
+        preview.hidden = !image;
+        if (image) preview.src = data;
+        this.#preview.querySelector('[data-chat-attachment-label]')!.textContent = file.name;
         this.#preview.hidden = false;
         this.#status.textContent = '';
       } catch {
-        if (version === this.#imageVersion) this.#status.textContent = this.#text.imageInvalid;
+        if (version === this.#attachmentVersion)
+          this.#status.textContent = this.#text.attachmentInvalid;
       } finally {
-        this.#preparing = false;
-        this.#attach.disabled = !!this.#busy;
+        if (version === this.#attachmentVersion) {
+          this.#preparing = false;
+          this.#attach.disabled = !!this.#busy;
+        }
       }
     }
 
@@ -747,7 +793,7 @@ const runtime = cs
       this.#activeId = id;
       this.#turns = thread.turns;
       this.#remember.checked = thread.saved;
-      this.#clearImage();
+      this.#clearAttachment();
       this.#input.value = '';
       this.#log.querySelectorAll('.msg').forEach((m) => m.remove());
       for (const turn of this.#turns) this.#bubble(turn);
@@ -877,10 +923,16 @@ const runtime = cs
           image.className = 'msg__image';
           body.append(image);
         }
+        for (const file of turn.files ?? []) {
+          const label = document.createElement('p');
+          label.className = 'msg__file';
+          label.textContent = `${this.#text.file}: ${file.filename}`;
+          body.append(label);
+        }
         if (turn.imageExpired) {
           const note = document.createElement('p');
           note.className = 'meta';
-          note.textContent = this.#text.imageExpired;
+          note.textContent = this.#text.attachmentExpired;
           body.append(note);
         }
       } else this.#fill(item, turn);
@@ -1128,19 +1180,20 @@ const runtime = cs
       let failed = false;
       try {
         const messages = this.#turns
-          .filter((turn) => turn.content.trim() || turn.images?.length)
+          .filter((turn) => turn.content.trim() || turn.images?.length || turn.files?.length)
           .slice(-MAX_TURNS)
-          .map(({ role, content, images }) => ({
+          .map(({ role, content, images, files }) => ({
             role,
             content: content.slice(0, MAX_ASSISTANT),
             ...(images?.length ? { images } : {}),
+            ...(files?.length ? { files } : {}),
           }));
         // The Worker also caps characters and bytes (Czech letters take two); drop the oldest.
         const body = () => JSON.stringify({ lang: this.#lang, messages });
         const chars = () => messages.reduce((sum, m) => sum + m.content.length, 0);
         while (
           messages.length > 1 &&
-          (chars() > MAX_CHARS || new TextEncoder().encode(body()).length > MAX_BYTES)
+          (chars() > MAX_CHARS || new TextEncoder().encode(body()).length > MAX_CHAT_BYTES)
         )
           messages.shift();
         const res = await this.#post(body(), controller.signal);
@@ -1599,6 +1652,9 @@ const runtime = cs
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
+  .msg--user .meta {
+    color: inherit;
+  }
 
   .msg--assistant {
     align-self: stretch;
@@ -1940,8 +1996,21 @@ const runtime = cs
     object-fit: cover;
     border-radius: 0.6rem;
   }
+  .chat__attachment img[hidden] {
+    display: none;
+  }
   .chat__attachment button {
     margin-left: auto;
+  }
+  .chat__attachment > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .msg__file {
+    font-size: 0.8rem;
+    overflow-wrap: anywhere;
   }
   .msg__image {
     width: min(100%, 16rem);
