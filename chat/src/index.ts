@@ -170,8 +170,8 @@ async function retrieve(env: Env, turns: Turn[]): Promise<Source[]> {
         },
         // The reranker filtered known English and Czech CV hits in the live probes.
         reranking: { enabled: false },
-        // Standalone questions already contain their query; rewrite only conversational follow-ups.
-        query_rewrite: { enabled: turns.length > 1 },
+        // Rewrite verbose first questions too, so relevant documents survive the source limit.
+        query_rewrite: { enabled: true },
       },
     });
     console.log(
