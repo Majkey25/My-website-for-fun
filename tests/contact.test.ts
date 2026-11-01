@@ -56,8 +56,17 @@ test('built pages and scripts do not expose contacts before activation', async (
   }
 });
 
-test('both home pages ship a configured contact form', async () => {
-  for (const path of ['index.html', 'cs/index.html']) {
+test('both contact pages ship a configured contact form', async () => {
+  for (const path of ['contact/index.html', 'cs/contact/index.html']) {
+    const home = await readFile(
+      new URL(`../dist/${path.replace('contact/', '')}`, import.meta.url),
+      'utf8',
+    );
+    assert(
+      !home.includes('data-contact-form'),
+      'The short homepage must link to the full contact page',
+    );
+    assert(/href="[^"]*\/contact\/"/.test(home), 'Homepage contact link missing');
     const html = await readFile(new URL(`../dist/${path}`, import.meta.url), 'utf8');
     const form = /<form\b([^>]*\bdata-contact-form\b[^>]*)>([\s\S]*?)<\/form>/.exec(html);
     assert(form, `${path}: contact form missing`);

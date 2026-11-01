@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import GlitchText from '../GlitchText.astro';
+import Arrow from '../Arrow.astro';
 import Base from '../../layouts/Base.astro';
 import { href as siteHref, slug } from '../../site';
 import { projectText, groupLabels, ui, type Lang } from '../../i18n';
@@ -31,24 +32,23 @@ const cases = projects.filter((p) => p.problem && p.approach && p.result).length
   }
 >
   <section class="head wrap" aria-labelledby="work-title">
-    <p class="mono muted" data-enter style="--i: 0">
+    <p class="meta" data-enter style="--i: 0">
       <a href={href()}>~</a> / {t.work.toLowerCase()}
     </p>
     <h1 id="work-title" class="title" data-enter style="--i: 1">
-      {t.allProjects} <span class="muted">({projects.length})</span>
+      <GlitchText text={t.allProjects} scramble /> <span class="muted">({projects.length})</span>
     </h1>
     <p class="lead" data-enter style="--i: 2">
       {cs ? (
         <>
           Veřejné projekty podle zaměření. Neveřejné zdrojové kódy jsou označené. U {cases} projektů
-          se značkou ↳ je celá případová studie a <a href={href('#work')}>vybrané projekty</a>{' '}
-          najdete na úvodní stránce.
+          je celá případová studie. <a href={href('#work')}>Vybrané projekty</a> najdete na úvodní
+          stránce.
         </>
       ) : (
         <>
-          Public projects, grouped by what they are. Private sources are marked; the {cases} marked
-          ↳ have a full case study, and the <a href={href('#work')}>pinned ones</a> lead the home
-          page.
+          Public projects, grouped by what they are. Private sources are marked; {cases} have a full
+          case study, and the <a href={href('#work')}>pinned ones</a> lead the home page.
         </>
       )}
     </p>
@@ -75,30 +75,42 @@ const cases = projects.filter((p) => p.problem && p.approach && p.result).length
           <li class="project">
             {p.problem && p.approach && p.result ? (
               <a class="row" href={href(`work/${slug(p.name)}/`)} data-desc={p.problem}>
-                <span class="row__num">↳</span>
+                <span class="row__num">
+                  <Arrow />
+                </span>
                 <span class="row__main">
-                  <span class="row__name" style={`view-transition-name: p-${slug(p.name)}`}>
-                    {p.name}
-                  </span>
+                  <span class="row__name">{p.name}</span>
                   <span class="row__kind">{p.kind}</span>
                 </span>
                 <span class="row__meta">{t.caseStudy}</span>
               </a>
             ) : (
               <div class="row">
-                <span class="row__num" />
+                <span class="row__num">
+                  {p.links[0] && (
+                    <a
+                      class="project__open"
+                      href={p.links[0].href}
+                      rel="noopener"
+                      target="_blank"
+                      aria-label={`${p.links[0].label}: ${p.name}`}
+                    >
+                      <Arrow direction="up-right" />
+                    </a>
+                  )}
+                </span>
                 <span class="row__main">
                   <span class="row__name">
                     {p.name}
                     {p.formerly && (
-                      <span class="muted mono">
+                      <span class="meta">
                         {' '}
                         {t.formerly} {p.formerly}
                       </span>
                     )}
                   </span>
                   <span class="row__kind">{p.kind}</span>
-                  <span class="mono muted">{p.stack.join(' · ')}</span>
+                  <span class="meta">{p.stack.join(' · ')}</span>
                 </span>
                 <span class="row__meta links">
                   {p.links.map((l) => (
@@ -143,6 +155,14 @@ const cases = projects.filter((p) => p.problem && p.approach && p.result).length
     display: grid;
     justify-items: end;
     gap: 0.5rem;
+  }
+
+  .project__open {
+    display: inline-grid;
+    place-items: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    margin: -0.65rem;
   }
 
   @media (width < 34rem) {

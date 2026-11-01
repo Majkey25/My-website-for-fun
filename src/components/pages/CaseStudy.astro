@@ -1,9 +1,12 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
 import GlitchText from '../GlitchText.astro';
+import Arrow from '../Arrow.astro';
 import Base from '../../layouts/Base.astro';
 import { href as siteHref, slug } from '../../site';
 import { projectText, groupLabels, ui, type Lang } from '../../i18n';
+import { projectMedia } from '../../project-media';
 
 interface Props {
   lang: Lang;
@@ -15,6 +18,7 @@ const { i, lang } = Astro.props;
 const p = projectText(Astro.props.p, lang);
 const next = projectText(Astro.props.next, lang);
 const t = ui[lang];
+const media = projectMedia[p.name];
 const href = (path = '') => siteHref(path, lang);
 const area = (x: typeof p) =>
   (lang === 'en' ? x.featured?.area : undefined) ?? groupLabels[lang][x.group];
@@ -32,16 +36,16 @@ const story = [
   description={`${p.name}: ${p.kind}. ${p.problem}`}
 >
   <article class="case wrap">
-    <p class="mono muted" data-enter style="--i: 0">
+    <p class="meta" data-enter style="--i: 0">
       <a href={href()}>~</a> / <a href={href('#work')}>{t.work.toLowerCase()}</a> / {pad(i + 1)}
     </p>
-    <h1 class="title" style={`view-transition-name: p-${slug(p.name)}`}>
-      {p.name}
+    <h1 class="title" data-enter style="--i: 0">
+      <GlitchText text={p.name} scramble />
     </h1>
     <p class="statement" data-enter style="--i: 1">
       {p.kind}
     </p>
-    <dl class="facts mono" data-enter style="--i: 2">
+    <dl class="facts meta" data-enter style="--i: 2">
       <div>
         <dt class="muted">{t.area}</dt>
         <dd>{area(p)}</dd>
@@ -62,6 +66,26 @@ const story = [
       )}
     </dl>
 
+    {media && (
+      <figure class="case__media">
+        <Image
+          src={media.image}
+          alt={media.alt[lang]}
+          widths={[400, 800, 1200, 1800]}
+          sizes="(max-width: 48rem) 90vw, 46rem"
+          loading="lazy"
+          decoding="async"
+        />
+        <figcaption class="meta">
+          <a href={media.source} rel="noopener" target="_blank">
+            {lang === 'cs'
+              ? 'Ukázka z veřejné stránky projektu'
+              : 'From the public project showcase'}
+          </a>
+        </figcaption>
+      </figure>
+    )}
+
     {story.map((s, index) => (
       <section class="part" aria-labelledby={`story-${index}-title`} data-reveal>
         <h2 id={`story-${index}-title`} class="label">
@@ -70,7 +94,7 @@ const story = [
         <p>{s.text}</p>
         {index === 1 && p.specimen && (
           <figure class="specimen">
-            <figcaption class="mono muted">{t.example}</figcaption>
+            <figcaption class="meta">{t.example}</figcaption>
             <p lang="cs">
               <del>{p.specimen.before}</del>
             </p>
@@ -94,18 +118,18 @@ const story = [
             </a>
           </li>
         ))}
-        {p.source === 'private' && <li class="mono muted">{t.privateSource}</li>}
+        {p.source === 'private' && <li class="meta">{t.privateSource}</li>}
       </ul>
     </section>
 
     <nav class="next" aria-label={t.nextProject}>
       <a class="row" href={href(`work/${slug(next.name)}/`)}>
-        <span class="row__num">→</span>
+        <span class="row__num">
+          <Arrow />
+        </span>
         <span class="row__main">
-          <span class="mono muted">{t.next}</span>
-          <span class="row__name" style={`view-transition-name: p-${slug(next.name)}`}>
-            {next.name}
-          </span>
+          <span class="meta">{t.next}</span>
+          <span class="row__name">{next.name}</span>
         </span>
         <span class="row__meta">{area(next)}</span>
       </a>
@@ -114,13 +138,26 @@ const story = [
 </Base>
 
 <style>
+  .case__media {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .case__media img {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--rule);
+    border-radius: 0.75rem;
+  }
+
   .case {
     display: grid;
     gap: 1.25rem;
     padding-top: clamp(3rem, 10vw, 6rem);
   }
 
-  .case > .mono a {
+  .case > .meta a {
     text-decoration: none;
   }
 
@@ -134,6 +171,10 @@ const story = [
     display: grid;
     grid-template-columns: 6rem minmax(0, 1fr);
     gap: 1rem;
+  }
+
+  .facts dd {
+    color: var(--ink);
   }
 
   .part {

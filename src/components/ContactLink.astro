@@ -18,7 +18,7 @@ const Tag = action === 'email' ? 'a' : 'button';
   <Tag
     class={className}
     type={action === 'email' ? undefined : 'button'}
-    href={action === 'email' ? href('#contact', lang) : undefined}
+    href={action === 'email' ? href('contact/', lang) : undefined}
     data-contact-value={encodeEmail(value)}
     data-contact-action={action}
     data-glitch={glitch || undefined}
@@ -35,9 +35,7 @@ const Tag = action === 'email' ? 'a' : 'button';
       aria-label={lang === 'cs' ? 'E-mailová adresa' : 'Email address'}
     />
   )}
-  {action === 'copy' && (
-    <span class="contact-status mono muted" role="status" aria-live="polite"></span>
-  )}
+  {action === 'copy' && <span class="contact-status meta" role="status" aria-live="polite"></span>}
   {action === 'reveal' && (
     <noscript>
       {value

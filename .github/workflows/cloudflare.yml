@@ -1,0 +1,115 @@
+name: Deploy to Cloudflare
+
+# Defaults to static assets. Enable the assistant only after its release checks pass.
+# Everything comes from the environment `cloudflare`, which only the main branch may use:
+#   secrets   CLOUDFLARE_API_TOKEN (Editor for init-chat only), OPENAI_API_KEY, SESSION_SECRET,
+#             TURNSTILE_SECRET
+#   variables CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_SITE_URL, TURNSTILE_SITE_KEY
+# Provider secrets reach the configuration/deploy steps only when AI is explicitly enabled.
+on:
+  workflow_dispatch:
+    inputs:
+      enable_ai:
+        description: Enable AI after account, retrieval and security release checks
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare
+  cancel-in-progress: false
+
+env:
+  ASTRO_TELEMETRY_DISABLED: 1
+
+jobs:
+  security:
+    uses: ./.github/workflows/security.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  deploy:
+    name: Build and deploy
+    needs: security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: cloudflare
+    env:
+      ENABLE_AI: ${{ inputs.enable_ai && 'true' || 'false' }}
+    steps:
+      - name: Check configuration
+        run: |
+          set -euo pipefail
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID SITE; do
+            [ -n "${!name:-}" ] || { echo "::error::Missing $name in the cloudflare environment"; exit 1; }
+          done
+          [ "$SITE" = 'https://init-chat.majkeylab.workers.dev' ] || { echo '::error::Use the canonical Cloudflare site'; exit 1; }
+          if [ "$ENABLE_AI" = true ]; then
+            for name in PUBLIC_TURNSTILE_SITE_KEY OPENAI_API_KEY SESSION_SECRET TURNSTILE_SECRET; do
+              [ -n "${!name:-}" ] || { echo "::error::Missing $name in the cloudflare environment"; exit 1; }
+            done
+            [ "${#SESSION_SECRET}" -ge 32 ] || { echo '::error::SESSION_SECRET needs 32+ characters'; exit 1; }
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          SITE: ${{ vars.CLOUDFLARE_SITE_URL }}
+          PUBLIC_TURNSTILE_SITE_KEY: ${{ inputs.enable_ai && vars.TURNSTILE_SITE_KEY || '' }}
+          OPENAI_API_KEY: ${{ inputs.enable_ai && secrets.OPENAI_API_KEY || '' }}
+          SESSION_SECRET: ${{ inputs.enable_ai && secrets.SESSION_SECRET || '' }}
+          TURNSTILE_SECRET: ${{ inputs.enable_ai && secrets.TURNSTILE_SECRET || '' }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm ci --prefix chat
+      - run: npm audit --audit-level=high --prefix chat
+      - run: npm run format:check
+      - run: npm run check --prefix chat
+      - run: npm test --prefix chat
+      - run: npm run check
+      - run: npm run test:fonts
+      - name: Build
+        run: |
+          set -euo pipefail
+          npm run build -- --site "$SITE"
+          node scripts/check-output.mjs
+        env:
+          SITE: ${{ vars.CLOUDFLARE_SITE_URL }}
+          PUBLIC_CHAT_API: ${{ inputs.enable_ai && '/api' || '' }}
+          PUBLIC_TURNSTILE_SITE_KEY: ${{ inputs.enable_ai && vars.TURNSTILE_SITE_KEY || '' }}
+      - run: node --test tests/*.test.*
+      - name: Deploy
+        working-directory: chat
+        run: |
+          set -euo pipefail
+          config=wrangler.static.jsonc
+          expected=405
+          if [ "$ENABLE_AI" = true ]; then
+            config=wrangler.jsonc
+            expected=401
+          fi
+          if [ "$ENABLE_AI" = true ]; then
+            # One upload; values travel on stdin, never as arguments or files.
+            jq -n '{OPENAI_API_KEY: env.OPENAI_API_KEY, SESSION_SECRET: env.SESSION_SECRET, TURNSTILE_SECRET: env.TURNSTILE_SECRET}' |
+              npx --no-install wrangler secret bulk --config "$config"
+          fi
+          npx --no-install wrangler deploy --config "$config"
+          status=$(curl --silent --show-error --connect-timeout 10 --max-time 30 --output /dev/null --write-out '%{http_code}' \
+            --header "Origin: $SITE" --header 'Content-Type: application/json' --data '{}' "$SITE/api/chat")
+          [ "$status" = "$expected" ] || { echo "::error::Unexpected public API status: $status"; exit 1; }
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          SITE: ${{ vars.CLOUDFLARE_SITE_URL }}
+          OPENAI_API_KEY: ${{ inputs.enable_ai && secrets.OPENAI_API_KEY || '' }}
+          SESSION_SECRET: ${{ inputs.enable_ai && secrets.SESSION_SECRET || '' }}
+          TURNSTILE_SECRET: ${{ inputs.enable_ai && secrets.TURNSTILE_SECRET || '' }}

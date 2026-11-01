@@ -1,0 +1,39 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "init-chat",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-28",
+  "compatibility_flags": ["enable_request_signal"],
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  // The built site is served from the same Worker; only /api/* runs code.
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "../dist",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"],
+  },
+  // Re-crawl the knowledge sources four times a day.
+  "triggers": { "crons": ["17 */6 * * *"] },
+  "ai_search_namespaces": [{ "binding": "AI_SEARCH", "namespace": "init" }],
+  // Approximate, per Cloudflare location; these limits do not enforce an account spending cap.
+  "ratelimits": [
+    { "name": "RL_SESSION", "namespace_id": "4101", "simple": { "limit": 5, "period": 60 } },
+    { "name": "RL_CHAT", "namespace_id": "4102", "simple": { "limit": 3, "period": 60 } },
+    { "name": "RL_GLOBAL", "namespace_id": "4103", "simple": { "limit": 12, "period": 60 } },
+  ],
+  "vars": {
+    "ALLOWED_ORIGINS": "https://init-chat.majkeylab.workers.dev",
+    "OPENAI_BASE_URL": "https://api.openai.com/v1",
+    // Existing complimentary quota/credits only; never buy credits or enable automatic recharge.
+    // Data sharing: gpt-6-luna is eligible for 250k/1M daily tokens in enrolled projects.
+    // gpt-5.6-luna and gpt-5.6-terra use the separate 2.5M/10M pool, depending on account tier.
+    // Quota overages and web-search tools are chargeable; verify existing credits and disable
+    // automatic recharge before enabling the public API. This setting does not enforce a cap.
+    // https://help.openai.com/en/articles/10306912
+    "OPENAI_MODEL": "gpt-6-luna",
+    "OPENAI_REASONING": "low",
+  },
+  // Secrets, set with `wrangler secret put <NAME>` and never committed:
+  // OPENAI_API_KEY, SESSION_SECRET, TURNSTILE_SECRET
+}

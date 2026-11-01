@@ -1,0 +1,21 @@
+{
+  "name": "init-chat",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker behind the site assistant: sessions, retrieval, streamed answers and the knowledge crawl.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types",
+    "check": "wrangler types && tsc --noEmit",
+    "test": "node --test \"test/*.test.ts\""
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "workerd": true
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "wrangler": "^4.156.0"
+  }
+}

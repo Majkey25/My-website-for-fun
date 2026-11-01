@@ -2,7 +2,7 @@
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 
-/** Path inside the site: href('work/') -> /init/work/ in production, /work/ locally. */
+/** Path inside the site, including an optional deployment base: href('work/') -> /work/. */
 export const href = (path = '', lang: 'en' | 'cs' = 'en') =>
   `${base}${lang === 'cs' ? 'cs/' : ''}${path}`;
 

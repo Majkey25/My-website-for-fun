@@ -8,12 +8,15 @@
   --muted: #5f5f68;
   --rule: #e2e2de;
   --accent: #3451f5;
+  --on-accent: #fff;
   --split-a: rgb(255 40 90 / 0.7);
   --split-b: rgb(0 170 255 / 0.7);
   --pad: clamp(1.25rem, 5vw, 2rem);
   --col: 46rem;
+  --frame: 80rem;
   --section: clamp(3.5rem, 9vw, 6.5rem);
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --arrow-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12h15m-6-6 6 6-6 6'/%3E%3C/svg%3E");
 }
 
 [data-theme='dark'] {
@@ -24,8 +27,64 @@
   --muted: #9b9ba4;
   --rule: #242427;
   --accent: #93a4ff;
+  --on-accent: #0b0b0c;
   --split-a: rgb(255 60 110 / 0.75);
   --split-b: rgb(40 200 255 / 0.75);
+}
+
+[data-theme='matrix'] {
+  color-scheme: dark;
+  --bg: oklch(0.128848 0.008545 157.117);
+  --surface: oklch(0.151779 0.011889 151.247);
+  --ink: oklch(0.963761 0.057357 152.82);
+  --muted: oklch(0.687622 0.079875 150.58);
+  --rule: oklch(0.314854 0.059303 151.825);
+  --accent: oklch(0.880896 0.22089 151.212);
+  --on-accent: oklch(0.155688 0.030962 151.482);
+  --split-a: rgb(0 255 110 / 0.7);
+  --split-b: rgb(120 255 190 / 0.7);
+}
+
+.matrix-transition {
+  display: none;
+}
+
+.theme-hack .matrix-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: var(--accent);
+  background: repeating-linear-gradient(transparent 0 3px, rgb(0 255 100 / 0.07) 3px 4px);
+  font:
+    700 clamp(1.25rem, 4vw, 3rem) ui-monospace,
+    monospace;
+  letter-spacing: 0.12em;
+  animation: matrix-override 760ms steps(1, end) both;
+}
+
+@keyframes matrix-override {
+  0%,
+  18% {
+    transform: translateX(-2%);
+  }
+  9%,
+  32% {
+    transform: translateX(2%);
+  }
+  44% {
+    transform: none;
+  }
+  72%,
+  100% {
+    opacity: 0;
+  }
+}
+
+html.theme-hack::view-transition-old(root) {
+  display: none;
 }
 
 *,
@@ -39,6 +98,7 @@
 }
 
 html {
+  scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-behavior: smooth;
@@ -54,6 +114,180 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: clip;
+}
+
+/* The intro's rain continues quietly behind the page. */
+.matrix-field {
+  position: fixed;
+  inset: 4rem 0 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--accent);
+  opacity: 0.11;
+  contain: strict;
+}
+
+.matrix-field canvas {
+  width: 100%;
+  height: calc(100svh - 4rem);
+}
+
+.spotlight {
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: -1;
+  width: min(52rem, 100vw);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--accent) 14%, transparent),
+    transparent 68%
+  );
+  opacity: 0;
+  transition: opacity 200ms var(--ease);
+  will-change: transform;
+}
+
+.spotlight.is-on {
+  opacity: 1;
+}
+
+.work-controls {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.work-controls p {
+  margin-right: auto;
+}
+.work-step {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--ink);
+  transition:
+    background-color 180ms var(--ease),
+    border-color 180ms var(--ease),
+    color 180ms var(--ease);
+}
+.work-step svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.work-step:not(:disabled):active {
+  background: var(--surface);
+}
+@media (hover: hover) and (pointer: fine) {
+  .work-step:not(:disabled):hover {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--bg);
+  }
+}
+.work-step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.work-reel {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.25rem 1rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--surface);
+}
+.work-reel > li {
+  display: flex;
+  flex: 0 0 min(38rem, 82%);
+  scroll-snap-align: start;
+}
+.work-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.1rem;
+  width: 100%;
+  padding: clamp(1.4rem, 4vw, 3rem);
+  border-radius: 1rem;
+  background: var(--surface);
+  text-decoration: none;
+}
+.work-scene__area {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.work-scene__name {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-stretch: 115%;
+  text-wrap: balance;
+}
+.work-scene__problem {
+  max-width: 45ch;
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+.work-scene__image {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: top;
+  border: 1px solid var(--rule);
+  border-radius: 0.5rem;
+}
+.work-scene__result {
+  max-width: 55ch;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.work-scene__stack {
+  margin-top: auto;
+  padding-top: 1rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+.work-scene__open {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding-top: 0.75rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+@media (width < 40rem) {
+  .work-reel > li {
+    flex-basis: 91%;
+  }
+  .matrix-field {
+    opacity: 0.09;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .matrix-field,
+  .spotlight {
+    display: none;
+  }
 }
 
 img,
@@ -123,9 +357,15 @@ button {
   transform: none;
 }
 
-.wrap {
+/* Reading column for text pages; the frame is the full page grid (header, home, footer). */
+.wrap,
+.frame {
   width: min(100% - 2 * var(--pad), var(--col));
   margin-inline: auto;
+}
+
+.frame {
+  width: min(100% - 2 * var(--pad), var(--frame));
 }
 
 /* ---------- Type ---------- */
@@ -172,10 +412,11 @@ button {
   color: var(--muted);
 }
 
-.mono {
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  letter-spacing: 0;
+/* Small supporting text: dates, stacks, notes. Figures line up. */
+.meta {
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .prose {
@@ -185,8 +426,15 @@ button {
 }
 
 .ext::after {
-  content: ' ↗';
-  font-size: 0.85em;
+  content: '';
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.1em;
+  background: currentColor;
+  rotate: -45deg;
+  mask: var(--arrow-icon) center / contain no-repeat;
 }
 
 .inline-list {
@@ -201,9 +449,9 @@ button {
   gap: 0.6rem;
   min-height: 2.75rem;
   max-width: 100%;
-  padding: 0.55rem 1rem;
-  border: 1px solid var(--rule);
-  border-radius: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border: 0;
+  border-radius: 999px;
   background: var(--surface);
   color: var(--ink);
   font-size: 0.9375rem;
@@ -211,9 +459,13 @@ button {
   line-height: 1.4;
   text-decoration: none;
   transition:
-    border-color 0.2s var(--ease),
-    box-shadow 0.2s var(--ease),
-    color 0.2s var(--ease);
+    background-color 0.2s var(--ease),
+    color 0.2s var(--ease),
+    transform 160ms var(--ease);
+}
+
+.action-link:active {
+  transform: scale(0.97);
 }
 
 .action-link .glitch-label {
@@ -231,28 +483,20 @@ button {
   padding-block: var(--section) 0;
 }
 
-/* A mono label with a hairline that draws itself as the section scrolls in. */
+/* Section heading: the expanded cut of Mona Sans, large enough to anchor its section. */
 .label {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
   margin-bottom: 1.5rem;
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  font-weight: 450;
-}
-
-.label::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--rule);
-  transform-origin: left;
+  font-size: clamp(1.6rem, 1.1rem + 1.8vw, 2.6rem);
+  font-weight: 720;
+  font-stretch: 118%;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
 }
 
 .label .count {
-  color: var(--ink);
+  color: var(--muted);
+  font-weight: 400;
 }
 
 /* ---------- Rows: the list pattern used for work, experience and projects ---------- */
@@ -288,8 +532,7 @@ a.row:focus-visible {
 
 .row__num,
 .row__meta {
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--muted);
 }
 
@@ -359,11 +602,11 @@ a.row:focus-visible {
 
 .peek__label {
   color: var(--accent);
-  font-family: var(--font-mono);
   font-size: 0.75rem;
+  font-weight: 600;
 }
 
-/* Interactive distortion: a stable label beneath a short burst of scrambled glyphs. */
+/* The readable name and reserved width stay stable while visual glyphs decode. */
 [data-glitch] {
   position: relative;
   isolation: isolate;
@@ -372,11 +615,11 @@ a.row:focus-visible {
 .glitch-label {
   position: relative;
   display: inline-grid;
+  max-width: 100%;
   white-space: pre-wrap;
-  overflow: clip;
+  clip-path: inset(-0.2em 0);
 }
 
-/* This invisible copy reserves the original width, even while glyphs change. */
 .glitch-label::before {
   content: attr(data-text);
   visibility: hidden;
@@ -385,6 +628,11 @@ a.row:focus-visible {
 [data-glitch-text] {
   position: absolute;
   inset: 0;
+  white-space: normal;
+}
+
+.name [data-glitch-text] {
+  white-space: nowrap;
 }
 
 .action-link[data-glitch]::before,
@@ -405,10 +653,9 @@ button[data-glitch]::before,
 }
 
 .action-link[data-glitch]:is(:hover, :focus-visible),
-button[data-glitch]:is(:hover, :focus-visible),
-.header__nav [data-glitch]:is(:hover, :focus-visible) {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 25%, transparent);
+button[data-glitch]:is(:hover, :focus-visible) {
+  background: color-mix(in oklab, var(--accent) 16%, var(--surface));
+  color: var(--ink);
 }
 
 .reading-progress {
@@ -425,34 +672,34 @@ button[data-glitch]:is(:hover, :focus-visible),
 
 /* ---------- Motion ---------- */
 
+@supports (animation-timeline: scroll()) {
+  .reading-progress {
+    animation: reading-progress linear both;
+    /* Scroll position remains useful with reduced motion. */
+    animation-timeline: var(--reading-timeline);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .is-glitching .glitch-label,
   .is-glitching > svg {
-    animation: control-glitch 0.48s steps(1, end);
+    animation: control-glitch 480ms steps(1, end);
   }
-
-  .action-link.is-glitching::before,
-  button.is-glitching::before,
-  .header__nav .is-glitching::before {
-    animation: control-scan 0.48s steps(1, end);
-  }
-
-  @supports (animation-timeline: scroll()) {
-    .reading-progress {
-      animation: reading-progress linear both;
-      /* Keep the timeline separate from the animation shorthand during minification. */
-      animation-timeline: var(--reading-timeline);
+  @media (hover: hover) and (pointer: fine) {
+    .action-link.is-glitching::before,
+    button.is-glitching::before,
+    .header__nav .is-glitching::before {
+      animation: control-scan 480ms steps(1, end);
     }
   }
 
-  /* Load: children rise out of a soft blur, one after another. */
+  /* The page entrance starts when the first-visit screen lifts. */
   [data-enter] {
-    animation: enter 0.35s var(--ease) both;
+    animation: page-enter 0.35s var(--ease) both;
     animation-delay: calc(var(--i, 0) * 80ms);
   }
 
-  /* Under the boot screen the hero is already painted; its entrance runs as the screen lifts. */
-  .booting [data-enter] {
+  .intro-active [data-enter] {
     animation: none;
   }
 
@@ -462,21 +709,11 @@ button[data-glitch]:is(:hover, :focus-visible),
   }
 
   @supports (animation-timeline: view()) {
-    .label::after {
-      animation: draw linear both;
-      animation-timeline: view();
-      animation-range: entry 10% cover 30%;
-    }
-
     [data-reveal] > * {
       animation: enter linear both;
       animation-timeline: view();
       animation-range: entry 0% entry 55%;
     }
-  }
-
-  @view-transition {
-    navigation: auto;
   }
 }
 
@@ -484,30 +721,23 @@ button[data-glitch]:is(:hover, :focus-visible),
   0%,
   24%,
   56% {
-    translate: -1px 0;
-    transform: skewX(-6deg);
+    transform: skewX(-6deg) translateX(-1px);
     text-shadow:
       -2px 0 var(--split-a),
       2px 0 var(--split-b);
-    filter: drop-shadow(2px 0 var(--split-b));
   }
-
   12%,
   40%,
   68% {
-    translate: 1px 0;
-    transform: skewX(5deg);
+    transform: skewX(5deg) translateX(1px);
     text-shadow:
       2px 0 var(--split-a),
       -2px 0 var(--split-b);
   }
-
   80%,
   100% {
-    translate: 0;
     transform: none;
     text-shadow: none;
-    filter: none;
   }
 }
 
@@ -538,9 +768,14 @@ button[data-glitch]:is(:hover, :focus-visible),
 
 @keyframes enter {
   from {
+    translate: 0 10px;
+  }
+}
+
+@keyframes page-enter {
+  from {
     opacity: 0;
     translate: 0 10px;
-    filter: blur(4px);
   }
 }
 
@@ -565,18 +800,8 @@ button[data-glitch]:is(:hover, :focus-visible),
   }
 }
 
-@keyframes draw {
-  from {
-    transform: scaleX(0);
-  }
-}
-
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 0.3s;
-}
-
 /* The theme switch reveals the new theme in a circle instead of crossfading. */
+html.theme-switch::view-transition-group(root),
 html.theme-switch::view-transition-old(root),
 html.theme-switch::view-transition-new(root) {
   animation: none;
@@ -585,7 +810,7 @@ html.theme-switch::view-transition-new(root) {
 
 @media (width < 48rem) {
   html {
-    scroll-padding-top: 8rem;
+    scroll-padding-top: 5rem;
   }
 }
 

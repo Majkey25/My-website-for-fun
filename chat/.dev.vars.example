@@ -1,0 +1,5 @@
+OPENAI_API_KEY=
+# 32+ random characters, for example: openssl rand -base64 48
+SESSION_SECRET=
+# Turnstile test secret that always passes; use the real one in production.
+TURNSTILE_SECRET=1x0000000000000000000000000000000AA

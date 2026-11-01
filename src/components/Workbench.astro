@@ -1,0 +1,115 @@
+<div class="workbench" aria-hidden="true" data-enter style="--i:2">
+  <div class="workbench__stage">
+    <div class="workbench__orbit"></div>
+    <div class="workbench__cube">
+      {['AI', '</>', 'ML', '{}', '01', 'MT'].map((label, side) => (
+        <span class="workbench__face" style={`--side:${side}`}>
+          {label}
+        </span>
+      ))}
+    </div>
+  </div>
+  <span class="workbench__caption">AI / software / audio</span>
+</div>
+
+<style>
+  .workbench {
+    display: none;
+  }
+
+  @media (width >= 56rem) {
+    .workbench {
+      display: grid;
+      justify-items: center;
+      align-self: center;
+      gap: 0.75rem;
+      color: var(--accent);
+    }
+
+    .workbench__stage {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: min(100%, 26rem);
+      height: 16rem;
+      perspective: 700px;
+    }
+
+    .workbench__cube {
+      position: relative;
+      width: 9rem;
+      height: 9rem;
+      transform-style: preserve-3d;
+      transform: rotateX(-24deg) rotateY(32deg);
+    }
+
+    .workbench__face {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      border: 1px solid currentColor;
+      background: color-mix(in oklab, var(--accent) 4%, transparent);
+      font:
+        500 1.75rem ui-monospace,
+        monospace;
+      backface-visibility: hidden;
+      transform: rotateY(calc(var(--side) * 90deg)) translateZ(4.5rem);
+    }
+
+    .workbench__face:nth-child(5) {
+      transform: rotateX(90deg) translateZ(4.5rem);
+    }
+
+    .workbench__face:nth-child(6) {
+      transform: rotateX(-90deg) translateZ(4.5rem);
+    }
+
+    .workbench__orbit {
+      position: absolute;
+      width: 95%;
+      height: 42%;
+      border: 1px solid color-mix(in oklab, var(--accent) 28%, transparent);
+      border-radius: 50%;
+      transform: rotate(-18deg);
+    }
+
+    .workbench__orbit::before,
+    .workbench__orbit::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 0.4rem;
+      height: 0.4rem;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .workbench__orbit::before {
+      left: -0.2rem;
+    }
+
+    .workbench__orbit::after {
+      right: -0.2rem;
+    }
+
+    .workbench__caption {
+      font:
+        0.75rem ui-monospace,
+        monospace;
+      letter-spacing: 0.08em;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .workbench__cube {
+        animation: workbench-turn 24s linear infinite;
+      }
+    }
+  }
+
+  @keyframes workbench-turn {
+    to {
+      transform: rotateX(-24deg) rotateY(392deg);
+    }
+  }
+</style>
