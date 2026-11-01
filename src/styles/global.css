@@ -9,6 +9,8 @@
   --rule: #e2e2de;
   --accent: #3451f5;
   --on-accent: #fff;
+  --matrix-accent: oklch(0.880896 0.22089 151.212);
+  --matrix-ink: oklch(0.155688 0.030962 151.482);
   --split-a: rgb(255 40 90 / 0.7);
   --split-b: rgb(0 170 255 / 0.7);
   --pad: clamp(1.25rem, 5vw, 2rem);
@@ -39,14 +41,25 @@
   --ink: oklch(0.963761 0.057357 152.82);
   --muted: oklch(0.687622 0.079875 150.58);
   --rule: oklch(0.314854 0.059303 151.825);
-  --accent: oklch(0.880896 0.22089 151.212);
-  --on-accent: oklch(0.155688 0.030962 151.482);
+  --accent: var(--matrix-accent);
+  --on-accent: var(--matrix-ink);
   --split-a: rgb(0 255 110 / 0.7);
   --split-b: rgb(120 255 190 / 0.7);
 }
 
 .matrix-transition {
   display: none;
+}
+
+.matrix-transition__signal {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+}
+
+.matrix-transition__signal svg {
+  width: clamp(6rem, 18vw, 12rem);
+  height: auto;
 }
 
 .theme-hack .matrix-transition {
