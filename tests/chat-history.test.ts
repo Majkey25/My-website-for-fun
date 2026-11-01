@@ -110,6 +110,22 @@ test('merging prefers newer data and preserves the tab save choice on equal time
   );
 });
 
+test('a deleted saved chat remains readable in a stale tab without being saved again', () => {
+  const stale = writeThreads([thread('deleted', now, true)], 'deleted', false, now);
+  const empty = writeThreads([], null, true, now);
+  const restored = readThreads(stale, empty, now);
+  assert.equal(restored.activeId, 'deleted');
+  assert.equal(restored.threads[0]?.saved, false);
+  assert.equal(restored.threads[0]?.turns[0]?.content, 'Hello');
+  assert.deepEqual(
+    readThreads(null, writeThreads(restored.threads, 'deleted', true, now), now).threads,
+    [],
+  );
+  // A missing or unreadable persistent envelope does not establish a deletion.
+  for (const unavailable of [null, '{'])
+    assert.equal(readThreads(stale, unavailable, now).threads[0]?.saved, true);
+});
+
 test('each conversation expires independently and corrupt state cannot become a chat', () => {
   const raw = JSON.stringify({
     version: 3,
