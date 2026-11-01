@@ -96,8 +96,7 @@ const runtime = cs
       unavailable: 'Odpověď nedorazila. Zkuste to znovu.',
       stopped: 'Zastaveno.',
       image: 'Přiložený obrázek',
-      attachmentExpired:
-        'Přílohy se do historie neukládají. Pro další otázku soubor přiložte znovu.',
+      attachmentExpired: 'Příloha už není dostupná. Pokud ji potřebujete, přiložte ji znovu.',
       attachmentLoading: 'Připravuji přílohu…',
       attachmentInvalid:
         'Přílohu nelze načíst. Dokumenty: PDF, DOCX, XLSX, PPTX do 2 MB; TXT, MD, CSV, JSON, YAML, LOG v UTF-8 do 128 KB; obrázky JPG, PNG, WebP do 10 MB.',
@@ -128,8 +127,7 @@ const runtime = cs
       unavailable: 'The answer did not arrive. Try again.',
       stopped: 'Stopped.',
       image: 'Attached image',
-      attachmentExpired:
-        'Attachments are not saved in history. Attach the file again for another question.',
+      attachmentExpired: 'This attachment is no longer available. Attach it again if needed.',
       attachmentLoading: 'Preparing attachment…',
       attachmentInvalid:
         'Cannot read this file. Documents: PDF, DOCX, XLSX, PPTX up to 2 MB; UTF-8 TXT, MD, CSV, JSON, YAML, LOG up to 128 KB; JPG, PNG, WebP images up to 10 MB.',
@@ -599,15 +597,12 @@ const runtime = cs
       let attachments = 0;
       for (const previous of [...this.#turns].reverse()) {
         attachments += (previous.images?.length ?? 0) + (previous.files?.length ?? 0);
-        if (attachments > MAX_ATTACHMENTS) {
-          if (previous.images?.length) {
-            delete previous.images;
-            previous.imageExpired = true;
-          }
-          if (previous.files?.length) {
-            delete previous.files;
-            previous.imageExpired = true;
-          }
+        if (attachments > MAX_ATTACHMENTS && (previous.images?.length || previous.files?.length)) {
+          delete previous.images;
+          delete previous.files;
+          previous.imageExpired = true;
+          const item = this.#log.querySelectorAll('.msg')[this.#turns.indexOf(previous)];
+          if (item) item.replaceWith(this.#bubble(previous));
         }
       }
       this.#bubble(turn);
