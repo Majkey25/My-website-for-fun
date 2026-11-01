@@ -60,6 +60,9 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
   writes. An empty current envelope prevents deleted legacy conversations from returning.
 - Browser verification has its own visible state and bounded wait, before retrieval starts.
   Logs record retrieval, first-token, optional web-search and total timing without message text.
+- Retrieval sends the latest question separately from up to three earlier text turns in one rewrite
+  envelope. History resolves references; it must not replace a new topic. Hybrid keyword matching
+  accepts any query term so a paraphrase does not require every word to occur in one document.
 - Client cancellation or the 60-second deadline aborts the stream and upstream generation.
   AI Search has no cancellation parameter: the Worker stops awaiting it and does not start an
   answer afterward, but the binding may finish its search in the background.
