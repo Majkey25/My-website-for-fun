@@ -254,7 +254,7 @@ test('chat streams status, sources, text, suggestions and done with metadata-onl
   assert.equal(upstream.stream, true);
 });
 
-test('standalone retrieval skips rewriting while follow-ups retain conversation context', async (t) => {
+test('retrieval rewrites verbose first questions and preserves follow-up context', async (t) => {
   stubFetch(t, () =>
     sse([
       { type: 'response.output_text.delta', delta: structuredAnswer('A bounded answer.') },
@@ -267,7 +267,7 @@ test('standalone retrieval skips rewriting while follow-ups retain conversation 
     { role: 'assistant', content: 'It scans documents.' },
   ];
   for (const messages of [
-    [{ role: 'user', content: 'Tell me about SeliaScan.' }],
+    [{ role: 'user', content: 'Tell me briefly about SeliaScan and show its project screenshot.' }],
     [...previous, { role: 'user', content: 'What was it called before?' }],
   ]) {
     let searched = false;
@@ -287,7 +287,7 @@ test('standalone retrieval skips rewriting while follow-ups retain conversation 
           }) => {
             searched = true;
             assert.deepEqual(input.messages, messages);
-            assert.equal(input.ai_search_options.query_rewrite.enabled, messages.length > 1);
+            assert.equal(input.ai_search_options.query_rewrite.enabled, true);
             return { chunks: [] };
           },
         },
