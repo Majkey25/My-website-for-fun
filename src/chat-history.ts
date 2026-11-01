@@ -98,7 +98,11 @@ const current = (time: unknown, now: number): time is number =>
   time <= now &&
   now - time < HISTORY_TTL_MS;
 
-function decode(raw: string | null, savedOnly: boolean, now: number): History & { legacy?: true } {
+function decode(
+  raw: string | null,
+  savedOnly: boolean,
+  now: number,
+): History & { legacy?: true; version?: 3 } {
   const empty: History = { activeId: null, threads: [] };
   if (!raw || raw.length > MAX_HISTORY_CHARS) return empty;
   try {
@@ -155,7 +159,7 @@ function decode(raw: string | null, savedOnly: boolean, now: number): History & 
           turns,
         });
     }
-    return { activeId: value.activeId, threads };
+    return { activeId: value.activeId, threads, version: 3 };
   } catch {
     return empty;
   }
@@ -179,6 +183,11 @@ export function readThreads(
     local.threads.some((thread) => thread.id === 'legacy' && thread.updatedAt === legacy.updatedAt)
   )
     legacy.saved = true;
+  // Explicit current storage records deletions; keep stale tab text without saving it again.
+  if (local.version === 3) {
+    const saved = new Set(local.threads.map((thread) => thread.id));
+    for (const thread of session.threads) if (!saved.has(thread.id)) thread.saved = false;
+  }
   const merged = new Map<string, ChatThread>();
   // Equal timestamps prefer the tab's current save choice over stale persistent state.
   for (const thread of [...local.threads, ...session.threads]) {

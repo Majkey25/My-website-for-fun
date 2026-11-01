@@ -54,6 +54,9 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
   on the device for seven days after their last message. At capacity a new chat evicts the oldest
   unsaved thread; saved threads require explicit deletion. Images stay in bounded memory; restored
   turns show that the attachment is unavailable. Interrupted answers are never saved as complete.
+- History uses a separate version 3 storage key so older open tabs cannot overwrite saved threads.
+  Existing data migrates only when the current key is absent; old keys are retired after successful
+  writes. An empty current envelope prevents deleted legacy conversations from returning.
 - Browser verification has its own visible state and bounded wait, before retrieval starts.
   Logs record retrieval, first-token, optional web-search and total timing without message text.
 - Client cancellation or the 60-second deadline aborts the stream and upstream generation.
