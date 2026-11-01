@@ -1,0 +1,850 @@
+---
+import { Image } from 'astro:assets';
+import schoolLogo from '../../assets/brands/spszl.png';
+import stcLogo from '../../assets/brands/stc.png';
+import utbLogo from '../../assets/brands/utb.png';
+import GlitchText from '../../components/GlitchText.astro';
+import SocialIcon from '../../components/SocialIcon.astro';
+import ContactLink from '../ContactLink.astro';
+import ContactForm from '../ContactForm.astro';
+import Base from '../../layouts/Base.astro';
+import { href as siteHref, profile } from '../../site';
+import { ui, type Lang } from '../../i18n';
+
+interface Props {
+  lang: Lang;
+  page: 'services' | 'about' | 'contact';
+}
+const { lang, page } = Astro.props;
+const cs = lang === 'cs';
+const t = ui[lang];
+const summary = {
+  services: cs
+    ? 'AI strategie, integrace, praktické školení a vývoj softwaru pro váš tým.'
+    : 'AI strategy, integration, practical training and software development for your team.',
+  about: cs
+    ? 'Vývoj AI a softwaru, zkušenosti, vzdělání a hudba.'
+    : 'AI and software engineering, experience, education and music.',
+  contact: cs
+    ? 'Napište mi o svém projektu, týmu nebo problému, který chcete vyřešit.'
+    : 'Tell me about your project, your team or a problem you want to solve.',
+}[page];
+
+const status = cs
+  ? [
+      { key: 'nyní', value: 'LLM/RAG systémy a adaptace českých malých modelů v OKsystemu' },
+      {
+        key: 'nabízím',
+        value: 'AI strategie, integrace, kurzy pro zaměstnance, tutoring a vývoj webů',
+      },
+      { key: 'tvořím', value: 'Android, web, počítačové vidění/OCR a audio ML' },
+      { key: 'studium', value: 'Softwarové inženýrství, Univerzita Tomáše Bati ve Zlíně' },
+      { key: 'hudba', value: 'Baskytara a doprovodný zpěv ve WeTheGods' },
+    ]
+  : [
+      { key: 'now', value: 'LLM/RAG systems and Czech small-model adaptation at OKsystem' },
+      {
+        key: 'offer',
+        value: 'AI strategy, integration, employee courses, tutoring and website development',
+      },
+      { key: 'build', value: 'Android, web, computer vision/OCR and audio ML' },
+      { key: 'study', value: 'Software engineering, Tomas Bata University in Zlín' },
+      { key: 'music', value: 'Bass and backing vocals in WeTheGods' },
+    ];
+const services = cs
+  ? [
+      {
+        area: 'AI management',
+        text: 'Převádím potřeby firmy na konkrétní využití, priority a plán dodání. Porovnávám vlastní vývoj s hotovým řešením, kvalitu modelů, cenu, rychlost, hosting a rizika dodavatele. Stanovuji kritéria hodnocení a dohled člověka.',
+      },
+      {
+        area: 'Integrace',
+        text: 'Navrhuji a propojuji LLM asistenty, RAG, agenty a interní automatizaci se stávajícími API, databázemi a postupy. Vybírám cloudové nebo lokální modely podle požadavků na soukromí, přístup a údržbu.',
+      },
+      {
+        area: 'AI školení',
+        text: 'Praktické kurzy, workshopy a individuální tutoring pro technické i netechnické zaměstnance. Učím efektivní zadávání promptů, každodenní postupy, ověřování výstupů a bezpečnou práci s firemními daty na příkladech z práce daného týmu.',
+      },
+      {
+        area: 'Vývoj webů',
+        text: 'Tvořím responzivní weby a webové aplikace. Propojuji uživatelské rozhraní s backendem a API a zajišťuji nasazení.',
+      },
+      {
+        area: 'Výzkum a produkty',
+        text: 'Zkoumám nové oblasti, porovnávám přístupy a stavím ověřovací prototypy. Pracuji s adaptací malých modelů, úlohami v češtině, počítačovým viděním/OCR, audio ML i full-stack produkty.',
+      },
+      {
+        area: 'Bezpečnost AI',
+        text: 'Vyhodnocuji halucinace, selhání a úniky dat. Vymezuji autorizované bezpečnostní prověrky a obranné postupy s AI s jasnými oprávněními, lidskou kontrolou a pravidly schvalování.',
+      },
+    ]
+  : [
+      {
+        area: 'AI management',
+        text: 'Turn business needs into use cases, priorities and delivery plans. Compare build-versus-buy, model quality, cost, speed, hosting and vendor risk. Define evaluation criteria and human oversight.',
+      },
+      {
+        area: 'Integration',
+        text: 'Design and integrate LLM assistants, RAG, agents and internal automation with existing APIs, databases and workflows. Choose hosted or local models around privacy, access and maintenance needs.',
+      },
+      {
+        area: 'AI training',
+        text: "Hands-on courses, workshops and individual tutoring for technical and non-technical employees. Teach effective prompting, everyday workflows, output verification and safe handling of company data, using examples relevant to the team's work.",
+      },
+      {
+        area: 'Website development',
+        text: 'Build responsive websites and web applications. Connect user interfaces to backends and APIs, and deploy the finished site.',
+      },
+      {
+        area: 'R&D and products',
+        text: 'Explore unfamiliar domains, compare approaches and build proofs of concept. Work across small-model adaptation, Czech-language tasks, computer vision/OCR, audio ML and full-stack products.',
+      },
+      {
+        area: 'AI safety',
+        text: 'Evaluate hallucinations, failure modes and data exposure. Scope authorized security reviews and defensive AI workflows with clear permissions, human review and approval requirements.',
+      },
+    ];
+// Highlights of the certifications and courses on LinkedIn; certTotal is a lower bound.
+const certTotal = 55;
+const certs = [
+  {
+    org: 'Microsoft',
+    list: ['Azure AI Fundamentals', 'Azure Fundamentals'],
+    note: cs ? 'certifikace Microsoft, 2023' : 'Microsoft Certified, 2023',
+  },
+  {
+    org: 'Google Cloud',
+    list: [
+      'Engineer AI Agents with Agent Development Kit (ADK)',
+      'Inspect Rich Documents with Gemini Multimodality and Multimodal RAG',
+      'Orchestrate Multi-agent Workflows with Gemini Enterprise',
+      'Implement CI/CD Pipelines on Google Cloud',
+    ],
+    note: cs ? 'odznaky dovedností, říjen 2026' : 'skill badges, Oct 2026',
+  },
+  {
+    org: 'Anthropic',
+    list: [
+      'Model Context Protocol: Advanced Topics',
+      'Building with the Claude API',
+      'Claude Code in Action',
+    ],
+    note: cs ? '3 z 20 kurzů, červenec 2026' : '3 of 20 courses, Jul 2026',
+  },
+  {
+    org: 'OpenAI',
+    list: [
+      'Design and Build Agentic Systems',
+      'Build with Retrieval-Augmented Generation',
+      'Evaluate AI Applications',
+    ],
+    note: cs ? '3 ze 17 kurzů, září 2026' : '3 of 17 courses, Sep 2026',
+  },
+  {
+    org: 'AWS',
+    list: ['Foundations of Prompt Engineering'],
+    note: cs ? 'kurz, srpen 2026' : 'course, Aug 2026',
+  },
+  {
+    org: 'Cambridge',
+    list: ['B2 First (FCE)'],
+    note: cs ? 'zkouška z angličtiny, 2024' : 'English exam, 2024',
+  },
+];
+const habits = cs
+  ? [
+      {
+        title: 'Nejdřív měřit, pak tvrdit.',
+        text: 'CzechCore zveřejňuje precision, recall i odmítnuté experimenty. Selia Weather zveřejňuje zpětné vyhodnocení včetně neúspěchů.',
+      },
+      {
+        title: 'Soukromí jako výchozí stav.',
+        text: 'GitHub verze SeliaScan, Intoniva, SeliaLists a Selia Cycles nevyžadují vlastní přístup k síti. Data zůstávají v zařízení, pokud si nezvolíte export, sdílení nebo synchronizaci.',
+      },
+      {
+        title: 'Jeden úkol na nástroj.',
+        text: 'Ekvalizér pro jednotlivé karty, přeskakování přes SponsorBlock, kopírování URL karet: malá rozšíření prohlížeče, z nichž každé dělá jednu věc.',
+      },
+      {
+        title: 'Agenti potřebují hranice.',
+        text: 'Programovacím agentům dávám ohraničené úkoly, kontext, oprávnění a pravidla. Za architekturu odpovídám já a vygenerovanou práci ověřuji kontrolou kódu, testy, CI a bezpečnostními kontrolami.',
+      },
+    ]
+  : [
+      {
+        title: 'Measure, then claim.',
+        text: 'CzechCore publishes its precision, recall and rejected experiments. Selia Weather publishes its replay together with the failures.',
+      },
+      {
+        title: 'Private by default.',
+        text: 'The GitHub editions of SeliaScan, Intoniva, SeliaLists and Selia Cycles ask for no network access of their own, and your data stays on the device unless you choose to export, share or sync it.',
+      },
+      {
+        title: 'One job per tool.',
+        text: 'A per-tab equalizer, a SponsorBlock skipper, a tab-URL copier: small browser extensions that each do one thing.',
+      },
+      {
+        title: 'Agents need boundaries.',
+        text: 'I direct coding agents with scoped tasks, context, permissions and guardrails. I keep ownership of architecture and validate generated work with review, tests, CI and security checks.',
+      },
+    ];
+const experience = [
+  {
+    when: cs ? 'září 2021 – květen 2025' : 'Sep 2021 – May 2025',
+    role: cs ? 'Strojírenství' : 'Mechanical Engineering',
+    org: 'Střední průmyslová škola Zlín',
+    logo: schoolLogo,
+  },
+  {
+    when: cs ? 'leden 2023 – červen 2025' : 'Jan 2023 – Jun 2025',
+    role: cs ? 'Student programování v Azure' : 'Student Azure Programming',
+    org: 'Student Trainee Center (STC)',
+    logo: stcLogo,
+    support: true,
+    note: cs
+      ? 'Vybrán do IT programu podporovaného Microsoftem. Vývoj softwaru, API a cloudových projektů s mentory. Závěrečný projekt Music Analyzer: aplikace v Pythonu a Flasku využívající Librosa, Spleeter a Demucs pro rozdělení hudby na šest stop, přehrávání a ovládání jednotlivých stop.'
+      : 'Selected for a Microsoft-supported IT programme, building software, API and cloud projects with mentors. Final project: Music Analyzer, a Python/Flask app using Librosa, Spleeter and Demucs for six-stem music separation, playback and per-stem controls.',
+  },
+  {
+    when: cs ? 'červen 2025 – dosud' : 'Jun 2025 – now',
+    role: 'Full-Stack AI/ML Engineer & Backend Developer',
+    org: 'OKsystem',
+    note: cs
+      ? 'Vyvíjím LLM chatboty a RAG pipeline s Python službami, API, databázemi, automatizací a propojením s frontendem. Pracuji na dotrénování českých malých modelů a s inovačním týmem ověřuji nové AI přístupy. Při jednom srovnání modelů klesly odhadované náklady přibližně ze 40 na 2 USD za 1 000 dotazů při pozorované vyšší kvalitě odpovědí. Jde o odhady, nikoli auditované úspory v produkci.'
+      : 'Build LLM chatbots and RAG pipelines with Python services, APIs, databases, automation and frontend integration. Work on Czech small-model fine-tuning and prototype new AI approaches with the innovation team. In one model comparison, estimated model cost fell from about $40 to $2 per 1,000 queries, with better observed answer quality. These are estimates, not audited production savings.',
+  },
+  {
+    when: cs ? 'září 2025 – květen 2030 (předpoklad)' : 'Sep 2025 – May 2030 (expected)',
+    role: cs ? 'Softwarové inženýrství' : 'Software Engineering',
+    org: cs ? 'Univerzita Tomáše Bati ve Zlíně' : 'Tomas Bata University in Zlín',
+    logo: utbLogo,
+    note: cs
+      ? 'Kombinované studium algoritmů, návrhu softwaru, databází, AI, sítí a vývoje webových a mobilních aplikací.'
+      : 'Combined study covering algorithms, software design, databases, AI, networks and web/mobile development.',
+  },
+  {
+    when: cs ? 'květen 2026 – říjen 2026' : 'May 2026 – Oct 2026',
+    role: cs ? 'Výzkumník bezpečnosti AI a red teamingu' : 'AI Safety & Red Teaming Researcher',
+    org: cs ? 'Na volné noze' : 'Freelance',
+    note: cs
+      ? 'Neveřejné hodnocení bezpečnosti pokročilé generativní AI pro nejmenovanou AI společnost pod NDA. Nezávislý a odpovědný výzkum zranitelností.'
+      : 'Private safety evaluations of frontier generative AI for a confidential AI company under NDA. Independent, responsible vulnerability research.',
+  },
+];
+const skills = cs
+  ? [
+      {
+        area: 'Aplikovaná AI/ML',
+        list: 'LLM, RAG, AI agenti, dotrénování SLM, adaptace na češtinu, hodnocení modelů, context/prompt engineering, PyTorch, Whisper, počítačové vidění/OCR, audio ML',
+      },
+      {
+        area: 'Vývoj',
+        list: 'Python, TypeScript/JavaScript, React, Kotlin, Android/Jetpack Compose, REST API, databáze, automatizace, Astro, C, C++, C#, Java, HTML/CSS',
+      },
+      {
+        area: 'Dodání',
+        list: 'GitHub Actions, CI/CD, pytest, Playwright, CodeQL, kontrola kódu, pravidla pro agenty a bezpečnostní kontroly',
+      },
+      {
+        area: 'Jazyky',
+        list: 'Čeština (rodilý mluvčí), angličtina (profesní pracovní znalost, Cambridge B2 First)',
+      },
+    ]
+  : [
+      {
+        area: 'Applied AI/ML',
+        list: 'LLMs, RAG, AI agents, SLM fine-tuning, Czech-language adaptation, model evaluation, context/prompt engineering, PyTorch, Whisper, computer vision/OCR, audio ML',
+      },
+      {
+        area: 'Engineering',
+        list: 'Python, TypeScript/JavaScript, React, Kotlin, Android/Jetpack Compose, REST APIs, databases, automation, Astro, C, C++, C#, Java, HTML/CSS',
+      },
+      {
+        area: 'Delivery',
+        list: 'GitHub Actions, CI/CD, pytest, Playwright, CodeQL, code review, agent guardrails and security checks',
+      },
+      {
+        area: 'Languages',
+        list: 'Czech (native), English (professional working proficiency, Cambridge B2 First)',
+      },
+    ];
+---
+
+<Base lang={lang} title={t[page]} description={summary}>
+  <section class="hero frame" aria-labelledby="hero-title">
+    <h1 id="hero-title" class="name" data-enter style="--i: 0">
+      <GlitchText text={page === 'about' ? 'Matěj Teplý' : t[page]} scramble />
+    </h1>
+    <p class="statement" data-enter style="--i: 1">
+      {summary}
+    </p>
+    {page === 'about' && (
+      <div class="hero__copy">
+        <p class="lead" data-enter style="--i: 2">
+          {cs ? (
+            <>
+              Propojuji aplikovanou AI/ML, vývoj produktů a zavádění AI do praxe. Z otevřených
+              problémů vytvářím prototypy, ověřený software a konkrétní plány. V OKsystemu vyvíjím
+              LLM/RAG systémy a pracuji na dotrénování českých malých modelů. Firmám také pomáhám
+              vybírat modely, plánovat bezpečnou integraci AI a řídit realizaci. Nabízím praktické
+              kurzy a tutoring, aby zaměstnanci uměli AI nástroje používat efektivně, chránit
+              citlivá data a ověřovat výsledky. Mé projekty zahrnují Android, web, OCR a audio ML.
+            </>
+          ) : (
+            <>
+              I'm a technical generalist working across applied AI/ML, product development and AI
+              adoption. I turn open-ended problems into prototypes, tested software and practical
+              plans. At OKsystem I build LLM/RAG systems and work on Czech small-model fine-tuning.
+              I also help organizations choose models, plan safe AI integration and manage delivery.
+              I offer hands-on courses and tutoring so employees can use AI tools effectively,
+              protect sensitive data and check the results. My projects span Android, web, OCR and
+              audio ML.
+            </>
+          )}
+        </p>
+        <dl class="status" data-enter style="--i: 3">
+          {status.map((s) => (
+            <div>
+              <dt>{s.key}</dt>
+              <dd>{s.value}</dd>
+            </div>
+          ))}
+        </dl>
+        <ul class="inline-list" data-enter style="--i: 4">
+          {profile.socials.slice(0, 2).map((s) => (
+            <li>
+              <a
+                class="action-link ext"
+                href={s.href}
+                rel="noopener me"
+                target="_blank"
+                data-glitch
+              >
+                <SocialIcon name={s.label} />
+                <GlitchText text={s.label} />
+              </a>
+            </li>
+          ))}
+          <li>
+            <ContactLink class="action-link" value={profile.email} lang={lang} glitch>
+              <GlitchText text={t.mail} />
+            </ContactLink>
+          </li>
+        </ul>
+      </div>
+    )}
+  </section>
+
+  {page === 'services' && (
+    <section id="services" class="section frame split" aria-labelledby="services-title">
+      <h2 id="services-title" class="label">
+        {cs ? 'AI služby a vývoj webů' : 'AI services and website development'}
+      </h2>
+      <p class="muted intro">
+        {cs ? (
+          <>
+            Pomáhám týmům převádět potřeby firmy na funkční AI systémy a učím lidi s nimi pracovat.
+            Nabízím samostatné konzultace, projektovou i průběžnou spolupráci na částečný úvazek,
+            také pro firmy bez vlastního AI týmu.
+          </>
+        ) : (
+          <>
+            I help teams turn business needs into workable AI systems and teach people how to use
+            them. Open to independent, project-based and fractional consulting, including companies
+            without an in-house AI team.
+          </>
+        )}
+      </p>
+      <dl class="skills" data-reveal>
+        {services.map((s) => (
+          <div>
+            <dt>{s.area}</dt>
+            <dd>{s.text}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  )}
+
+  {page === 'services' && (
+    <section class="section frame split" aria-labelledby="how-title">
+      <h2 id="how-title" class="label">
+        {cs ? 'Jak pracuji' : 'How I work'}
+      </h2>
+      <ul class="habits" data-reveal>
+        {habits.map((h) => (
+          <li>
+            <h3 class="habit__title">{h.title}</h3>
+            <p class="muted">{h.text}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {page === 'about' && (
+    <section id="about" class="section frame split" aria-labelledby="about-title">
+      <h2 id="about-title" class="label">
+        {cs ? 'Zkušenosti a vzdělání' : 'Experience and education'}
+      </h2>
+      <ol class="timeline" data-reveal>
+        {experience.map((e) => (
+          <li>
+            <span class="meta timeline__when">
+              {e.when.split(' – ').map((date, i) => (
+                <span>
+                  {date}
+                  {i === 0 ? ' –' : ''}
+                </span>
+              ))}
+            </span>
+            <div>
+              <h3 class="timeline__role">
+                {e.role}{' '}
+                <span class="muted">
+                  ·{' '}
+                  {e.logo && (
+                    <Image
+                      class:list={[
+                        'timeline__mark',
+                        { 'timeline__mark--school': e.org === 'Střední průmyslová škola Zlín' },
+                      ]}
+                      src={e.logo}
+                      width="40"
+                      height="40"
+                      densities={[1, 2, 3]}
+                      format="webp"
+                      loading="lazy"
+                      decoding="async"
+                      alt=""
+                    />
+                  )}
+                  {e.org === 'OKsystem' ? (
+                    <svg
+                      class="timeline__logo"
+                      viewBox="0 0 150 30"
+                      width="100"
+                      height="20"
+                      role="img"
+                      aria-label={e.org}
+                    >
+                      <use href={`${siteHref('oksystem.svg')}#oksystem`} />
+                    </svg>
+                  ) : (
+                    e.org
+                  )}
+                </span>
+              </h3>
+              {e.support && (
+                <p class="timeline__support meta">
+                  <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                    <path fill="#f25022" d="M0 0h9v9H0z" />
+                    <path fill="#7fba00" d="M11 0h9v9h-9z" />
+                    <path fill="#00a4ef" d="M0 11h9v9H0z" />
+                    <path fill="#ffb900" d="M11 11h9v9h-9z" />
+                  </svg>
+                  <span>
+                    {cs ? 'Podporováno společností' : 'Supported by'} <strong>Microsoft</strong>
+                  </span>
+                </p>
+              )}
+              {e.note && <p class="muted">{e.note}</p>}
+            </div>
+          </li>
+        ))}
+      </ol>
+      <dl class="skills" data-reveal>
+        {skills.map((s) => (
+          <div>
+            <dt>{s.area}</dt>
+            <dd>{s.list}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  )}
+
+  {page === 'about' && (
+    <section id="certs" class="section frame split" aria-labelledby="certs-title">
+      <h2 id="certs-title" class="label">
+        {cs ? 'Certifikace a kurzy' : 'Certifications and courses'}
+      </h2>
+      <dl class="certs" data-reveal>
+        {certs.map((c) => (
+          <div>
+            <dt>{c.org}</dt>
+            <dd>
+              <ul>
+                {c.list.map((name) => (
+                  <li>{name}</li>
+                ))}
+              </ul>
+              <span class="meta">{c.note}</span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p class="muted intro">
+        {cs
+          ? 'Dále Google AI Essentials, Elements of AI z Helsinské univerzity a kurzy od IBM, Cisco a ITU.'
+          : 'Also Google AI Essentials, Elements of AI from the University of Helsinki, and courses from IBM, Cisco and the ITU.'}
+      </p>
+      <p class="more">
+        <a
+          class="action-link ext"
+          href="https://www.linkedin.com/in/matejteply/details/certifications/"
+          rel="noopener"
+          target="_blank"
+          data-glitch
+        >
+          <GlitchText
+            text={
+              cs
+                ? `Přes ${certTotal} s identifikátory na LinkedIn`
+                : `Over ${certTotal} with credential IDs on LinkedIn`
+            }
+          />
+        </a>
+      </p>
+    </section>
+  )}
+
+  {page === 'about' && (
+    <section id="music" class="section frame split" aria-labelledby="music-title">
+      <h2 id="music-title" class="label">
+        {cs ? 'Hudba' : 'Music'}
+      </h2>
+      <div class="prose" data-reveal>
+        <p>
+          {cs ? (
+            <>
+              Hudba je podstatnou součástí mého života. Hraji na baskytaru a zpívám doprovodné
+              vokály ve WeTheGods, alternativní metalcorové kapele z Uherského Hradiště. Hraji také
+              na kytaru, bicí a saxofon. Hudba ovlivňuje, jak přemýšlím o rytmu, struktuře a
+              tvořivosti, i při programování.
+            </>
+          ) : (
+            <>
+              Music is a core part of who I am, not a side hobby. I play bass and sing backing
+              vocals in WeTheGods, an alternative metalcore band from Uherské Hradiště, and I also
+              play guitar, drums and saxophone. It shapes how I think about rhythm, structure and
+              creativity, even in code.
+            </>
+          )}
+        </p>
+        <p>
+          {cs
+            ? 'V letech 2025–2026 jsem hrál na kytaru v rockové kapele Exhalace. Vytvořil jsem weby obou kapel i ladičku a sbírám vinylové desky.'
+            : 'From 2025 to 2026 I played guitar in the rock band Exhalace. I built both bands’ websites and a tuner app, and I collect vinyl records.'}
+        </p>
+        <ul class="inline-list">
+          <li>
+            <a
+              class="action-link ext"
+              href="https://majkey25.github.io/WeTheGods/"
+              rel="noopener"
+              target="_blank"
+              data-glitch
+            >
+              <GlitchText text="WeTheGods" />
+            </a>
+          </li>
+          <li>
+            <a
+              class="action-link ext"
+              href="https://open.spotify.com/artist/0t37G5AusfBBeHTv85jxj9"
+              rel="noopener"
+              target="_blank"
+              data-glitch
+            >
+              <GlitchText text="Spotify" />
+            </a>
+          </li>
+          <li>
+            <a
+              class="action-link ext"
+              href="https://www.exhalace.cz/"
+              rel="noopener"
+              target="_blank"
+              data-glitch
+            >
+              <GlitchText text="Exhalace" />
+            </a>
+          </li>
+        </ul>
+      </div>
+    </section>
+  )}
+
+  {page === 'contact' && (
+    <section id="contact" class="section frame split" aria-labelledby="contact-title">
+      <h2 id="contact-title" class="label">
+        {cs ? 'Spolupráce' : 'Work with me'}
+      </h2>
+      <p class="statement">
+        {cs
+          ? 'Pojďme něco vytvořit, naplánovat zavedení AI nebo proškolit váš tým.'
+          : "Let's build something, plan AI adoption or train your team."}
+      </p>
+      <p class="muted intro">
+        {cs
+          ? 'Nabízím AI strategii, integraci, praktické kurzy a tutoring pro zaměstnance, vývoj webů i produktů.'
+          : 'Available for AI strategy, integration, practical employee courses and tutoring, website development, or product development.'}
+      </p>
+      <ContactForm lang={lang} accessKey={profile.web3formsAccessKey} />
+      <p class="mail">
+        <ContactLink class="action-link" value={profile.email} lang={lang} glitch>
+          <GlitchText text={t.mail} />
+        </ContactLink>
+        <ContactLink class="action-link" value={profile.email} lang={lang} action="reveal" glitch>
+          <GlitchText text={cs ? 'Zobrazit e-mail' : 'Show email'} />
+        </ContactLink>
+        <ContactLink
+          class="action-link no-print"
+          value={profile.email}
+          lang={lang}
+          action="copy"
+          glitch
+        >
+          <GlitchText text={t.copy} />
+        </ContactLink>
+      </p>
+    </section>
+  )}
+</Base>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1.75rem, 4vw, 3rem) clamp(2rem, 6vw, 6rem);
+    align-items: start;
+    padding-block: clamp(3rem, 9vw, 6.5rem) 0;
+  }
+
+  .hero .name {
+    grid-column: 1 / -1;
+    font-size: clamp(2.75rem, 0.8rem + 10.2vw, 9.75rem);
+    letter-spacing: -0.045em;
+    line-height: 0.9;
+  }
+
+  .hero__copy {
+    display: grid;
+    grid-column: 1;
+    grid-row: 3;
+    gap: 1.4rem;
+    max-width: 46rem;
+  }
+
+  .hero .statement {
+    grid-column: 1;
+    grid-row: 2;
+    max-width: 36ch;
+    font-size: clamp(1.4rem, 1rem + 1.6vw, 2.25rem);
+  }
+
+  .hero .lead {
+    max-width: 60ch;
+  }
+
+  .status {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .status div {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .status dt {
+    color: var(--muted);
+  }
+
+  /* Sections: the heading holds the left column while its content scrolls past on the right. */
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+    column-gap: clamp(2rem, 6vw, 6rem);
+    align-items: start;
+  }
+
+  .split > :global(*) {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  .split > .label {
+    grid-column: 1;
+    grid-row: 1 / span 12;
+    position: sticky;
+    top: 6rem;
+  }
+
+  .split > .statement {
+    margin-bottom: 1rem;
+  }
+
+  @media (width < 56rem) {
+    .split {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .split > :global(*),
+    .split > .label {
+      grid-column: 1;
+      grid-row: auto;
+      position: static;
+    }
+  }
+
+  .intro {
+    max-width: 58ch;
+    margin-bottom: 1rem;
+  }
+
+  .more {
+    margin-top: 1rem;
+  }
+
+  .habits,
+  .timeline {
+    display: grid;
+    gap: 1.4rem;
+  }
+
+  .habits {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+    gap: 2rem clamp(1.5rem, 4vw, 3rem);
+  }
+
+  .habits li {
+    display: grid;
+    gap: 0.4rem;
+    align-content: start;
+  }
+
+  .timeline li {
+    display: grid;
+    grid-template-columns: 10rem minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .timeline__when {
+    padding-top: 0.15rem;
+  }
+
+  .timeline__when > span {
+    display: block;
+    white-space: nowrap;
+  }
+
+  .habit__title,
+  .timeline__role {
+    font-size: 1.0625rem;
+    font-weight: 650;
+    font-stretch: 110%;
+  }
+
+  .timeline__role .muted {
+    font-weight: 400;
+    font-stretch: 100%;
+  }
+
+  .timeline__logo {
+    display: inline-block;
+    vertical-align: middle;
+    fill: #009645;
+  }
+
+  .timeline__mark {
+    display: inline-block;
+    margin-right: 0.4rem;
+    vertical-align: middle;
+  }
+
+  @media screen {
+    :global([data-theme='dark']) .timeline__mark--school {
+      filter: invert(1);
+    }
+  }
+
+  .timeline__support {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-block: 0.4rem;
+    color: var(--muted);
+  }
+
+  .timeline__support svg {
+    flex: none;
+    align-self: center;
+  }
+
+  .timeline__support strong {
+    color: var(--ink);
+    font-weight: 550;
+  }
+
+  .skills {
+    display: grid;
+    gap: 0.9rem;
+    margin-top: 2.5rem;
+  }
+
+  .skills div,
+  .certs div {
+    display: grid;
+    grid-template-columns: 10rem minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .skills dt,
+  .certs dt {
+    color: var(--muted);
+    font-size: 0.9375rem;
+  }
+
+  .certs {
+    display: grid;
+    gap: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .certs dt {
+    padding-top: 0.2rem;
+  }
+
+  .certs dd {
+    display: grid;
+    gap: 0.3rem;
+    text-wrap: pretty;
+  }
+
+  /* Tighter inside a name than between names, so a wrapped name still reads as one. */
+  .certs ul {
+    display: grid;
+    gap: 0.4rem;
+    line-height: 1.35;
+  }
+
+  @media (width < 34rem) {
+    .timeline li,
+    .skills div,
+    .certs div {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.15rem;
+    }
+  }
+
+  .mail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin-top: 1.25rem;
+  }
+</style>

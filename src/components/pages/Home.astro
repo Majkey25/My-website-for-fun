@@ -1,16 +1,14 @@
 ---
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
-import schoolLogo from '../../assets/brands/spszl.png';
-import stcLogo from '../../assets/brands/stc.png';
-import utbLogo from '../../assets/brands/utb.png';
-import GlitchText from '../../components/GlitchText.astro';
-import SocialIcon from '../../components/SocialIcon.astro';
-import ContactLink from '../ContactLink.astro';
-import ContactForm from '../ContactForm.astro';
+import Arrow from '../Arrow.astro';
+import GlitchText from '../GlitchText.astro';
+import Workbench from '../Workbench.astro';
 import Base from '../../layouts/Base.astro';
-import { href as siteHref, profile, slug } from '../../site';
-import { projectText, groupLabels, ui, type Lang } from '../../i18n';
+import { chat, starters } from '../../chat';
+import { href as siteHref, slug } from '../../site';
+import { projectText, ui, type Lang } from '../../i18n';
+import { projectMedia } from '../../project-media';
 
 interface Props {
   lang: Lang;
@@ -19,919 +17,527 @@ const { lang } = Astro.props;
 const cs = lang === 'cs';
 const t = ui[lang];
 const href = (path = '') => siteHref(path, lang);
-const projects = (await getCollection('projects')).map((e) => projectText(e.data, lang));
-const featured = projects
-  .filter((p) => p.featured)
-  .sort((a, b) => (a.featured?.order ?? 0) - (b.featured?.order ?? 0));
-const pad = (n: number) => String(n).padStart(2, '0');
-
-const status = cs
-  ? [
-      { key: 'nyní', value: 'LLM/RAG systémy a adaptace českých malých modelů v OKsystemu' },
-      {
-        key: 'nabízím',
-        value: 'AI strategie, integrace, kurzy pro zaměstnance, tutoring a vývoj webů',
-      },
-      { key: 'tvořím', value: 'Android, web, počítačové vidění/OCR a audio ML' },
-      { key: 'studium', value: 'Softwarové inženýrství, Univerzita Tomáše Bati ve Zlíně' },
-      { key: 'hudba', value: 'Baskytara a doprovodný zpěv ve WeTheGods' },
-    ]
-  : [
-      { key: 'now', value: 'LLM/RAG systems and Czech small-model adaptation at OKsystem' },
-      {
-        key: 'offer',
-        value: 'AI strategy, integration, employee courses, tutoring and website development',
-      },
-      { key: 'build', value: 'Android, web, computer vision/OCR and audio ML' },
-      { key: 'study', value: 'Software engineering, Tomas Bata University in Zlín' },
-      { key: 'music', value: 'Bass and backing vocals in WeTheGods' },
-    ];
-const services = cs
-  ? [
-      {
-        area: 'AI management',
-        text: 'Převádím potřeby firmy na konkrétní využití, priority a plán dodání. Porovnávám vlastní vývoj s hotovým řešením, kvalitu modelů, cenu, rychlost, hosting a rizika dodavatele. Stanovuji kritéria hodnocení a dohled člověka.',
-      },
-      {
-        area: 'Integrace',
-        text: 'Navrhuji a propojuji LLM asistenty, RAG, agenty a interní automatizaci se stávajícími API, databázemi a postupy. Vybírám cloudové nebo lokální modely podle požadavků na soukromí, přístup a údržbu.',
-      },
-      {
-        area: 'AI školení',
-        text: 'Praktické kurzy, workshopy a individuální tutoring pro technické i netechnické zaměstnance. Učím efektivní zadávání promptů, každodenní postupy, ověřování výstupů a bezpečnou práci s firemními daty na příkladech z práce daného týmu.',
-      },
-      {
-        area: 'Vývoj webů',
-        text: 'Tvořím responzivní weby a webové aplikace. Propojuji uživatelské rozhraní s backendem a API a zajišťuji nasazení.',
-      },
-      {
-        area: 'Výzkum a produkty',
-        text: 'Zkoumám nové oblasti, porovnávám přístupy a stavím ověřovací prototypy. Pracuji s adaptací malých modelů, úlohami v češtině, počítačovým viděním/OCR, audio ML i full-stack produkty.',
-      },
-      {
-        area: 'Bezpečnost AI',
-        text: 'Vyhodnocuji halucinace, selhání a úniky dat. Vymezuji autorizované bezpečnostní prověrky a obranné postupy s AI s jasnými oprávněními, lidskou kontrolou a pravidly schvalování.',
-      },
-    ]
-  : [
-      {
-        area: 'AI management',
-        text: 'Turn business needs into use cases, priorities and delivery plans. Compare build-versus-buy, model quality, cost, speed, hosting and vendor risk. Define evaluation criteria and human oversight.',
-      },
-      {
-        area: 'Integration',
-        text: 'Design and integrate LLM assistants, RAG, agents and internal automation with existing APIs, databases and workflows. Choose hosted or local models around privacy, access and maintenance needs.',
-      },
-      {
-        area: 'AI training',
-        text: "Hands-on courses, workshops and individual tutoring for technical and non-technical employees. Teach effective prompting, everyday workflows, output verification and safe handling of company data, using examples relevant to the team's work.",
-      },
-      {
-        area: 'Website development',
-        text: 'Build responsive websites and web applications. Connect user interfaces to backends and APIs, and deploy the finished site.',
-      },
-      {
-        area: 'R&D and products',
-        text: 'Explore unfamiliar domains, compare approaches and build proofs of concept. Work across small-model adaptation, Czech-language tasks, computer vision/OCR, audio ML and full-stack products.',
-      },
-      {
-        area: 'AI safety',
-        text: 'Evaluate hallucinations, failure modes and data exposure. Scope authorized security reviews and defensive AI workflows with clear permissions, human review and approval requirements.',
-      },
-    ];
-// Highlights of the certifications and courses on LinkedIn; certTotal is a lower bound.
-const certTotal = 55;
-const certs = [
+const projects = (await getCollection('projects')).map((entry) => projectText(entry.data, lang));
+const selected = projects
+  .filter((project) => project.featured && projectMedia[project.name])
+  .sort((a, b) => (a.featured?.order ?? 0) - (b.featured?.order ?? 0))
+  .slice(0, 6);
+const pages = [
   {
-    org: 'Microsoft',
-    list: ['Azure AI Fundamentals', 'Azure Fundamentals'],
-    note: cs ? 'certifikace Microsoft, 2023' : 'Microsoft Certified, 2023',
+    path: 'services/',
+    id: 'services',
+    title: t.services,
+    text: cs
+      ? 'AI strategie, integrace, školení a vývoj.'
+      : 'AI strategy, integration, training and development.',
   },
   {
-    org: 'Google Cloud',
-    list: [
-      'Engineer AI Agents with Agent Development Kit (ADK)',
-      'Inspect Rich Documents with Gemini Multimodality and Multimodal RAG',
-      'Orchestrate Multi-agent Workflows with Gemini Enterprise',
-      'Implement CI/CD Pipelines on Google Cloud',
-    ],
-    note: cs ? 'odznaky dovedností, říjen 2026' : 'skill badges, Oct 2026',
+    path: 'about/',
+    id: 'about',
+    title: t.about,
+    text: cs
+      ? 'Zkušenosti, vzdělání a přístup k práci.'
+      : 'Experience, education and the way I work.',
   },
   {
-    org: 'Anthropic',
-    list: [
-      'Model Context Protocol: Advanced Topics',
-      'Building with the Claude API',
-      'Claude Code in Action',
-    ],
-    note: cs ? '3 z 20 kurzů, červenec 2026' : '3 of 20 courses, Jul 2026',
-  },
-  {
-    org: 'OpenAI',
-    list: [
-      'Design and Build Agentic Systems',
-      'Build with Retrieval-Augmented Generation',
-      'Evaluate AI Applications',
-    ],
-    note: cs ? '3 ze 17 kurzů, září 2026' : '3 of 17 courses, Sep 2026',
-  },
-  {
-    org: 'AWS',
-    list: ['Foundations of Prompt Engineering'],
-    note: cs ? 'kurz, srpen 2026' : 'course, Aug 2026',
-  },
-  {
-    org: 'Cambridge',
-    list: ['B2 First (FCE)'],
-    note: cs ? 'zkouška z angličtiny, 2024' : 'English exam, 2024',
+    path: 'contact/',
+    id: 'contact',
+    title: t.contact,
+    text: cs ? 'Napište mi o svém projektu nebo týmu.' : 'Tell me about your project or team.',
   },
 ];
-// First visit: a short boot log, in the spirit of the site's name.
-const boot = cs
-  ? [
-      'spouštím majkey25.github.io/init',
-      `[ ok ] připojeno /work: ${projects.length} projektů`,
-      `[ ok ] načteno přes ${certTotal} certifikací a kurzů`,
-      '[ ok ] spuštěno rag-agents.service',
-      '[ ok ] spuštěno android-apps.service',
-      '[ ok ] spuštěno music.service',
-      '[ ok ] dosažen cíl: majkey',
-    ]
-  : [
-      'booting majkey25.github.io/init',
-      `[ ok ] mounted /work: ${projects.length} projects`,
-      `[ ok ] loaded over ${certTotal} credentials`,
-      '[ ok ] started rag-agents.service',
-      '[ ok ] started android-apps.service',
-      '[ ok ] started music.service',
-      '[ ok ] reached target: majkey',
-    ];
-const habits = cs
-  ? [
-      {
-        title: 'Nejdřív měřit, pak tvrdit.',
-        text: 'CzechCore zveřejňuje precision, recall i odmítnuté experimenty. Selia Weather zveřejňuje zpětné vyhodnocení včetně neúspěchů.',
-      },
-      {
-        title: 'Soukromí jako výchozí stav.',
-        text: 'GitHub verze SeliaScan, Intoniva, SeliaLists a Selia Cycles nevyžadují vlastní přístup k síti. Data zůstávají v zařízení, pokud si nezvolíte export, sdílení nebo synchronizaci.',
-      },
-      {
-        title: 'Jeden úkol na nástroj.',
-        text: 'Ekvalizér pro jednotlivé karty, přeskakování přes SponsorBlock, kopírování URL karet: malá rozšíření prohlížeče, z nichž každé dělá jednu věc.',
-      },
-      {
-        title: 'Agenti potřebují hranice.',
-        text: 'Programovacím agentům dávám ohraničené úkoly, kontext, oprávnění a pravidla. Za architekturu odpovídám já a vygenerovanou práci ověřuji kontrolou kódu, testy, CI a bezpečnostními kontrolami.',
-      },
-    ]
-  : [
-      {
-        title: 'Measure, then claim.',
-        text: 'CzechCore publishes its precision, recall and rejected experiments. Selia Weather publishes its replay together with the failures.',
-      },
-      {
-        title: 'Private by default.',
-        text: 'The GitHub editions of SeliaScan, Intoniva, SeliaLists and Selia Cycles ask for no network access of their own, and your data stays on the device unless you choose to export, share or sync it.',
-      },
-      {
-        title: 'One job per tool.',
-        text: 'A per-tab equalizer, a SponsorBlock skipper, a tab-URL copier: small browser extensions that each do one thing.',
-      },
-      {
-        title: 'Agents need boundaries.',
-        text: 'I direct coding agents with scoped tasks, context, permissions and guardrails. I keep ownership of architecture and validate generated work with review, tests, CI and security checks.',
-      },
-    ];
-const experience = [
-  {
-    when: cs ? 'září 2021 – květen 2025' : 'Sep 2021 – May 2025',
-    role: cs ? 'Strojírenství' : 'Mechanical Engineering',
-    org: 'Střední průmyslová škola Zlín',
-    logo: schoolLogo,
-  },
-  {
-    when: cs ? 'leden 2023 – červen 2025' : 'Jan 2023 – Jun 2025',
-    role: cs ? 'Student programování v Azure' : 'Student Azure Programming',
-    org: 'Student Trainee Center (STC)',
-    logo: stcLogo,
-    support: true,
-    note: cs
-      ? 'Vybrán do IT programu podporovaného Microsoftem. Vývoj softwaru, API a cloudových projektů s mentory. Závěrečný projekt Music Analyzer: aplikace v Pythonu a Flasku využívající Librosa, Spleeter a Demucs pro rozdělení hudby na šest stop, přehrávání a ovládání jednotlivých stop.'
-      : 'Selected for a Microsoft-supported IT programme, building software, API and cloud projects with mentors. Final project: Music Analyzer, a Python/Flask app using Librosa, Spleeter and Demucs for six-stem music separation, playback and per-stem controls.',
-  },
-  {
-    when: cs ? 'červen 2025 – dosud' : 'Jun 2025 – now',
-    role: 'Full-Stack AI/ML Engineer & Backend Developer',
-    org: 'OKsystem',
-    note: cs
-      ? 'Vyvíjím LLM chatboty a RAG pipeline s Python službami, API, databázemi, automatizací a propojením s frontendem. Pracuji na dotrénování českých malých modelů a s inovačním týmem ověřuji nové AI přístupy. Při jednom srovnání modelů klesly odhadované náklady přibližně ze 40 na 2 USD za 1 000 dotazů při pozorované vyšší kvalitě odpovědí. Jde o odhady, nikoli auditované úspory v produkci.'
-      : 'Build LLM chatbots and RAG pipelines with Python services, APIs, databases, automation and frontend integration. Work on Czech small-model fine-tuning and prototype new AI approaches with the innovation team. In one model comparison, estimated model cost fell from about $40 to $2 per 1,000 queries, with better observed answer quality. These are estimates, not audited production savings.',
-  },
-  {
-    when: cs ? 'září 2025 – květen 2030 (předpoklad)' : 'Sep 2025 – May 2030 (expected)',
-    role: cs ? 'Softwarové inženýrství' : 'Software Engineering',
-    org: cs ? 'Univerzita Tomáše Bati ve Zlíně' : 'Tomas Bata University in Zlín',
-    logo: utbLogo,
-    note: cs
-      ? 'Kombinované studium algoritmů, návrhu softwaru, databází, AI, sítí a vývoje webových a mobilních aplikací.'
-      : 'Combined study covering algorithms, software design, databases, AI, networks and web/mobile development.',
-  },
-  {
-    when: cs ? 'květen 2026 – říjen 2026' : 'May 2026 – Oct 2026',
-    role: cs ? 'Výzkumník bezpečnosti AI a red teamingu' : 'AI Safety & Red Teaming Researcher',
-    org: cs ? 'Na volné noze' : 'Freelance',
-    note: cs
-      ? 'Neveřejné hodnocení bezpečnosti pokročilé generativní AI pro nejmenovanou AI společnost pod NDA. Nezávislý a odpovědný výzkum zranitelností.'
-      : 'Private safety evaluations of frontier generative AI for a confidential AI company under NDA. Independent, responsible vulnerability research.',
-  },
-];
-const skills = cs
-  ? [
-      {
-        area: 'Aplikovaná AI/ML',
-        list: 'LLM, RAG, AI agenti, dotrénování SLM, adaptace na češtinu, hodnocení modelů, context/prompt engineering, PyTorch, Whisper, počítačové vidění/OCR, audio ML',
-      },
-      {
-        area: 'Vývoj',
-        list: 'Python, TypeScript/JavaScript, React, Kotlin, Android/Jetpack Compose, REST API, databáze, automatizace, Astro, C, C++, C#, Java, HTML/CSS',
-      },
-      {
-        area: 'Dodání',
-        list: 'GitHub Actions, CI/CD, pytest, Playwright, CodeQL, kontrola kódu, pravidla pro agenty a bezpečnostní kontroly',
-      },
-      {
-        area: 'Jazyky',
-        list: 'Čeština (rodilý mluvčí), angličtina (profesní pracovní znalost, Cambridge B2 First)',
-      },
-    ]
-  : [
-      {
-        area: 'Applied AI/ML',
-        list: 'LLMs, RAG, AI agents, SLM fine-tuning, Czech-language adaptation, model evaluation, context/prompt engineering, PyTorch, Whisper, computer vision/OCR, audio ML',
-      },
-      {
-        area: 'Engineering',
-        list: 'Python, TypeScript/JavaScript, React, Kotlin, Android/Jetpack Compose, REST APIs, databases, automation, Astro, C, C++, C#, Java, HTML/CSS',
-      },
-      {
-        area: 'Delivery',
-        list: 'GitHub Actions, CI/CD, pytest, Playwright, CodeQL, code review, agent guardrails and security checks',
-      },
-      {
-        area: 'Languages',
-        list: 'Czech (native), English (professional working proficiency, Cambridge B2 First)',
-      },
-    ];
 ---
 
-<Base boot={boot} lang={lang}>
-  <section class="hero wrap" aria-labelledby="hero-title">
-    <p class="mono muted" data-enter style="--i: 0">
-      {cs
-        ? 'Technický inovátor · aplikovaná AI/ML · Zlín, CZ'
-        : 'Technical innovator · applied AI/ML · Zlín, CZ'}
-    </p>
-    <h1 id="hero-title" class="name" data-enter style="--i: 1">
-      <span class="sr-only">Matěj Teplý</span>
-      <span aria-hidden="true" data-scramble>
-        Matěj Teplý
-      </span>
+<Base lang={lang} intro>
+  <section class="hero frame" aria-labelledby="hero-title">
+    <h1 id="hero-title" class="name" data-enter style="--i:0">
+      <GlitchText text="Matěj Teplý" scramble />
     </h1>
-    <p class="statement" data-enter style="--i: 2">
-      {cs ? 'Tvořím užitečné technologie' : 'I build useful technology'}{' '}
-      <em>{cs ? 'a pomáhám týmům používat AI.' : 'and help teams use AI.'}</em>
-    </p>
-    <p class="lead" data-enter style="--i: 3">
-      {cs ? (
-        <>
-          Propojuji aplikovanou AI/ML, vývoj produktů a zavádění AI do praxe. Z otevřených problémů
-          vytvářím prototypy, ověřený software a konkrétní plány. V OKsystemu vyvíjím LLM/RAG
-          systémy a pracuji na dotrénování českých malých modelů. Firmám také pomáhám vybírat
-          modely, plánovat bezpečnou integraci AI a řídit realizaci. Nabízím praktické kurzy a
-          tutoring, aby zaměstnanci uměli AI nástroje používat efektivně, chránit citlivá data a
-          ověřovat výsledky. Mé projekty zahrnují Android, web, OCR a audio ML.
-        </>
-      ) : (
-        <>
-          I'm a technical generalist working across applied AI/ML, product development and AI
-          adoption. I turn open-ended problems into prototypes, tested software and practical plans.
-          At OKsystem I build LLM/RAG systems and work on Czech small-model fine-tuning. I also help
-          organizations choose models, plan safe AI integration and manage delivery. I offer
-          hands-on courses and tutoring so employees can use AI tools effectively, protect sensitive
-          data and check the results. My projects span Android, web, OCR and audio ML.
-        </>
-      )}
-    </p>
-    <dl class="status mono" data-enter style="--i: 4">
-      {status.map((s) => (
-        <div>
-          <dt>{s.key}</dt>
-          <dd>
-            <span class="sr-only">{s.value}</span>
-            <span aria-hidden="true" data-scramble>
-              {s.value}
-            </span>
-          </dd>
-        </div>
-      ))}
-    </dl>
-    <ul class="inline-list" data-enter style="--i: 5">
-      {profile.socials.slice(0, 2).map((s) => (
-        <li>
-          <a class="action-link ext" href={s.href} rel="noopener me" target="_blank" data-glitch>
-            <SocialIcon name={s.label} />
-            <GlitchText text={s.label} />
-          </a>
-        </li>
-      ))}
-      <li>
-        <ContactLink class="action-link" value={profile.email} lang={lang} glitch>
-          <GlitchText text={t.mail} />
-        </ContactLink>
-      </li>
-    </ul>
-  </section>
-
-  <section id="services" class="section wrap" aria-labelledby="services-title">
-    <h2 id="services-title" class="label">
-      {cs ? 'AI služby a vývoj webů' : 'AI services and website development'}
-    </h2>
-    <p class="muted intro">
-      {cs ? (
-        <>
-          Pomáhám týmům převádět potřeby firmy na funkční AI systémy a učím lidi s nimi pracovat.
-          Nabízím samostatné konzultace, projektovou i průběžnou spolupráci na částečný úvazek, také
-          pro firmy bez vlastního AI týmu.
-        </>
-      ) : (
-        <>
-          I help teams turn business needs into workable AI systems and teach people how to use
-          them. Open to independent, project-based and fractional consulting, including companies
-          without an in-house AI team.
-        </>
-      )}
-    </p>
-    <dl class="skills" data-reveal>
-      {services.map((s) => (
-        <div>
-          <dt class="mono muted">{s.area}</dt>
-          <dd>{s.text}</dd>
-        </div>
-      ))}
-    </dl>
-  </section>
-
-  <section id="work" class="section wrap" aria-labelledby="work-title">
-    <h2 id="work-title" class="label">
-      {cs ? 'Vybrané projekty' : 'Pinned work'} <span class="count">({pad(featured.length)})</span>
-    </h2>
-    <p class="muted intro">
-      {cs ? (
-        <>
-          Vybrané projekty popsané jako problém, postup a výsledek. Výsledek říká, co jsem změřil
-          nebo vydal. Když měření odhalilo selhání, zůstává uvedené.
-        </>
-      ) : (
-        <>
-          Selected projects, each told as problem, approach and result. The result is what I
-          measured or shipped; where a measurement found a failure, it stays in.
-        </>
-      )}
-    </p>
-    <ol class="rows" data-reveal>
-      {featured.map((p, i) => (
-        <li>
-          <a class="row" href={href(`work/${slug(p.name)}/`)} data-desc={p.problem}>
-            <span class="row__num">{pad(i + 1)}</span>
-            <span class="row__main">
-              <span class="row__name" style={`view-transition-name: p-${slug(p.name)}`}>
-                {p.name}
-              </span>
-              <span class="row__kind">{p.kind}</span>
-            </span>
-            <span class="row__meta">{cs ? groupLabels.cs[p.group] : p.featured?.area}</span>
-          </a>
-        </li>
-      ))}
-    </ol>
-    <p class="more">
-      <a class="action-link" href={href('work/')} data-glitch>
-        <GlitchText
-          text={
-            cs ? `Všech ${projects.length} projektů →` : `See all ${projects.length} projects →`
-          }
-        />
-      </a>
-    </p>
-  </section>
-
-  <section class="section wrap" aria-labelledby="how-title">
-    <h2 id="how-title" class="label">
-      {cs ? 'Jak pracuji' : 'How I work'}
-    </h2>
-    <ol class="habits" data-reveal>
-      {habits.map((h, i) => (
-        <li>
-          <span class="row__num">{pad(i + 1)}</span>
-          <div>
-            <h3 class="habit__title">{h.title}</h3>
-            <p class="muted">{h.text}</p>
-          </div>
-        </li>
-      ))}
-    </ol>
-  </section>
-
-  <section id="about" class="section wrap" aria-labelledby="about-title">
-    <h2 id="about-title" class="label">
-      {cs ? 'Zkušenosti a vzdělání' : 'Experience and education'}
-    </h2>
-    <ol class="timeline" data-reveal>
-      {experience.map((e) => (
-        <li>
-          <span class="row__num timeline__when">
-            {e.when.split(' – ').map((date, i) => (
-              <span>
-                {date}
-                {i === 0 ? ' –' : ''}
-              </span>
-            ))}
-          </span>
-          <div>
-            <h3 class="timeline__role">
-              {e.role}{' '}
-              <span class="muted">
-                ·{' '}
-                {e.logo && (
-                  <Image
-                    class:list={[
-                      'timeline__mark',
-                      { 'timeline__mark--school': e.org === 'Střední průmyslová škola Zlín' },
-                    ]}
-                    src={e.logo}
-                    width="40"
-                    height="40"
-                    densities={[1, 2, 3]}
-                    format="webp"
-                    loading="lazy"
-                    decoding="async"
-                    alt=""
-                  />
-                )}
-                {e.org === 'OKsystem' ? (
-                  <svg
-                    class="timeline__logo"
-                    viewBox="0 0 150 30"
-                    width="100"
-                    height="20"
-                    role="img"
-                    aria-label={e.org}
-                  >
-                    <use href={`${siteHref('oksystem.svg')}#oksystem`} />
-                  </svg>
-                ) : (
-                  e.org
-                )}
-              </span>
-            </h3>
-            {e.support && (
-              <p class="timeline__support mono">
-                <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
-                  <path fill="#f25022" d="M0 0h9v9H0z" />
-                  <path fill="#7fba00" d="M11 0h9v9h-9z" />
-                  <path fill="#00a4ef" d="M0 11h9v9H0z" />
-                  <path fill="#ffb900" d="M11 11h9v9h-9z" />
-                </svg>
-                <span>
-                  {cs ? 'Podporováno společností' : 'Supported by'} <strong>Microsoft</strong>
-                </span>
-              </p>
-            )}
-            {e.note && <p class="muted">{e.note}</p>}
-          </div>
-        </li>
-      ))}
-    </ol>
-    <dl class="skills" data-reveal>
-      {skills.map((s) => (
-        <div>
-          <dt class="mono muted">{s.area}</dt>
-          <dd>{s.list}</dd>
-        </div>
-      ))}
-    </dl>
-  </section>
-
-  <section id="certs" class="section wrap" aria-labelledby="certs-title">
-    <h2 id="certs-title" class="label">
-      {cs ? 'Certifikace a kurzy' : 'Certifications and courses'}{' '}
-      <span class="count">
-        ({cs ? 'přes' : 'over'} {certTotal})
-      </span>
-    </h2>
-    <dl class="certs" data-reveal>
-      {certs.map((c) => (
-        <div>
-          <dt class="mono muted">{c.org}</dt>
-          <dd>
-            <ul>
-              {c.list.map((name) => (
-                <li>{name}</li>
-              ))}
-            </ul>
-            <span class="mono muted">{c.note}</span>
-          </dd>
-        </div>
-      ))}
-    </dl>
-    <p class="muted intro">
-      {cs
-        ? 'Dále Google AI Essentials, Elements of AI z Helsinské univerzity a kurzy od IBM, Cisco a ITU.'
-        : 'Also Google AI Essentials, Elements of AI from the University of Helsinki, and courses from IBM, Cisco and the ITU.'}
-    </p>
-    <p class="more">
-      <a
-        class="action-link ext"
-        href="https://www.linkedin.com/in/matejteply/details/certifications/"
-        rel="noopener"
-        target="_blank"
-        data-glitch
-      >
-        <GlitchText
-          text={
-            cs
-              ? `Přes ${certTotal} s identifikátory na LinkedIn`
-              : `Over ${certTotal} with credential IDs on LinkedIn`
-          }
-        />
-      </a>
-    </p>
-  </section>
-
-  <section id="music" class="section wrap" aria-labelledby="music-title">
-    <h2 id="music-title" class="label">
-      {cs ? 'Hudba' : 'Music'}
-    </h2>
-    <div class="prose" data-reveal>
-      <p>
-        {cs ? (
-          <>
-            Hudba je podstatnou součástí mého života. Hraji na baskytaru a zpívám doprovodné vokály
-            ve WeTheGods, alternativní metalcorové kapele z Uherského Hradiště. Hraji také na
-            kytaru, bicí a saxofon. Hudba ovlivňuje, jak přemýšlím o rytmu, struktuře a tvořivosti,
-            i při programování.
-          </>
-        ) : (
-          <>
-            Music is a core part of who I am, not a side hobby. I play bass and sing backing vocals
-            in WeTheGods, an alternative metalcore band from Uherské Hradiště, and I also play
-            guitar, drums and saxophone. It shapes how I think about rhythm, structure and
-            creativity, even in code.
-          </>
-        )}
-      </p>
-      <p>
+    <div class="hero__copy" data-enter style="--i:1">
+      <p class="statement">
         {cs
-          ? 'V letech 2025–2026 jsem hrál na kytaru v rockové kapele Exhalace. Vytvořil jsem weby obou kapel i ladičku a sbírám vinylové desky.'
-          : 'From 2025 to 2026 I played guitar in the rock band Exhalace. I built both bands’ websites and a tuner app, and I collect vinyl records.'}
+          ? 'Tvořím užitečný software a pomáhám týmům pracovat s AI.'
+          : 'I build useful software and help teams work with AI.'}
       </p>
-      <ul class="inline-list">
-        <li>
-          <a
-            class="action-link ext"
-            href="https://majkey25.github.io/WeTheGods/"
-            rel="noopener"
-            target="_blank"
-            data-glitch
+      <p class="muted">
+        {cs
+          ? 'AI/ML engineer a technický inovátor ze Zlína.'
+          : 'Applied AI/ML engineer and technical generalist, based in Zlín.'}
+      </p>
+      <div class="hero__actions">
+        <a class="action-link" href={href('work/')} data-glitch>
+          <GlitchText text={cs ? 'Moje projekty' : 'View my work'} /> <Arrow />
+        </a>
+        <a class="action-link" href={href('contact/')} data-glitch>
+          <GlitchText text={cs ? 'Pojďme se domluvit' : "Let's talk"} />{' '}
+          <Arrow direction="up-right" />
+        </a>
+      </div>
+    </div>
+    {!chat && <Workbench />}
+    {chat && (
+      <form class="ask" data-ask data-enter style="--i:2">
+        <label class="ask__title" for="ask-input">
+          {cs ? 'Zeptejte se mého AI agenta' : 'Ask my AI agent'}
+        </label>
+        <p class="muted">
+          {cs ? 'Projekty, zkušenosti nebo AI školení.' : 'Projects, experience or AI training.'}
+        </p>
+        <div class="ask__field">
+          <input
+            id="ask-input"
+            name="q"
+            maxlength="2000"
+            autocomplete="off"
+            enterkeyhint="send"
+            placeholder={cs ? 'Vaše otázka' : 'Your question'}
+            required
+          />
+          <button type="submit">
+            <span class="sr-only">{cs ? 'Zeptat se' : 'Ask'}</span>
+            <Arrow />
+          </button>
+        </div>
+        <button class="ask__starter" type="button" data-ask-starter={starters[lang][0]}>
+          {starters[lang][0]}
+        </button>
+      </form>
+    )}
+  </section>
+
+  <section id="work" class="section frame work-showcase" aria-labelledby="work-title">
+    <div class="work-stage">
+      <div class="section-heading">
+        <h2 id="work-title" class="label">
+          {cs ? 'Vybrané projekty' : 'Selected work'}
+        </h2>
+        <div class="work-controls">
+          <button
+            class="work-step"
+            type="button"
+            data-work-step="-1"
+            aria-controls="selected-work"
+            aria-label={cs ? 'Předchozí projekt' : 'Previous project'}
+            disabled
           >
-            <GlitchText text="WeTheGods" />
-          </a>
-        </li>
-        <li>
-          <a
-            class="action-link ext"
-            href="https://open.spotify.com/artist/0t37G5AusfBBeHTv85jxj9"
-            rel="noopener"
-            target="_blank"
-            data-glitch
+            <Arrow direction="left" />
+          </button>
+          <button
+            class="work-step"
+            type="button"
+            data-work-step="1"
+            aria-controls="selected-work"
+            aria-label={cs ? 'Další projekt' : 'Next project'}
           >
-            <GlitchText text="Spotify" />
-          </a>
-        </li>
-        <li>
-          <a
-            class="action-link ext"
-            href="https://www.exhalace.cz/"
-            rel="noopener"
-            target="_blank"
-            data-glitch
-          >
-            <GlitchText text="Exhalace" />
-          </a>
-        </li>
-      </ul>
+            <Arrow />
+          </button>
+        </div>
+      </div>
+      <div class="work-viewport">
+        <ol
+          class="work-reel"
+          id="selected-work"
+          tabindex="0"
+          aria-label={cs ? 'Vybrané projekty' : 'Selected projects'}
+        >
+          {selected.map((project, index) => {
+            const media = projectMedia[project.name]!;
+            const ratio = media.image.width / media.image.height;
+            const portrait = ratio < 1;
+            return (
+              <li>
+                <a class="work-scene" href={href(`work/${slug(project.name)}/`)}>
+                  <h3 class="work-scene__name">{project.name}</h3>
+                  <Image
+                    class="work-scene__image"
+                    src={media.image}
+                    alt={media.alt[lang]}
+                    widths={portrait ? [160, 240, 320, 480] : [320, 480, 640, 960, 1200]}
+                    sizes={
+                      portrait
+                        ? `(max-width:40rem) clamp(${11 * ratio}rem, ${24 * ratio}svh, ${14 * ratio}rem), clamp(${12 * ratio}rem, ${34 * ratio}svh, ${24 * ratio}rem)`
+                        : '(max-width:40rem) 64vw, (max-width:84rem) 50vw, 700px'
+                    }
+                    priority={index === 0}
+                  />
+                  <p class="muted">{project.kind}</p>
+                  <span class="work-scene__open">
+                    {cs ? 'Případová studie' : 'View case study'} <Arrow direction="up-right" />
+                  </span>
+                </a>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+      <a class="action-link more" href={href('work/')} data-glitch>
+        <GlitchText
+          text={cs ? `Všech ${projects.length} projektů` : `All ${projects.length} projects`}
+        />{' '}
+        <Arrow />
+      </a>
     </div>
   </section>
 
-  <section id="contact" class="section wrap" aria-labelledby="contact-title">
-    <h2 id="contact-title" class="label">
-      {t.contact}
-    </h2>
-    <p class="statement">
-      {cs
-        ? 'Pojďme něco vytvořit, naplánovat zavedení AI nebo proškolit váš tým.'
-        : "Let's build something, plan AI adoption or train your team."}
-    </p>
-    <p class="muted intro">
-      {cs
-        ? 'Nabízím AI strategii, integraci, praktické kurzy a tutoring pro zaměstnance, vývoj webů i produktů. Napište mi o svém týmu a problému, který chcete vyřešit.'
-        : 'Available for AI strategy, integration, practical employee courses and tutoring, website development, or product development. Tell me about your team and the problem you want to solve.'}
-    </p>
-    <ContactForm lang={lang} accessKey={profile.web3formsAccessKey} />
-    <p class="mail">
-      <ContactLink class="action-link" value={profile.email} lang={lang} glitch>
-        <GlitchText text={t.mail} />
-      </ContactLink>
-      <ContactLink class="action-link" value={profile.email} lang={lang} action="reveal" glitch>
-        <GlitchText text={cs ? 'Zobrazit e-mail' : 'Show email'} />
-      </ContactLink>
-      <ContactLink
-        class="action-link no-print"
-        value={profile.email}
-        lang={lang}
-        action="copy"
-        glitch
-      >
-        <GlitchText text={t.copy} />
-      </ContactLink>
-    </p>
-  </section>
+  <nav class="section frame explore" aria-label={cs ? 'Další stránky' : 'Explore the site'}>
+    {pages.map((page) => (
+      <a id={page.id} class="explore__link" href={href(page.path)}>
+        <h2>{page.title}</h2>
+        <p class="muted">{page.text}</p>
+        <Arrow direction="up-right" />
+      </a>
+    ))}
+  </nav>
 </Base>
 
 <script>
-  // The name and the status lines decode from random glyphs once per visit. The real text is
-  // always in the DOM for assistive tech (sr-only) and for anyone without JavaScript.
-  const quiet = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let seen = false;
-  try {
-    seen = sessionStorage.getItem('scrambled') === '1';
-    sessionStorage.setItem('scrambled', '1');
-  } catch {
-    // Storage blocked: play every time.
-  }
-  // Same case as the letter it stands in for, so a line keeps roughly its width.
-  const upper = 'ABCDEFGHKLMNPRSTUVXYZ';
-  const lower = 'abcdeghknopqrsuvxyz';
-  const pick = (set: string) => set[Math.floor(Math.random() * set.length)];
-  const decode = (el: HTMLElement, delay: number, step: number) => {
-    const text = (el.textContent ?? '').trim();
-    const start = performance.now() + delay;
-    const tick = (now: number) => {
-      const t = now - start;
-      let out = '';
-      let done = true;
-      for (let i = 0; i < text.length; i++) {
-        const ch = text[i];
-        if (ch === ' ' || t >= 180 + i * step) out += ch;
-        else {
-          done = false;
-          out += pick(ch === ch.toUpperCase() ? upper : lower);
-        }
-      }
-      el.textContent = out;
-      if (!done) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
+  const ask = document.querySelector<HTMLFormElement>('[data-ask]');
+  const send = (question: string) =>
+    document.dispatchEvent(new CustomEvent('chat:ask', { detail: question }));
+  ask?.addEventListener('focusin', () => document.dispatchEvent(new Event('chat:warm')), {
+    once: true,
+  });
+  ask?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const input = ask.querySelector('input');
+    if (input?.value.trim()) send(input.value);
+    if (input) input.value = '';
+  });
+  ask
+    ?.querySelector<HTMLButtonElement>('[data-ask-starter]')
+    ?.addEventListener('click', (event) => {
+      const question = (event.currentTarget as HTMLButtonElement).dataset.askStarter;
+      if (question) send(question);
+    });
+  const reel = document.querySelector<HTMLElement>('.work-reel');
+  const warmImages = async () => {
+    await document.fonts.ready;
+    reel?.querySelectorAll<HTMLImageElement>('img[loading="lazy"]').forEach((image) => {
+      image.loading = 'eager';
+    });
   };
-  const play = () => {
-    const [name, ...lines] = document.querySelectorAll<HTMLElement>('[data-scramble]');
-    if (name) decode(name, 0, 55);
-    lines.forEach((line, i) => decode(line, 450 + i * 200, 12));
+  if (document.readyState === 'complete') void warmImages();
+  else addEventListener('load', warmImages, { once: true });
+  const showcase = document.querySelector<HTMLElement>('.work-showcase');
+  const stage = document.querySelector<HTMLElement>('.work-stage');
+  const viewport = document.querySelector<HTMLElement>('.work-viewport');
+  const header = document.querySelector<HTMLElement>('.header');
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-work-step]');
+  const quiet = matchMedia('(prefers-reduced-motion: reduce)');
+  let pinned = false;
+  let start = 0;
+  let travel = 0;
+  let frame = 0;
+  let position = 0;
+  const syncControls = () => {
+    if (!reel) return;
+    const offset = pinned ? position : reel.scrollLeft;
+    viewport?.style.setProperty('--fade-left', offset > 1 ? '2rem' : '0px');
+    viewport?.style.setProperty('--fade-right', offset < travel - 1 ? '2rem' : '0px');
+    buttons.forEach((button) => {
+      button.disabled =
+        Number(button.dataset.workStep) < 0
+          ? (pinned ? position : reel.scrollLeft) <= 1
+          : (pinned ? position : reel.scrollLeft) >= travel - 1;
+    });
   };
-  if (!quiet && !seen) {
-    if (document.documentElement.classList.contains('booting'))
-      document.addEventListener('init:booted', play, { once: true });
-    else play();
+  reel?.addEventListener('scroll', syncControls, { passive: true });
+  const update = () => {
+    frame = 0;
+    if (pinned && reel) {
+      position = Math.max(0, Math.min(travel, scrollY - start));
+      reel.style.transform = `translate3d(${-position}px, 0, 0)`;
+    }
+    syncControls();
+  };
+  const measure = () => {
+    if (!reel || !showcase || !stage) return;
+    const top = (header?.offsetHeight ?? 0) + 16;
+    const height = stage.offsetHeight;
+    const padding = parseFloat(getComputedStyle(showcase).paddingTop);
+    travel = reel.scrollWidth - reel.clientWidth;
+    start = showcase.getBoundingClientRect().top + scrollY + padding - top;
+    // Short viewports keep native horizontal scrolling so the full card stays reachable.
+    const wasPinned = pinned;
+    pinned = !quiet.matches && travel > 0 && height <= innerHeight - top - 16;
+    showcase.style.setProperty('--work-top', `${top}px`);
+    showcase.classList.toggle('is-pinned', pinned);
+    showcase.style.height = pinned ? `${height + padding + travel}px` : '';
+    if (pinned) reel.scrollLeft = 0;
+    else {
+      reel.style.removeProperty('transform');
+      if (wasPinned) reel.scrollLeft = position;
+    }
+    update();
+  };
+  addEventListener(
+    'scroll',
+    () => {
+      if (pinned && !frame) frame = requestAnimationFrame(update);
+    },
+    { passive: true },
+  );
+  addEventListener('resize', measure);
+  quiet.addEventListener('change', measure);
+  if (stage && header) {
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    observer.observe(header);
   }
+  measure();
+  const move = (direction: number, behavior: ScrollBehavior) => {
+    if (!reel) return;
+    const distance =
+      (reel.querySelector('li')?.getBoundingClientRect().width ?? reel.clientWidth) + 16;
+    if (pinned)
+      scrollTo({
+        top: start + Math.max(0, Math.min(travel, position + distance * direction)),
+        behavior,
+      });
+    else reel.scrollBy({ left: distance * direction, behavior });
+  };
+  buttons.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      move(
+        Number(button.dataset.workStep),
+        quiet.matches || event.detail === 0 ? 'instant' : 'smooth',
+      );
+    });
+  });
+  reel?.addEventListener('keydown', (event) => {
+    if (!pinned || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    event.preventDefault();
+    move(event.key === 'ArrowRight' ? 1 : -1, 'instant');
+  });
+  reel?.addEventListener('focusin', (event) => {
+    const card = (event.target as Element).closest<HTMLElement>('li');
+    if (!pinned || !card || !viewport) return;
+    const box = card.getBoundingClientRect();
+    const bounds = viewport.getBoundingClientRect();
+    if (box.left < bounds.left || box.right > bounds.right)
+      scrollTo({ top: start + Math.min(travel, card.offsetLeft - 4), behavior: 'instant' });
+  });
 </script>
 
 <style>
   .hero {
     display: grid;
-    gap: 1.4rem;
-    padding-block: clamp(3.5rem, 12vw, 8rem) 0;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 2.5rem 4rem;
+    padding-top: clamp(3rem, 9vw, 6.5rem);
   }
-
+  .hero .name {
+    grid-column: 1/-1;
+    font-size: clamp(2.75rem, 0.8rem + 10.2vw, 9.75rem);
+    letter-spacing: -0.045em;
+    line-height: 0.9;
+  }
+  .hero__copy {
+    display: grid;
+    align-content: start;
+    gap: 1.25rem;
+  }
   .hero .statement {
-    /* Match 22ch in Mona Sans 500/108% without resizing the column during font swap. */
-    max-width: 14.564em;
+    max-width: 26ch;
+    font-size: clamp(1.5rem, 1rem + 1.8vw, 2.5rem);
   }
-
-  .hero .lead {
-    max-width: 58ch;
-  }
-
-  /* Status: key/value lines like a terminal readout, a block caret after the last one. */
-  .status {
-    display: grid;
-    gap: 0.3rem;
-    padding-left: 1rem;
-    border-left: 1px solid var(--rule);
-  }
-
-  .status div {
-    display: grid;
-    grid-template-columns: 4.5rem minmax(0, 1fr);
-    gap: 1rem;
-  }
-
-  .status dt {
-    color: var(--muted);
-  }
-
-  .status div:last-child [data-scramble]::after {
-    content: '';
-    display: inline-block;
-    width: 0.55em;
-    height: 1.05em;
-    margin-left: 0.35em;
-    background: var(--accent);
-    vertical-align: -0.18em;
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .status div:last-child [data-scramble]::after {
-      animation: blink 1.1s steps(1) infinite;
-    }
-  }
-
-  @keyframes blink {
-    50% {
-      opacity: 0;
-    }
-  }
-
-  .intro {
-    max-width: 58ch;
-    margin-bottom: 1rem;
-  }
-
-  .more {
-    margin-top: 1rem;
-  }
-
-  .habits,
-  .timeline {
-    display: grid;
-    gap: 1.4rem;
-  }
-
-  .habits li,
-  .timeline li {
-    display: grid;
-    grid-template-columns: 2.25rem minmax(0, 1fr);
-    gap: 1rem;
-  }
-
-  .timeline li {
-    position: relative;
-    grid-template-columns: 12rem minmax(0, 1fr);
-  }
-
-  .timeline {
-    padding-left: 1rem;
-    border-left: 1px solid var(--rule);
-  }
-
-  .timeline__when > span {
-    display: block;
-    white-space: nowrap;
-  }
-
-  .timeline__when::before {
-    content: '';
-    position: absolute;
-    top: 0.6rem;
-    left: -1.25rem;
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
-    background: var(--accent);
-  }
-
-  .habit__title,
-  .timeline__role {
-    font-size: 1rem;
-    font-weight: 620;
-    font-stretch: 108%;
-  }
-
-  .timeline__role .muted {
-    font-weight: 400;
-    font-stretch: 100%;
-  }
-
-  .timeline__logo {
-    display: inline-block;
-    vertical-align: middle;
-    fill: #009645;
-  }
-
-  .timeline__mark {
-    display: inline-block;
-    margin-right: 0.4rem;
-    vertical-align: middle;
-  }
-
-  @media screen {
-    :global([data-theme='dark']) .timeline__mark--school {
-      filter: invert(1);
-    }
-  }
-
-  .timeline__support {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    margin-block: 0.4rem;
-    color: var(--muted);
-  }
-
-  .timeline__support svg {
-    flex: none;
-    align-self: center;
-  }
-
-  .timeline__support strong {
-    color: var(--ink);
-    font-weight: 550;
-  }
-
-  .row__num {
-    padding-top: 0.2rem;
-    font-family: var(--font-mono);
-    font-size: 0.8125rem;
-    color: var(--muted);
-  }
-
-  .skills {
-    display: grid;
-    gap: 0.6rem;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--rule);
-  }
-
-  .skills div,
-  .certs div {
-    display: grid;
-    grid-template-columns: 7.5rem minmax(0, 1fr);
-    gap: 1rem;
-  }
-
-  .certs {
-    display: grid;
-    gap: 1.1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .certs dt {
-    padding-top: 0.2rem;
-  }
-
-  .certs dd {
-    display: grid;
-    gap: 0.3rem;
-    text-wrap: pretty;
-  }
-
-  /* Tighter inside a name than between names, so a wrapped name still reads as one. */
-  .certs ul {
-    display: grid;
-    gap: 0.4rem;
-    line-height: 1.35;
-  }
-
-  @media (width < 34rem) {
-    .timeline li,
-    .skills div,
-    .certs div {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 0.15rem;
-    }
-  }
-
-  .mail {
+  .hero__actions {
     display: flex;
     flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .hero__actions a:first-child {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .hero__actions a:first-child:is(:hover, :focus-visible) {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .ask {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: 1rem;
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    border-radius: 1.5rem;
+    background: var(--surface);
+  }
+  .ask__title {
+    font-size: 1.5rem;
+    font-weight: 650;
+    line-height: 1.2;
+  }
+  .ask__field {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.35rem 0.35rem 0.35rem 1rem;
+    border-radius: 999px;
+    background: var(--bg);
+  }
+  .ask__field:focus-within {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  .ask__field input {
+    flex: 1;
+    min-width: 0;
+    min-height: 2.75rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+  }
+  .ask__field input:focus {
+    outline: none;
+  }
+  .ask__field button {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .ask__starter {
+    padding: 0.4rem 0;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    text-align: left;
+    font-size: 0.875rem;
+  }
+  .ask__starter:hover {
+    color: var(--ink);
+  }
+  .section-heading {
+    display: flex;
     align-items: center;
-    gap: 0.5rem 1rem;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .section-heading .label {
+    margin-bottom: 0;
+  }
+  .work-showcase.is-pinned .work-stage {
+    position: sticky;
+    top: var(--work-top);
+  }
+  .work-viewport {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 var(--fade-left, 0px),
+      #000 calc(100% - var(--fade-right, 2rem)),
+      transparent
+    );
+  }
+  .work-showcase {
+    overflow-anchor: none;
+  }
+  .work-showcase.is-pinned .work-viewport {
+    overflow: clip;
+    overflow-clip-margin: 5px;
+  }
+  .work-showcase.is-pinned .work-reel {
+    /* Move one composited track instead of fighting native nested scrolling. */
+    overflow: visible;
+    scroll-snap-type: none;
+    scrollbar-width: none;
+    will-change: transform;
+  }
+  .work-reel {
+    position: relative;
+  }
+  .work-controls {
+    margin: 0;
+  }
+  .work-reel > li {
+    flex-basis: 60%;
+  }
+  .work-scene {
+    min-height: 0;
+    padding: clamp(1.25rem, 2.5vw, 2rem);
+    gap: 1rem;
+  }
+  .work-scene__name {
+    font-size: clamp(1.6rem, 3.5vw, 3rem);
+  }
+  .work-scene .muted {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  .work-scene__image {
+    align-self: center;
+    width: auto;
+    height: auto;
+    max-height: clamp(12rem, 34svh, 24rem);
+    aspect-ratio: auto;
+    object-fit: contain;
+    border: 0;
+    background: transparent;
+  }
+  .more {
     margin-top: 1.25rem;
   }
-
-  .mail :global([data-glitch-text]) {
-    white-space: nowrap;
-    text-align: start;
+  .explore {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem;
+  }
+  .explore__link {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+    padding: 1.5rem 2rem 1.5rem 0;
+    border-top: 1px solid var(--rule);
+    text-decoration: none;
+    transition: border-color 180ms var(--ease);
+  }
+  .explore__link h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+  }
+  .explore__link :global(svg) {
+    position: absolute;
+    right: 0;
+    top: 1.75rem;
+    transition: transform 180ms var(--ease);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .explore__link:hover {
+      border-color: var(--accent);
+    }
+    .explore__link:hover :global(svg) {
+      transform: translate(2px, -2px);
+    }
+  }
+  @media (width < 56rem) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2rem;
+    }
+    .explore {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+  }
+  @media (width < 40rem) {
+    .work-reel > li {
+      flex-basis: 84%;
+    }
+    .work-scene__image {
+      max-height: clamp(11rem, 24svh, 14rem);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .explore__link :global(svg) {
+      transition: none;
+      transform: none;
+    }
   }
 </style>

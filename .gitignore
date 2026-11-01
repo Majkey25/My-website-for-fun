@@ -10,8 +10,8 @@ node_modules/
 npm-debug.log*
 
 # environment variables
-.env
-.env.production
+.env*
+!.env.example
 
 # local scratch
 .reference/
@@ -23,3 +23,9 @@ Thumbs.db
 
 # local Lighthouse CI reports
 .lighthouseci/
+
+# Worker secrets for local development and generated Worker types
+.dev.vars*
+!.dev.vars.example
+chat/worker-configuration.d.ts
+.wrangler/

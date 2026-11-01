@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig, fontProviders } from 'astro/config';
+import { defineConfig, envField, fontProviders } from 'astro/config';
 import { fileURLToPath } from 'node:url';
 
 /** @returns {ReturnType<typeof fontProviders.npm>} */
@@ -38,13 +38,24 @@ function localFontsource() {
   };
 }
 
-// The deploy workflow passes --site and --base from the GitHub Pages settings (/init/);
-// CI builds at the root so Lighthouse can serve dist directly.
+// Cloudflare is canonical; alternate preview deployments may override --site and --base.
 export default defineConfig({
-  site: 'https://majkey25.github.io',
+  site: 'https://init-chat.majkeylab.workers.dev',
   compressHTML: true,
   experimental: { parallelPrerender: { workers: 2 } },
   build: { inlineStylesheets: 'always' },
+  // The site assistant (chat/) is shown only when both are set at build time.
+  env: {
+    schema: {
+      // '/api' when the Worker also serves the site, otherwise the Worker's absolute URL + '/api'.
+      PUBLIC_CHAT_API: envField.string({ context: 'client', access: 'public', optional: true }),
+      PUBLIC_TURNSTILE_SITE_KEY: envField.string({
+        context: 'client',
+        access: 'public',
+        optional: true,
+      }),
+    },
+  },
   fonts: [
     {
       // One family for everything readable; the width axis gives the name its expanded cut.
@@ -57,17 +68,6 @@ export default defineConfig({
       stretch: '75% 125%',
       subsets: ['latin', 'latin-ext'],
       fallbacks: ['system-ui', 'Arial', 'sans-serif'],
-    },
-    {
-      // Labels, dates and the status lines.
-      provider: localFontsource(),
-      name: 'Geist Mono',
-      options: { package: '@fontsource-variable/geist-mono', file: 'index.css' },
-      cssVariable: '--font-mono',
-      weights: ['400 500'],
-      styles: ['normal'],
-      subsets: ['latin', 'latin-ext'],
-      fallbacks: ['ui-monospace', 'Consolas', 'monospace'],
     },
   ],
 });

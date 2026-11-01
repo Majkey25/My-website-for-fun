@@ -4,13 +4,15 @@ import Home from '../components/pages/Home.astro';
 import Work from '../components/pages/Work.astro';
 import CaseStudy from '../components/pages/CaseStudy.astro';
 import Privacy from '../components/pages/Privacy.astro';
+import Profile from '../components/pages/Profile.astro';
 import { getCases } from '../cases';
 import { languages, type Lang } from '../i18n';
 import { slug } from '../site';
 
 type Project = CollectionEntry<'projects'>['data'];
 type Props = { lang: Lang } & (
-  { page: 'home' | 'work' | 'privacy' } | { page: 'case'; p: Project; i: number; next: Project }
+  | { page: 'home' | 'work' | 'privacy' | 'services' | 'about' | 'contact' }
+  | { page: 'case'; p: Project; i: number; next: Project }
 );
 
 export const getStaticPaths = async () => {
@@ -22,6 +24,10 @@ export const getStaticPaths = async () => {
       { params: { path: prefix || undefined }, props: { lang, page: 'home' } },
       { params: { path: `${prefix}work` }, props: { lang, page: 'work' } },
       { params: { path: `${prefix}privacy` }, props: { lang, page: 'privacy' } },
+      ...(['services', 'about', 'contact'] as const).map((page) => ({
+        params: { path: `${prefix}${page}` },
+        props: { lang, page },
+      })),
       ...cases.map((p, i) => ({
         params: { path: `${prefix}work/${slug(p.name)}` },
         props: { lang, page: 'case' as const, p, i, next: cases[(i + 1) % cases.length] },
@@ -37,4 +43,7 @@ const props = Astro.props;
 {props.page === 'home' && <Home lang={props.lang} />}
 {props.page === 'work' && <Work lang={props.lang} />}
 {props.page === 'privacy' && <Privacy lang={props.lang} />}
+{(props.page === 'services' || props.page === 'about' || props.page === 'contact') && (
+  <Profile lang={props.lang} page={props.page} />
+)}
 {props.page === 'case' && <CaseStudy lang={props.lang} p={props.p} i={props.i} next={props.next} />}

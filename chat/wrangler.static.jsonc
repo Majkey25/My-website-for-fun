@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "init-chat",
+  "compatibility_date": "2026-10-28",
+  "workers_dev": true,
+  // The static configuration declares no API runtime, bindings or scheduled crawler.
+  "triggers": { "crons": [] },
+  "assets": {
+    "directory": "../dist",
+    "not_found_handling": "404-page",
+  },
+}

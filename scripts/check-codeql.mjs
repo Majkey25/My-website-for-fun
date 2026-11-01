@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { lstat, readFile, readdir } from 'node:fs/promises';
+import { lstat, open, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const levels = ['none', 'note', 'warning', 'error'];
@@ -151,11 +151,22 @@ assert.deepEqual(
 let blocked = 0;
 for (const language of languages) {
   const path = join(output, `${language}.sarif`);
-  assert((await lstat(path)).isFile(), 'SARIF output must be a regular file');
-  const sarif = JSON.parse(await readFile(path, 'utf8'));
-  assert.equal(sarif.version, '2.1.0', 'Unsupported SARIF version');
-  assert(array(sarif.runs).length > 0, 'Missing SARIF runs');
-  for (const run of sarif.runs) blocked += checkRun(run, language);
+  const file = await open(path, 'r');
+  try {
+    const entry = await lstat(path);
+    const opened = await file.stat();
+    assert(entry.isFile() && opened.isFile(), 'SARIF output must be a regular file');
+    assert(
+      entry.dev === opened.dev && entry.ino === opened.ino,
+      'SARIF output changed while opening',
+    );
+    const sarif = JSON.parse(await file.readFile('utf8'));
+    assert.equal(sarif.version, '2.1.0', 'Unsupported SARIF version');
+    assert(array(sarif.runs).length > 0, 'Missing SARIF runs');
+    for (const run of sarif.runs) blocked += checkRun(run, language);
+  } finally {
+    await file.close();
+  }
 }
 assert.equal(
   blocked,

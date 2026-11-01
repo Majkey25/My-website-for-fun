@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import ContactLink from '../ContactLink.astro';
+import GlitchText from '../GlitchText.astro';
 import { href, profile } from '../../site';
 import { ui, type Lang } from '../../i18n';
 
@@ -23,9 +24,11 @@ const t = ui[lang];
   <article class="privacy wrap">
     {lang === 'cs' ? (
       <>
-        <h1>Soukromí</h1>
+        <h1 data-enter>
+          <GlitchText text="Soukromí" scramble />
+        </h1>
         <p>
-          Aktualizováno 23. října 2026. Toto osobní portfolio spravuje Matěj Teplý (Majkey).
+          Aktualizováno 1. listopadu 2026. Toto osobní portfolio spravuje Matěj Teplý (Majkey).
           Kontakt:{' '}
           <ContactLink class="action-link" value={profile.email} lang={lang} action="reveal">
             Zobrazit e-mail
@@ -35,19 +38,36 @@ const t = ui[lang];
         <h2>Web a úložiště prohlížeče</h2>
         <p>
           Web neobsahuje analytiku, reklamy, registraci ani nákup. Písma se načítají ze stejného
-          webu. Web hostuje GitHub Pages, který pro doručení obsahu a zabezpečení zpracovává
-          technické požadavky včetně IP adres.{' '}
-          <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">
-            Prohlášení GitHubu o ochraně soukromí
-          </a>{' '}
-          vysvětluje dobu uchovávání, mezinárodní předávání a kontakty pro otázky soukromí.
+          webu. Web využívá Cloudflare, který pro doručení obsahu a zabezpečení zpracovává technické
+          požadavky včetně IP adres.{' '}
+          <a href="https://www.cloudflare.com/privacypolicy/">Zásady Cloudflare</a> vysvětlují dobu
+          uchovávání, mezinárodní předávání a kontakty pro otázky soukromí.
         </p>
         <p>
-          Zvolený barevný režim se ukládá do local storage, dokud nesmažete data tohoto webu v
-          prohlížeči. Příznak v session storage si do konce relace karty pamatuje přehrání úvodu.
-          Ani jedna z těchto informací se neposílá správci webu. Web nenastavuje reklamní ani
-          analytické cookies. Tyto předvolby lze smazat v nastavení dat webů v prohlížeči.
-          Procházení funguje i při blokovaném úložišti.
+          Zvolený světlý nebo tmavý režim se ukládá do local storage, dokud nesmažete data tohoto
+          webu v prohlížeči. Session storage si do zavření karty pamatuje odemčený režim Matrix,
+          přehrání úvodní animace a konverzaci s asistentem webu a jeho krátkodobý přístupový token.
+          Volitelná funkce zapamatování ukládá text chatu do local storage na 7 dní od poslední
+          zprávy. Obrázky se do úložiště prohlížeče neukládají. Nový chat historii vymaže. Web
+          nenastavuje reklamní ani analytické cookies. Tyto údaje lze smazat v nastavení dat webů v
+          prohlížeči. Procházení funguje i při blokovaném úložišti.
+        </p>
+        <h2>Asistent webu</h2>
+        <p>
+          Otázky pro asistenta jdou přes můj Cloudflare Worker. Cloudflare Turnstile pomáhá
+          filtrovat automatizované požadavky. Worker vyhledá odpovídající pasáže ve veřejném obsahu
+          tohoto webu, mých veřejných repozitářů a profesním výtahu ze životopisu (Cloudflare AI
+          Search). Může také prohledat vybrané veřejné profily a projekty pomocí OpenAI web search.
+          Pošle otázku s pasážemi do OpenAI API spolu s nedávnými zprávami a přiloženými obrázky.
+          Obrázky prohlížeč zmenší a znovu zakóduje bez původních metadat. Cloudflare pro
+          vyhledávání zpracovává text nedávných zpráv. Aplikace nemá vlastní serverovou historii
+          konverzací a do svých záznamů zapisuje dobu odpovědi a počty tokenů, nikoli text otázek.
+          Sdílení vstupů a výstupů s OpenAI je zapnuté; OpenAI může sdílený obsah využít k vývoji a
+          trénování modelů. Zpracování u OpenAI popisují{' '}
+          <a href="https://platform.openai.com/docs/guides/your-data">zásady pro data z API</a>, u
+          Cloudflare jeho{' '}
+          <a href="https://www.cloudflare.com/privacypolicy/">zásady ochrany soukromí</a>. Do
+          asistenta nepište osobní ani citlivé údaje.
         </p>
         <h2>Kontakt a vaše práva</h2>
         <p>
@@ -68,8 +88,8 @@ const t = ui[lang];
           osobních údajů, které uchovávám, nebo vznést námitku. Přenositelnost platí v případech
           stanovených zákonem. Můžete také podat stížnost u{' '}
           <a href="https://uoou.gov.cz/">Úřadu pro ochranu osobních údajů</a> nebo místního
-          dozorového úřadu. Ohledně hostingových záznamů GitHubu kontaktujte GitHub podle jeho
-          prohlášení o ochraně soukromí.
+          dozorového úřadu. Ohledně hostingových záznamů kontaktujte příslušného poskytovatele podle
+          jeho zásad ochrany soukromí.
         </p>
         <h2>Odkazy a informace o projektech</h2>
         <p>
@@ -79,16 +99,17 @@ const t = ui[lang];
         </p>
         <h2>Licence písem</h2>
         <p>
-          Mona Sans a Geist Mono používají licenci SIL Open Font License. Distribuované licenční
-          texty jsou dostupné pro <a href={href('mona-sans-license.txt')}>Mona Sans</a> a{' '}
-          <a href={href('geist-license.txt')}>Geist Mono</a>.
+          Písmo Mona Sans používá licenci SIL Open Font License.{' '}
+          <a href={href('mona-sans-license.txt')}>Licenční text</a> je dostupný na tomto webu.
         </p>
       </>
     ) : (
       <>
-        <h1>Privacy</h1>
+        <h1 data-enter>
+          <GlitchText text="Privacy" scramble />
+        </h1>
         <p>
-          Updated 23 October 2026. This personal portfolio is maintained by Matěj Teplý (Majkey).
+          Updated 1 November 2026. This personal portfolio is maintained by Matěj Teplý (Majkey).
           Contact:{' '}
           <ContactLink class="action-link" value={profile.email} lang={lang} action="reveal">
             Show email
@@ -98,19 +119,35 @@ const t = ui[lang];
         <h2>Website and browser storage</h2>
         <p>
           The site has no analytics, advertisements, registration or purchase flow. Fonts are served
-          with the site. GitHub Pages hosts the site and processes technical requests, including IP
-          addresses, for delivery and security. GitHub's{' '}
-          <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">
-            privacy statement
-          </a>{' '}
-          explains its retention, international transfers, and privacy contacts.
+          with the site. Cloudflare hosts the site and processes technical requests, including IP
+          addresses, for delivery and security.{' '}
+          <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare's privacy policy</a>
+          explains retention, international transfers and privacy contacts.
         </p>
         <p>
-          Your chosen colour theme is saved in local storage until you clear this site's browser
-          data. A session-storage flag remembers that the introduction has played, until the tab
-          session ends. Neither is sent to the maintainer. The site does not set advertising or
-          analytics cookies. Your browser's site-data controls can remove these preferences;
-          browsing still works when storage is blocked.
+          Your chosen light or dark theme is saved in local storage until you clear this site's
+          browser data. Session storage remembers, until the tab closes, the unlocked Matrix theme,
+          that the intro has played and your conversation with the site assistant, plus its
+          short-lived access token. Optional history saves chat text in local storage for 7 days
+          after the last message. Images are never saved to browser storage. New chat clears the
+          history. The site does not set advertising or analytics cookies. Your browser's site-data
+          controls can remove this data; browsing still works when storage is blocked.
+        </p>
+        <h2>Site assistant</h2>
+        <p>
+          Questions to the assistant go through my Cloudflare Worker. Cloudflare Turnstile first
+          screens automated requests. The Worker looks up matching passages in this site's public
+          content, my public repositories and a professional extract from my CV (Cloudflare AI
+          Search). It can also search selected public profiles and projects through OpenAI web
+          search. It sends the question, recent messages, attached images and matching passages to
+          the OpenAI API. The browser resizes and re-encodes images without their original metadata.
+          Cloudflare processes recent message text for retrieval. The app has no server-side
+          conversation history. Its logs record response times and token counts, not question text.
+          Input/output sharing with OpenAI is enabled; OpenAI may use shared content to develop and
+          train models. OpenAI's{' '}
+          <a href="https://platform.openai.com/docs/guides/your-data">API data controls</a> and
+          Cloudflare's <a href="https://www.cloudflare.com/privacypolicy/">privacy policy</a>
+          describe their processing. Do not enter personal or sensitive information.
         </p>
         <h2>Contact and your rights</h2>
         <p>
@@ -130,7 +167,7 @@ const t = ui[lang];
           processing of personal information I hold. Portability applies where provided by law. You
           may also complain to the{' '}
           <a href="https://uoou.gov.cz/">Czech data protection authority</a> or your local
-          authority. For GitHub's hosting records, contact GitHub through its privacy statement.
+          authority. For hosting records, contact the relevant provider through its privacy policy.
         </p>
         <h2>Links and project information</h2>
         <p>
@@ -141,9 +178,8 @@ const t = ui[lang];
         </p>
         <h2>Font licenses</h2>
         <p>
-          Mona Sans and Geist Mono use the SIL Open Font License. The distributed notices are
-          available for <a href={href('mona-sans-license.txt')}>Mona Sans</a> and
-          <a href={href('geist-license.txt')}>Geist Mono</a>.
+          Mona Sans uses the SIL Open Font License. The distributed{' '}
+          <a href={href('mona-sans-license.txt')}>license notice</a> is available on this site.
         </p>
       </>
     )}

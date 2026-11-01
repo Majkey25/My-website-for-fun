@@ -6,16 +6,18 @@ export type Lang = (typeof languages)[number];
 
 export const ui = {
   en: {
+    services: 'Services',
     work: 'Work',
     about: 'About',
     contact: 'Contact',
     main: 'Main',
+    menu: 'Menu',
     language: 'Language',
-    theme: 'Dark theme',
+    theme: 'Switch theme',
     skip: 'Skip to content',
     privacy: 'Privacy',
     source: 'source',
-    typography: 'set in Mona Sans and Geist Mono · built with Astro',
+    typography: 'set in Mona Sans · built with Astro',
     problem: 'problem',
     title: 'Matěj Teplý: applied AI, strategy and training',
     description:
@@ -37,16 +39,18 @@ export const ui = {
     copy: 'Copy email',
   },
   cs: {
+    services: 'Služby',
     work: 'Projekty',
     about: 'O mně',
     contact: 'Kontakt',
     main: 'Hlavní navigace',
+    menu: 'Menu',
     language: 'Jazyk',
-    theme: 'Tmavý režim',
+    theme: 'Změnit motiv',
     skip: 'Přejít na obsah',
     privacy: 'Soukromí',
     source: 'zdrojový kód',
-    typography: 'písma Mona Sans a Geist Mono · vytvořeno v Astro',
+    typography: 'písmo Mona Sans · vytvořeno v Astro',
     problem: 'problém',
     title: 'Matěj Teplý: aplikovaná AI, strategie a školení',
     description:

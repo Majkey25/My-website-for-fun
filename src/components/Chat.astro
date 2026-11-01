@@ -1,0 +1,1566 @@
+---
+// The site assistant: a launcher and a dialog that streams answers with their sources.
+// All model text is turned into DOM nodes (never innerHTML); links must be https.
+// Render it only when the assistant is configured: a site without it then loads none of its
+// markup or script (the global styles below are still inlined).
+import { starters } from '../chat';
+import Arrow from './Arrow.astro';
+import type { Lang } from '../i18n';
+import { href } from '../site';
+
+interface Props {
+  lang: Lang;
+  api: string;
+  siteKey: string;
+}
+const { lang, api, siteKey } = Astro.props;
+const cs = lang === 'cs';
+const text = cs
+  ? {
+      launch: 'Zeptejte se mého AI agenta',
+      title: 'Zeptejte se na mou práci',
+      sub: 'Odpovědi čerpají z mých projektů, profesního profilu a vybraných veřejných zdrojů.',
+      label: 'Vaše otázka',
+      placeholder: 'Projekty, služby, zkušenosti…',
+      send: 'Odeslat',
+      stop: 'Zastavit',
+      close: 'Zavřít',
+      reset: 'Nový chat',
+      note: 'Otázky i obrázky zpracuje OpenAI přes Cloudflare. OpenAI může sdílený obsah použít k trénování modelů. Obrázky se neukládají do místní historie. Nesdílejte citlivé údaje.',
+      attach: 'Přiložit obrázek',
+      remove: 'Odebrat obrázek',
+      remember: 'Pamatovat text chatu na tomto zařízení 7 dní',
+      privacy: 'Soukromí',
+    }
+  : {
+      launch: 'Ask my AI agent',
+      title: 'Ask about my work',
+      sub: 'Answers draw on my projects, professional profile and selected public sources.',
+      label: 'Your question',
+      placeholder: 'Projects, services, experience…',
+      send: 'Send',
+      stop: 'Stop',
+      close: 'Close',
+      reset: 'New chat',
+      note: 'Questions and images go to OpenAI through Cloudflare. OpenAI may use shared content to train models. Images are not saved in local history. Do not share sensitive data.',
+      attach: 'Attach an image',
+      remove: 'Remove image',
+      remember: 'Remember chat text on this device for 7 days',
+      privacy: 'Privacy',
+    };
+// Strings the script needs at runtime.
+const runtime = cs
+  ? {
+      sources: 'Zdroje',
+      searching: 'Hledám na webu…',
+      web: 'Prohledávám povolené veřejné zdroje…',
+      writing: 'Píšu odpověď…',
+      ready: 'Odpověď je hotová.',
+      copy: 'Kopírovat',
+      copied: 'Zkopírováno',
+      retry: 'Zkusit znovu',
+      busy: 'Příliš mnoho otázek najednou. Zkuste to za minutu.',
+      quota: 'Asistent vyčerpal dostupný limit API. Napište mi prosím přes kontaktní formulář.',
+      challenge: 'Kontrola prohlížeče neprošla. Obnovte stránku a zkuste to znovu.',
+      unavailable: 'Odpověď nedorazila. Zkuste to znovu.',
+      stopped: 'Zastaveno.',
+      image: 'Přiložený obrázek',
+      imageExpired: 'Obrázek se do historie neukládá. Pro další otázku ho přiložte znovu.',
+      imageLoading: 'Připravuji obrázek…',
+      imageInvalid: 'Vyberte JPG, PNG nebo WebP do 10 MB. Obrázek se nepodařilo připravit.',
+      historyUnavailable: 'Prohlížeč nedovolil uložit historii. Chat zůstane jen na této stránce.',
+    }
+  : {
+      sources: 'Sources',
+      searching: 'Searching the site…',
+      web: 'Searching approved public sources…',
+      writing: 'Writing…',
+      ready: 'Answer ready.',
+      copy: 'Copy',
+      copied: 'Copied',
+      retry: 'Try again',
+      busy: 'Too many questions at once. Try again in a minute.',
+      quota:
+        'The assistant has reached its API allowance. Please write to me through the contact form.',
+      challenge: 'The browser check did not pass. Reload the page and try again.',
+      unavailable: 'The answer did not arrive. Try again.',
+      stopped: 'Stopped.',
+      image: 'Attached image',
+      imageExpired: 'Images are not saved in history. Attach it again for another question.',
+      imageLoading: 'Preparing image…',
+      imageInvalid: 'Choose a JPG, PNG or WebP under 10 MB. The image could not be prepared.',
+      historyUnavailable:
+        'Your browser blocked history storage. This chat will last for this page only.',
+    };
+---
+
+<site-chat
+  class="no-print"
+  data-api={api}
+  data-site-key={siteKey}
+  data-lang={lang}
+  data-text={JSON.stringify(runtime)}
+>
+  <button class="chat-launch" type="button" aria-haspopup="dialog" data-chat-open>
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      <path d="M12 3c.5 4.6 3.4 7.5 8 8-4.6.5-7.5 3.4-8 8-.5-4.6-3.4-7.5-8-8 4.6-.5 7.5-3.4 8-8Z" />
+    </svg>
+    <span>{text.launch}</span>
+  </button>
+  <dialog class="chat" aria-labelledby="chat-title">
+    <div class="chat__head">
+      <div>
+        <h2 id="chat-title">{text.title}</h2>
+        <p>{text.sub}</p>
+      </div>
+      <button class="chat__icon" type="button" data-chat-reset title={text.reset}>
+        <span class="sr-only">{text.reset}</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" />
+        </svg>
+      </button>
+      <button class="chat__icon" type="button" data-chat-close title={text.close}>
+        <span class="sr-only">{text.close}</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18" />
+        </svg>
+      </button>
+    </div>
+    <div class="chat__log" role="log" aria-labelledby="chat-title" tabindex="0">
+      <ul class="chat__starters">
+        {starters[lang].map((question, i) => (
+          <li style={`--i: ${i}`}>
+            <button type="button" data-chat-ask={question}>
+              {question}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <p class="chat__status" role="status" />
+    <div class="chat__attachment" hidden>
+      <img alt={runtime.image} width="56" height="56" />
+      <span>{runtime.image}</span>
+      <button class="chat__icon" type="button" data-chat-remove title={text.remove}>
+        <span class="sr-only">{text.remove}</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18" />
+        </svg>
+      </button>
+    </div>
+    <form class="chat__form">
+      <input type="file" accept="image/jpeg,image/png,image/webp" data-chat-file hidden />
+      <button class="chat__icon chat__attach" type="button" data-chat-attach title={text.attach}>
+        <span class="sr-only">{text.attach}</span>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path d="m8 12 6-6a3 3 0 0 1 4 4l-8 8a5 5 0 0 1-7-7l9-9M7 15l9-9" />
+        </svg>
+      </button>
+      <label class="sr-only" for="chat-input">
+        {text.label}
+      </label>
+      <textarea
+        id="chat-input"
+        name="question"
+        rows="1"
+        maxlength="2000"
+        enterkeyhint="send"
+        placeholder={text.placeholder}
+        autofocus
+      />
+      <button class="chat__send" type="submit">
+        <span class="sr-only" data-send-label>
+          {text.send}
+        </span>
+        <span class="sr-only" data-stop-label hidden>
+          {text.stop}
+        </span>
+        <Arrow class="chat__send-icon" direction="up" />
+        <svg class="chat__stop-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <rect x="5" y="5" width="14" height="14" rx="2" />
+        </svg>
+      </button>
+    </form>
+    <label class="chat__remember">
+      <input type="checkbox" data-chat-remember />
+      {text.remember}
+    </label>
+    <p class="chat__note">
+      {text.note} <a href={href('privacy/', lang)}>{text.privacy}</a>
+    </p>
+    <div class="chat__check" />
+  </dialog>
+</site-chat>
+
+<script>
+  import {
+    chatSources,
+    HISTORY_LIMIT,
+    readChatHistory,
+    writeChatHistory,
+    type ChatSource as Source,
+    type ChatTurn as Stored,
+  } from '../chat-history';
+  type Session = { token: string; expires: number };
+  type Runtime = Record<
+    | 'sources'
+    | 'searching'
+    | 'web'
+    | 'writing'
+    | 'ready'
+    | 'copy'
+    | 'copied'
+    | 'retry'
+    | 'busy'
+    | 'quota'
+    | 'challenge'
+    | 'unavailable'
+    | 'stopped'
+    | 'image'
+    | 'imageExpired'
+    | 'imageLoading'
+    | 'imageInvalid'
+    | 'historyUnavailable',
+    string
+  >;
+  type Turnstile = {
+    render: (box: HTMLElement, options: Record<string, unknown>) => string;
+    remove: (id: string) => void;
+  };
+
+  const STORE = 'chat:v2';
+  const SESSION = 'chat:session';
+  const MAX_TURNS = 12; // the Worker accepts at most 12
+  const MAX_ASSISTANT = 6000;
+  const MAX_CHARS = 30_000;
+  const MAX_BYTES = 5 * 1024 * 1024;
+
+  class ChatError extends Error {}
+
+  // ---------- Markdown subset into DOM nodes ----------
+
+  const INLINE = /(\*\*[^*\n]+\*\*|`[^`\n]+`|\[S\d{1,2}\]|\[[^\]\n]+\]\(https:\/\/[^)\s]+\))/g;
+
+  function inline(text: string, sources: Source[]): Node[] {
+    return text.split(INLINE).flatMap((part, i): Node[] => {
+      if (!part) return [];
+      if (i % 2 === 0) return [document.createTextNode(part)];
+      if (part.startsWith('**')) {
+        const strong = document.createElement('strong');
+        strong.textContent = part.slice(2, -2);
+        return [strong];
+      }
+      if (part.startsWith('`')) {
+        const code = document.createElement('code');
+        code.textContent = part.slice(1, -1);
+        return [code];
+      }
+      const cite = /^\[S(\d{1,2})\]$/.exec(part);
+      if (cite) {
+        const source = sources.find((s) => s.id === `S${cite[1]}`);
+        if (!source) return [];
+        if (source.url === null) {
+          const label = document.createElement('span');
+          label.className = 'chat__cite';
+          label.textContent = cite[1] ?? '';
+          label.title = source.title;
+          return [label];
+        }
+        const link = document.createElement('a');
+        link.className = 'chat__cite';
+        link.href = source.url;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = cite[1] ?? '';
+        link.title = source.title;
+        return [link];
+      }
+      const [, label = '', url = ''] = /^\[([^\]]+)\]\((.+)\)$/.exec(part) ?? [];
+      if (!sources.some((source) => source.url === url)) return [document.createTextNode(label)];
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = label;
+      return [link];
+    });
+  }
+
+  function markdown(text: string, sources: Source[]): Node[] {
+    const blocks: Node[] = [];
+    // Widened on purpose: the loop reassigns both, which narrowing from `null` does not see.
+    let list = null as HTMLElement | null;
+    let code = null as HTMLElement | null;
+    let paragraph: string[] = [];
+    const flush = () => {
+      if (!paragraph.length) return;
+      const p = document.createElement('p');
+      p.append(...inline(paragraph.join(' '), sources));
+      blocks.push(p);
+      paragraph = [];
+    };
+    for (const line of text.split('\n')) {
+      if (line.trimStart().startsWith('```')) {
+        flush();
+        list = null;
+        if (code) code = null;
+        else {
+          const pre = document.createElement('pre');
+          code = document.createElement('code');
+          pre.append(code);
+          blocks.push(pre);
+        }
+        continue;
+      }
+      if (code) {
+        code.append(`${code.childNodes.length ? '\n' : ''}${line}`);
+        continue;
+      }
+      const item = /^\s*(?:[-*]|(\d+)\.)\s+(.*)$/.exec(line);
+      if (item) {
+        flush();
+        const tag = item[1] ? 'OL' : 'UL';
+        if (list?.tagName !== tag) {
+          list = document.createElement(tag);
+          blocks.push(list);
+        }
+        const li = document.createElement('li');
+        li.append(...inline(item[2] ?? '', sources));
+        list.append(li);
+        continue;
+      }
+      list = null;
+      if (line.trim()) paragraph.push(line.trim());
+      else flush();
+    }
+    flush();
+    return blocks;
+  }
+
+  // ---------- The element ----------
+
+  class SiteChat extends HTMLElement {
+    #api = this.dataset.api ?? '';
+    #lang = this.dataset.lang === 'cs' ? 'cs' : 'en';
+    #text = JSON.parse(this.dataset.text ?? '{}') as Runtime;
+    #dialog = this.querySelector('dialog')!;
+    #log = this.querySelector<HTMLElement>('.chat__log')!;
+    #starters = this.querySelector<HTMLElement>('.chat__starters')!;
+    #status = this.querySelector<HTMLElement>('.chat__status')!;
+    #form = this.querySelector('form')!;
+    #send = this.querySelector<HTMLButtonElement>('.chat__send')!;
+    #input = this.querySelector('textarea')!;
+    #check = this.querySelector<HTMLElement>('.chat__check')!;
+    #remember = this.querySelector<HTMLInputElement>('[data-chat-remember]')!;
+    #file = this.querySelector<HTMLInputElement>('[data-chat-file]')!;
+    #attach = this.querySelector<HTMLButtonElement>('[data-chat-attach]')!;
+    #preview = this.querySelector<HTMLElement>('.chat__attachment')!;
+    #image: string | null = null;
+    #imageVersion = 0;
+    #preparing = false;
+    #turns: Stored[] = [];
+    #busy: AbortController | null = null;
+    #turnstile: Promise<Turnstile> | null = null;
+    #current: Session | null = null;
+    #minting: Promise<string> | null = null;
+
+    connectedCallback() {
+      try {
+        const saved = localStorage.getItem(STORE);
+        this.#remember.checked = saved !== null;
+        this.#turns = readChatHistory(saved ?? sessionStorage.getItem(STORE));
+        if (!this.#turns.length) localStorage.removeItem(STORE);
+      } catch {
+        try {
+          this.#turns = readChatHistory(sessionStorage.getItem(STORE));
+        } catch {
+          this.#turns = [];
+        }
+      }
+      for (const turn of this.#turns) this.#bubble(turn);
+      this.#sync();
+
+      this.querySelector('[data-chat-open]')?.addEventListener('click', () => this.open());
+      this.querySelector('[data-chat-close]')?.addEventListener('click', () =>
+        this.#dialog.close(),
+      );
+      this.querySelector('[data-chat-reset]')?.addEventListener('click', () => this.#reset());
+      this.#remember.addEventListener('change', () => this.#save());
+      this.#send.addEventListener('click', (event) => {
+        if (!this.#busy) return;
+        // Aborting can restore type=submit before the click's default action runs.
+        event.preventDefault();
+        this.#busy.abort();
+      });
+      this.#attach.addEventListener('click', () => this.#file.click());
+      this.querySelector('[data-chat-remove]')?.addEventListener('click', () => this.#clearImage());
+      this.#file.addEventListener('change', () => void this.#prepareImage());
+      // A click on the backdrop closes the panel. The dialog element is also the target of clicks
+      // in its own padding and of a text selection dragged out of it, so both the press and the
+      // release must land outside its box.
+      const outside = (e: MouseEvent) => {
+        const box = this.#dialog.getBoundingClientRect();
+        return (
+          e.target === this.#dialog &&
+          (e.clientX < box.left ||
+            e.clientX > box.right ||
+            e.clientY < box.top ||
+            e.clientY > box.bottom)
+        );
+      };
+      let pressedOutside = false;
+      this.#dialog.addEventListener('pointerdown', (e) => (pressedOutside = outside(e)));
+      this.#dialog.addEventListener('click', (e) => {
+        if (pressedOutside && outside(e)) this.#dialog.close();
+      });
+      this.#dialog.addEventListener('close', () =>
+        document.documentElement.classList.remove('chat-open'),
+      );
+      this.addEventListener('click', (e) => {
+        const ask = (e.target as HTMLElement).closest<HTMLElement>('[data-chat-ask]');
+        if (ask?.dataset.chatAsk) this.ask(ask.dataset.chatAsk);
+      });
+      this.#form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (this.#busy) return;
+        this.ask(this.#input.value);
+      });
+      this.#input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+          e.preventDefault();
+          this.#form.requestSubmit();
+        }
+      });
+      document.addEventListener('chat:ask', (e) => {
+        const question = (e as CustomEvent<string>).detail;
+        this.open();
+        // While an answer streams, keep the question in the composer instead of dropping it.
+        if (question && this.#busy) this.#input.value = question;
+        else if (question) this.ask(question);
+      });
+      // Someone started typing elsewhere on the page: pass the browser check now.
+      document.addEventListener('chat:warm', () =>
+        this.#session(new AbortController().signal).catch(() => undefined),
+      );
+    }
+
+    open() {
+      if (this.#dialog.open) return;
+      document.documentElement.classList.add('chat-open');
+      this.#dialog.showModal();
+      this.#log.scrollTop = this.#log.scrollHeight;
+      // Pass the browser check while the visitor types; the first question then needs no wait.
+      this.#session(new AbortController().signal).catch(() => undefined);
+    }
+
+    ask(raw: string) {
+      const question = raw.trim().slice(0, 2000);
+      if ((!question && !this.#image) || this.#busy || this.#preparing) return;
+      this.#input.value = '';
+      this.#log.querySelectorAll('.msg--error').forEach((note) => note.remove());
+      const turn: Stored = {
+        role: 'user',
+        content: question,
+        ...(this.#image ? { images: [this.#image] } : {}),
+      };
+      this.#clearImage();
+      this.#turns.push(turn);
+      let images = 0;
+      for (const previous of [...this.#turns].reverse()) {
+        if (previous.images?.length && ++images > 3) {
+          delete previous.images;
+          previous.imageExpired = true;
+        }
+      }
+      this.#bubble(turn);
+      this.#save();
+      void this.#answer();
+    }
+
+    #sync() {
+      this.#starters.hidden = this.#turns.length > 0;
+    }
+
+    #save() {
+      this.#turns = this.#turns.slice(-HISTORY_LIMIT);
+      const messages = this.#log.querySelectorAll('.msg');
+      for (let i = 0; i < messages.length - HISTORY_LIMIT; i++) messages[i]?.remove();
+      this.#sync();
+      const history = writeChatHistory(this.#turns);
+      try {
+        sessionStorage.setItem(STORE, history);
+      } catch {
+        // Storage blocked: the conversation lasts for this page only.
+      }
+      try {
+        if (this.#remember.checked) localStorage.setItem(STORE, history);
+        else localStorage.removeItem(STORE);
+      } catch {
+        if (this.#remember.checked) this.#status.textContent = this.#text.historyUnavailable;
+      }
+    }
+
+    #clearImage() {
+      this.#imageVersion++;
+      this.#image = null;
+      this.#file.value = '';
+      this.#preview.hidden = true;
+      this.#preview.querySelector('img')!.removeAttribute('src');
+    }
+
+    async #prepareImage() {
+      const file = this.#file.files?.[0];
+      if (!file || this.#busy) return;
+      this.#clearImage();
+      const version = this.#imageVersion;
+      this.#preparing = true;
+      this.#attach.disabled = true;
+      this.#status.textContent = this.#text.imageLoading;
+      try {
+        if (
+          !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ||
+          file.size > 10 * 1024 * 1024
+        )
+          throw new Error('Invalid image');
+        const bitmap = await createImageBitmap(file);
+        let blob: Blob | null;
+        try {
+          if (bitmap.width * bitmap.height > 16_000_000)
+            throw new Error('Image dimensions too large');
+          const scale = Math.min(1, 1280 / Math.max(bitmap.width, bitmap.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+          canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+          const context = canvas.getContext('2d');
+          if (!context) throw new Error('Image conversion unavailable');
+          context.fillStyle = '#fff';
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+          // Re-encoding strips image metadata before anything leaves the device.
+          blob = await new Promise<Blob | null>((resolve) =>
+            canvas.toBlob(resolve, 'image/jpeg', 0.82),
+          );
+        } finally {
+          bitmap.close();
+        }
+        if (!blob || blob.size > 1024 * 1024) throw new Error('Image too large');
+        const data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () =>
+            typeof reader.result === 'string'
+              ? resolve(reader.result)
+              : reject(new Error('Invalid image'));
+          reader.onerror = () => reject(new Error('Image read failed'));
+          reader.readAsDataURL(blob);
+        });
+        if (version !== this.#imageVersion) return;
+        this.#image = data;
+        this.#preview.querySelector('img')!.src = data;
+        this.#preview.hidden = false;
+        this.#status.textContent = '';
+      } catch {
+        if (version === this.#imageVersion) this.#status.textContent = this.#text.imageInvalid;
+      } finally {
+        this.#preparing = false;
+        this.#attach.disabled = !!this.#busy;
+      }
+    }
+
+    #reset() {
+      // Detach the running answer first, so it cannot write into the new conversation.
+      const running = this.#busy;
+      this.#setBusy(null);
+      running?.abort();
+      this.#turns = [];
+      this.#clearImage();
+      this.#log.querySelectorAll('.msg').forEach((m) => m.remove());
+      this.#status.textContent = '';
+      this.#save();
+      this.#input.focus();
+    }
+
+    #bubble(turn: Stored) {
+      const item = document.createElement('div');
+      item.className = `msg msg--${turn.role}`;
+      const body = document.createElement('div');
+      body.className = 'msg__body';
+      item.append(body);
+      if (turn.role === 'user') {
+        body.textContent = turn.content;
+        for (const data of turn.images ?? []) {
+          const image = document.createElement('img');
+          image.src = data;
+          image.alt = this.#text.image;
+          image.className = 'msg__image';
+          body.append(image);
+        }
+        if (turn.imageExpired) {
+          const note = document.createElement('p');
+          note.className = 'meta';
+          note.textContent = this.#text.imageExpired;
+          body.append(note);
+        }
+      } else this.#fill(item, turn);
+      this.#log.append(item);
+      this.#log.scrollTop = this.#log.scrollHeight;
+      return item;
+    }
+
+    /** Renders an assistant answer, its cited sources and the copy action. */
+    #fill(item: HTMLElement, turn: Stored, streaming = false) {
+      const following = this.#log.scrollHeight - this.#log.scrollTop - this.#log.clientHeight < 120;
+      const sources = turn.sources ?? [];
+      item.querySelector('.msg__body')!.replaceChildren(...markdown(turn.content, sources));
+      item.classList.toggle('is-streaming', streaming);
+      if (streaming) {
+        if (following) this.#log.scrollTop = this.#log.scrollHeight;
+        return;
+      }
+      const cited = sources.filter((s) => turn.content.includes(`[${s.id}]`));
+      if (cited.length && !item.querySelector('.msg__sources')) {
+        const list = document.createElement('ol');
+        list.className = 'msg__sources';
+        list.setAttribute('aria-label', this.#text.sources);
+        cited.forEach((s, i) => {
+          const li = document.createElement('li');
+          li.style.setProperty('--i', String(i));
+          const link = document.createElement(s.url ? 'a' : 'details');
+          const label = s.url ? link : document.createElement('summary');
+          if (link instanceof HTMLAnchorElement && s.url) {
+            link.href = s.url;
+            link.target = '_blank';
+            link.rel = 'noopener';
+          }
+          const num = document.createElement('span');
+          num.textContent = s.id.slice(1);
+          const title = document.createElement('span');
+          title.textContent = s.title;
+          label.append(num, title);
+          if (!s.url) {
+            const excerpt = document.createElement('p');
+            excerpt.textContent = s.excerpt ?? s.title;
+            link.append(label, excerpt);
+          }
+          li.append(link);
+          list.append(li);
+        });
+        item.append(list);
+      }
+      if (turn.content && !item.querySelector('.msg__copy')) {
+        const copy = document.createElement('button');
+        copy.type = 'button';
+        copy.className = 'msg__copy';
+        copy.textContent = this.#text.copy;
+        copy.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(turn.content.replace(/\s?\[S\d{1,2}\]/g, ''));
+            copy.textContent = this.#text.copied;
+            setTimeout(() => (copy.textContent = this.#text.copy), 1600);
+          } catch {
+            this.#status.textContent = this.#text.unavailable;
+          }
+        });
+        item.append(copy);
+      }
+      if (following) this.#log.scrollTop = this.#log.scrollHeight;
+    }
+
+    #setBusy(busy: AbortController | null) {
+      this.#busy = busy;
+      this.#form.classList.toggle('is-busy', !!busy);
+      this.#send.type = busy ? 'button' : 'submit';
+      this.#log.setAttribute('aria-busy', String(!!busy));
+      this.#attach.disabled = !!busy || this.#preparing;
+      this.querySelector<HTMLElement>('[data-send-label]')!.hidden = !!busy;
+      this.querySelector<HTMLElement>('[data-stop-label]')!.hidden = !busy;
+    }
+
+    // ---------- Network ----------
+
+    #widget(): Promise<Turnstile> {
+      this.#turnstile ??= new Promise<Turnstile>((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.onload = () => {
+          const api = (window as unknown as { turnstile?: Turnstile }).turnstile;
+          if (api) resolve(api);
+          else {
+            this.#turnstile = null;
+            reject(new ChatError('challenge'));
+          }
+        };
+        script.onerror = () => {
+          this.#turnstile = null;
+          reject(new ChatError('challenge'));
+        };
+        document.head.append(script);
+      });
+      return this.#turnstile;
+    }
+
+    /** A valid session token. Callers waiting at the same time share one browser check. */
+    #session(signal: AbortSignal, fresh = false): Promise<string> {
+      if (!fresh) {
+        try {
+          this.#current ??= JSON.parse(sessionStorage.getItem(SESSION) ?? 'null') as Session;
+        } catch {
+          // Unreadable or blocked storage: the session lives in memory only.
+        }
+        if (this.#current && this.#current.expires - Date.now() > 60_000)
+          return Promise.resolve(this.#current.token);
+      }
+      const pending = (this.#minting ??= this.#mint().finally(() => (this.#minting = null)));
+      return new Promise<string>((resolve, reject) => {
+        signal.addEventListener('abort', () => reject(new ChatError('stopped')), { once: true });
+        pending.then(resolve, reject);
+      });
+    }
+
+    async #mint(): Promise<string> {
+      const turnstile = await this.#widget();
+      let id = '';
+      const proof = await new Promise<string>((resolve, reject) => {
+        id = turnstile.render(this.#check, {
+          sitekey: this.dataset.siteKey,
+          language: this.#lang,
+          appearance: 'interaction-only',
+          callback: resolve,
+          'error-callback': () => reject(new ChatError('challenge')),
+          'timeout-callback': () => reject(new ChatError('challenge')),
+          'unsupported-callback': () => reject(new ChatError('challenge')),
+        });
+      }).finally(() => setTimeout(() => turnstile.remove(id)));
+      const res = await fetch(`${this.#api}/session`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ turnstile: proof }),
+      });
+      if (!res.ok) throw new ChatError(res.status === 429 ? 'busy' : 'challenge');
+      const session = (await res.json()) as Session;
+      this.#current = session;
+      try {
+        sessionStorage.setItem(SESSION, JSON.stringify(session));
+      } catch {
+        // Blocked storage: the session lives in memory only.
+      }
+      return session.token;
+    }
+
+    async #post(body: string, signal: AbortSignal): Promise<Response> {
+      for (const fresh of [false, true]) {
+        const res = await fetch(`${this.#api}/chat`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            authorization: `Bearer ${await this.#session(signal, fresh)}`,
+          },
+          body,
+          signal,
+        });
+        if (res.status !== 401) return res;
+      }
+      throw new ChatError('challenge');
+    }
+
+    async #answer() {
+      const controller = new AbortController();
+      this.#setBusy(controller);
+      const turn: Stored = { role: 'assistant', content: '', sources: [] };
+      const item = this.#bubble(turn);
+      // Three dots breathe in turn until the first word arrives.
+      const dots = document.createElement('span');
+      dots.className = 'msg__dots';
+      dots.append(...Array.from({ length: 3 }, () => document.createElement('i')));
+      item.querySelector('.msg__body')!.append(dots);
+      this.#status.textContent = this.#text.searching;
+      let frame = 0;
+      const paint = () => {
+        frame = 0;
+        this.#fill(item, turn, true);
+      };
+      // A reset or a newer answer replaced this one; it must not touch the conversation.
+      const stale = () => this.#busy !== controller;
+      let failed = false;
+      try {
+        const messages = this.#turns
+          .filter((turn) => turn.content.trim() || turn.images?.length)
+          .slice(-MAX_TURNS)
+          .map(({ role, content, images }) => ({
+            role,
+            content: content.slice(0, MAX_ASSISTANT),
+            ...(images?.length ? { images } : {}),
+          }));
+        // The Worker also caps characters and bytes (Czech letters take two); drop the oldest.
+        const body = () => JSON.stringify({ lang: this.#lang, messages });
+        const chars = () => messages.reduce((sum, m) => sum + m.content.length, 0);
+        while (
+          messages.length > 1 &&
+          (chars() > MAX_CHARS || new TextEncoder().encode(body()).length > MAX_BYTES)
+        )
+          messages.shift();
+        const res = await this.#post(body(), controller.signal);
+        if (!res.ok || !res.body) throw new ChatError(res.status === 429 ? 'busy' : 'unavailable');
+        let buffer = '';
+        let done = false;
+        for await (const chunk of res.body.pipeThrough(new TextDecoderStream())) {
+          buffer += chunk;
+          for (let end = buffer.indexOf('\n\n'); end !== -1; end = buffer.indexOf('\n\n')) {
+            const block = buffer.slice(0, end);
+            buffer = buffer.slice(end + 2);
+            const event = /^event: (.+)$/m.exec(block)?.[1];
+            const data = JSON.parse(/^data: (.*)$/m.exec(block)?.[1] ?? 'null') as unknown;
+            if (event === 'sources') turn.sources = chatSources(data);
+            else if (event === 'status' && (data as { stage?: string } | null)?.stage === 'web')
+              this.#status.textContent = this.#text.web;
+            else if (event === 'delta') {
+              if (!turn.content) this.#status.textContent = this.#text.writing;
+              turn.content += (data as { text: string }).text;
+              frame ||= requestAnimationFrame(paint);
+            } else if (event === 'done') done = true;
+            else if (event === 'error') throw new ChatError((data as { code: string }).code);
+          }
+        }
+        // Without `done` the connection dropped mid-answer.
+        if (!done || !turn.content.trim()) throw new ChatError('unavailable');
+        this.#status.textContent = this.#text.ready;
+      } catch (error) {
+        if (stale()) return;
+        failed = true;
+        const code = error instanceof ChatError ? error.message : 'unavailable';
+        const message = controller.signal.aborted
+          ? this.#text.stopped
+          : code === 'busy' || code === 'quota' || code === 'challenge'
+            ? this.#text[code]
+            : this.#text.unavailable;
+        // A cut-off or stopped answer stays readable but never enters the conversation, so it is
+        // neither restored as complete after a reload nor sent back as context.
+        if (turn.content.trim()) {
+          item.classList.remove('is-streaming');
+          item.classList.add('msg--partial');
+          item
+            .querySelector('.msg__body')!
+            .replaceChildren(...markdown(turn.content, turn.sources ?? []));
+        } else item.remove();
+        this.#failure(message, code !== 'quota', item);
+      } finally {
+        cancelAnimationFrame(frame);
+        if (!stale()) {
+          if (!failed) {
+            this.#fill(item, turn);
+            this.#turns.push(turn);
+          }
+          this.#save();
+          this.#setBusy(null);
+        }
+      }
+    }
+
+    /** An inline error; the retry answers the question that is still last in the conversation. */
+    #failure(message: string, retry: boolean, partial: HTMLElement) {
+      this.#status.textContent = '';
+      const note = document.createElement('div');
+      note.className = 'msg msg--error';
+      note.textContent = `${message} `;
+      if (retry) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = this.#text.retry;
+        button.addEventListener('click', () => {
+          note.remove();
+          partial.remove();
+          if (!this.#busy && this.#turns.at(-1)?.role === 'user') void this.#answer();
+        });
+        note.append(button);
+      }
+      this.#log.append(note);
+      this.#log.scrollTop = this.#log.scrollHeight;
+    }
+  }
+
+  customElements.define('site-chat', SiteChat);
+</script>
+
+<!-- Global: the script creates message elements, which scoped styles would not reach. -->
+<style is:global>
+  site-chat {
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+    display: contents;
+  }
+
+  /* ---------- Launcher ---------- */
+
+  .chat-launch {
+    position: fixed;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    z-index: 30;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 3rem;
+    padding: 0 1.2rem 0 1rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--bg);
+    font-weight: 600;
+    font-stretch: 108%;
+    transition:
+      transform 160ms var(--ease-out),
+      opacity 200ms var(--ease-out);
+  }
+
+  .chat-launch svg {
+    fill: var(--accent);
+    transition: transform 400ms var(--ease-out);
+  }
+
+  .chat-launch:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .chat-launch:hover svg {
+      transform: rotate(90deg) scale(1.1);
+    }
+  }
+
+  .chat-open .chat-launch {
+    opacity: 0;
+    transform: scale(0.92);
+    pointer-events: none;
+  }
+
+  /* ---------- Panel ---------- */
+
+  .chat {
+    --gap: clamp(1rem, 3vw, 1.25rem);
+    position: fixed;
+    inset: 1rem 1rem 1rem auto;
+    width: min(34rem, 100vw - 2rem);
+    max-width: none;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 1.25rem;
+    background: var(--bg);
+    color: var(--ink);
+    box-shadow:
+      0 0 0 1px var(--rule),
+      0 32px 80px -24px rgb(0 0 0 / 0.5);
+    display: none;
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto auto auto auto;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateX(1.25rem) scale(0.98);
+    transform-origin: bottom right;
+    transition:
+      opacity 160ms ease-out,
+      transform 160ms ease-out,
+      display 160ms allow-discrete,
+      overlay 160ms allow-discrete;
+  }
+
+  .chat[open] {
+    display: grid;
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 240ms var(--ease-out),
+      transform 320ms var(--ease-out),
+      display 320ms allow-discrete,
+      overlay 320ms allow-discrete;
+
+    @starting-style {
+      opacity: 0;
+      transform: translateX(1.25rem) scale(0.98);
+    }
+  }
+
+  .chat::backdrop {
+    background: rgb(0 0 0 / 0);
+    transition:
+      background-color 200ms ease-out,
+      display 200ms allow-discrete,
+      overlay 200ms allow-discrete;
+  }
+
+  .chat[open]::backdrop {
+    background: rgb(0 0 0 / 0.32);
+
+    @starting-style {
+      background: rgb(0 0 0 / 0);
+    }
+  }
+
+  @media (width < 40rem) {
+    body:has(site-chat) {
+      padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+    }
+
+    .chat-launch {
+      max-width: calc(100vw - 2rem);
+      padding: 0.65rem 1rem;
+      font-size: 0.875rem;
+      font-stretch: normal;
+      line-height: 1.3;
+    }
+
+    .chat {
+      inset: auto 0 0;
+      width: 100%;
+      height: min(100dvh - 2.5rem, 46rem);
+      border-radius: 1.25rem 1.25rem 0 0;
+      transform: translateY(100%);
+      transform-origin: bottom;
+    }
+
+    .chat[open] {
+      transition:
+        opacity 200ms ease-out,
+        transform 420ms var(--ease-drawer),
+        display 420ms allow-discrete,
+        overlay 420ms allow-discrete;
+
+      @starting-style {
+        transform: translateY(100%);
+      }
+    }
+  }
+
+  .chat__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.25rem;
+    padding: var(--gap) var(--gap) 0.75rem;
+  }
+
+  .chat__head div {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .chat__head h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-stretch: 112%;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .chat__head p {
+    color: var(--muted);
+    font-size: 0.875rem;
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+
+  .chat__icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--muted);
+    transition:
+      background-color 160ms ease,
+      color 160ms ease,
+      transform 160ms var(--ease-out);
+  }
+
+  .chat__icon svg,
+  .chat__send svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .chat__icon:active {
+    transform: scale(0.94);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .chat__icon:hover {
+      background: var(--surface);
+      color: var(--ink);
+    }
+  }
+
+  /* ---------- Conversation ---------- */
+
+  .chat__log {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0.5rem var(--gap) 1rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  .chat__log:focus-visible {
+    outline-offset: -2px;
+  }
+
+  .chat__starters[hidden] {
+    display: none;
+  }
+
+  .chat__starters {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: auto;
+  }
+
+  .chat__starters button {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 0;
+    border-radius: 0.9rem;
+    background: var(--surface);
+    font-size: 0.9375rem;
+    line-height: 1.35;
+    text-align: left;
+    transition:
+      background-color 160ms ease,
+      transform 160ms var(--ease-out);
+  }
+
+  .chat__starters button:active {
+    transform: scale(0.98);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .chat__starters button:hover {
+      background: color-mix(in oklab, var(--accent) 14%, var(--surface));
+    }
+  }
+
+  .chat[open] .chat__starters li {
+    animation: rise 360ms var(--ease-out) both;
+    animation-delay: calc(120ms + var(--i) * 50ms);
+  }
+
+  .msg {
+    max-width: 92%;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    transition:
+      opacity 220ms var(--ease-out),
+      transform 220ms var(--ease-out);
+
+    @starting-style {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  .msg--user {
+    align-self: flex-end;
+    padding: 0.6rem 0.95rem;
+    border-radius: 1.1rem 1.1rem 0.35rem 1.1rem;
+    background: var(--accent);
+    color: var(--on-accent);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .msg--assistant {
+    align-self: stretch;
+    max-width: none;
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .msg__body {
+    display: grid;
+    gap: 0.6em;
+    overflow-wrap: anywhere;
+  }
+
+  .msg__body :is(ul, ol) {
+    display: grid;
+    gap: 0.3em;
+    padding-left: 1.2em;
+  }
+
+  .msg__body ul {
+    list-style: disc;
+  }
+
+  .msg__body ol {
+    list-style: decimal;
+  }
+
+  .msg__body code {
+    padding: 0.1em 0.35em;
+    border-radius: 0.3em;
+    background: var(--surface);
+    font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+    font-size: 0.875em;
+  }
+
+  .msg__body pre {
+    padding: 0.8rem 0.9rem;
+    border-radius: 0.6rem;
+    background: var(--surface);
+    overflow-x: auto;
+  }
+
+  .msg__body pre code {
+    padding: 0;
+    background: none;
+  }
+
+  .chat__cite {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    margin-inline: 0.15em;
+    padding-inline: 0.3em;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--accent) 18%, transparent);
+    color: var(--ink);
+    font-size: 0.6875rem;
+    font-weight: 650;
+    text-decoration: none;
+    vertical-align: 0.15em;
+  }
+
+  /* While text streams in, a caret follows it. */
+  .msg.is-streaming .msg__body > :last-child::after {
+    content: '';
+    display: inline-block;
+    width: 0.5em;
+    height: 1em;
+    margin-left: 0.15em;
+    border-radius: 2px;
+    background: var(--accent);
+    vertical-align: -0.12em;
+    animation: caret 900ms steps(1, end) infinite;
+  }
+
+  .msg__dots {
+    display: flex;
+    gap: 0.3rem;
+    height: 1.5rem;
+    align-items: center;
+  }
+
+  .msg__dots i {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: breathe 1s ease-in-out infinite;
+  }
+
+  .msg__dots i:nth-child(2) {
+    animation-delay: 150ms;
+  }
+
+  .msg__dots i:nth-child(3) {
+    animation-delay: 300ms;
+  }
+
+  .msg__sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .msg__sources li {
+    animation: rise 300ms var(--ease-out) both;
+    animation-delay: calc(var(--i) * 45ms);
+  }
+
+  .msg__sources a,
+  .msg__sources summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    max-width: 16rem;
+    min-height: 2rem;
+    padding: 0.25rem 0.7rem 0.25rem 0.3rem;
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 0.8125rem;
+    text-decoration: none;
+    transition:
+      background-color 160ms ease,
+      transform 160ms var(--ease-out);
+  }
+
+  .msg__sources a:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .msg__sources a:hover {
+      background: color-mix(in oklab, var(--accent) 16%, var(--surface));
+    }
+  }
+
+  .msg__sources span:first-child {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 50%;
+    background: var(--bg);
+    font-size: 0.6875rem;
+    font-weight: 650;
+  }
+
+  .msg__sources span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .msg__sources details {
+    max-width: 100%;
+  }
+  .msg__sources summary {
+    cursor: pointer;
+  }
+  .msg__sources details p {
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+    white-space: pre-wrap;
+  }
+
+  .msg__copy,
+  .msg--error button {
+    justify-self: start;
+    min-height: 2rem;
+    padding: 0 0.6rem;
+    margin-left: -0.6rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.8125rem;
+    transition:
+      color 160ms ease,
+      background-color 160ms ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .msg__copy:hover,
+    .msg--error button:hover {
+      background: var(--surface);
+      color: var(--ink);
+    }
+  }
+
+  .msg--error,
+  .msg--partial {
+    color: var(--muted);
+  }
+
+  .msg--error button {
+    margin-left: 0;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .chat__status {
+    min-height: 1.25rem;
+    padding-inline: var(--gap);
+    color: var(--muted);
+    font-size: 0.8125rem;
+  }
+
+  /* ---------- Composer ---------- */
+
+  .chat__form {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin: 0.4rem var(--gap) 0;
+    padding: 0.4rem 0.4rem 0.4rem 1rem;
+    border-radius: 1.4rem;
+    background: var(--surface);
+    transition: box-shadow 200ms ease;
+  }
+
+  .chat__form:focus-within {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+
+  .chat__form textarea {
+    flex: 1;
+    min-width: 0;
+    min-height: 2.5rem;
+    max-height: 9rem;
+    padding: 0.55rem 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 1rem;
+    line-height: 1.4;
+    resize: none;
+    field-sizing: content;
+  }
+
+  .chat__form textarea:focus {
+    outline: none;
+  }
+
+  .chat__form textarea::placeholder {
+    color: var(--muted);
+  }
+
+  .chat__send {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--bg);
+    transition: transform 160ms var(--ease-out);
+  }
+
+  .chat__send:active {
+    transform: scale(0.94);
+  }
+
+  .chat__send svg {
+    grid-area: 1 / 1;
+    transition:
+      opacity 180ms ease,
+      filter 180ms ease,
+      transform 220ms var(--ease-out);
+  }
+
+  .chat__stop-icon {
+    fill: currentColor;
+    stroke: none !important;
+  }
+
+  .chat__form:not(.is-busy) .chat__stop-icon,
+  .chat__form.is-busy .chat__send-icon {
+    opacity: 0;
+    filter: blur(2px);
+    transform: scale(0.6);
+  }
+
+  .chat__note {
+    padding: 0.7rem var(--gap) var(--gap);
+    color: var(--muted);
+    font-size: 0.75rem;
+    line-height: 1.45;
+    padding-bottom: max(var(--gap), env(safe-area-inset-bottom));
+  }
+
+  .chat__attachment {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin: 0.4rem var(--gap);
+    color: var(--muted);
+    font-size: 0.8125rem;
+  }
+
+  .chat__attachment[hidden] {
+    display: none;
+  }
+  .chat__attachment img {
+    width: 3.5rem;
+    height: 3.5rem;
+    object-fit: cover;
+    border-radius: 0.6rem;
+  }
+  .chat__attachment button {
+    margin-left: auto;
+  }
+  .msg__image {
+    width: min(100%, 16rem);
+    max-height: 14rem;
+    object-fit: contain;
+    border-radius: 0.6rem;
+  }
+  .chat__remember {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    margin: 0.2rem var(--gap) 0;
+    color: var(--muted);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    cursor: pointer;
+  }
+
+  .chat__remember input {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--accent);
+  }
+  .chat__attach:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  @media (height < 34rem) {
+    .chat {
+      inset: 0 0 0 auto;
+      height: 100dvh;
+      border-radius: 0;
+    }
+    .chat__head p {
+      display: none;
+    }
+  }
+
+  .chat__check:empty {
+    display: none;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  @keyframes caret {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes breathe {
+    50% {
+      opacity: 0.25;
+      transform: scale(0.75);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chat,
+    .chat[open],
+    .msg {
+      transform: none !important;
+    }
+  }
+</style>

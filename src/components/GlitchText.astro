@@ -1,12 +1,15 @@
 ---
 interface Props {
   text: string;
+  scramble?: boolean;
 }
 
-const { text } = Astro.props;
+const { text, scramble = false } = Astro.props;
 ---
 
 <span class="sr-only">{text}</span>
 <span class="glitch-label" data-text={text} aria-hidden="true">
-  <span data-glitch-text>{text}</span>
+  <span data-glitch-text data-scramble={scramble || undefined}>
+    {text}
+  </span>
 </span>

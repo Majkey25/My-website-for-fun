@@ -1,0 +1,162 @@
+---
+import type { Lang } from '../i18n';
+const { lang = 'en' } = Astro.props as { lang?: Lang };
+const lines =
+  lang === 'cs'
+    ? [
+        'spouštím /init',
+        '[ ok ] Matěj Teplý',
+        '[ ok ] aplikovaná AI / software',
+        '[ ok ] Android / web / audio',
+        '[ ok ] veřejné projekty',
+        '[ ok ] připraveno',
+      ]
+    : [
+        'booting /init',
+        '[ ok ] Matěj Teplý',
+        '[ ok ] applied AI / software',
+        '[ ok ] Android / web / audio',
+        '[ ok ] public projects',
+        '[ ok ] ready',
+      ];
+---
+
+<div class="intro-screen no-print">
+  <canvas aria-hidden="true" />
+  <div class="intro-screen__content" aria-hidden="true">
+    <p class="intro-screen__log">
+      {lines.map((line, index) => (
+        <span style={`--i:${index}`}>{line}</span>
+      ))}
+    </p>
+    <div class="intro-screen__progress"></div>
+  </div>
+</div>
+
+<script>
+  import { startMatrix } from '../scripts/matrix';
+  const screen = document.querySelector<HTMLElement>('.intro-screen');
+  const root = document.documentElement;
+  if (screen && root.classList.contains('intro-active')) {
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    let stopMatrix = () => {};
+    let ended = false;
+    const finish = (immediate = false) => {
+      if (ended) return;
+      ended = true;
+      stopMatrix();
+      clearTimeout(expiry);
+      document.removeEventListener('keydown', key);
+      document.removeEventListener('visibilitychange', visibility);
+      motion.removeEventListener('change', skip);
+      const animate = !immediate && !motion.matches && !document.hidden;
+      if (animate) screen.classList.add('is-out');
+      root.classList.remove('intro-active');
+      document.dispatchEvent(new Event('init:intro-finished'));
+      if (animate) setTimeout(() => screen.remove(), 320);
+      else screen.remove();
+    };
+    const skip = () => finish(true);
+    const key = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' || event.key === 'Tab') skip();
+    };
+    const visibility = () => {
+      if (document.hidden) skip();
+    };
+    const expiry = setTimeout(() => finish(), 1550);
+    document.addEventListener('keydown', key);
+    document.addEventListener('visibilitychange', visibility);
+    motion.addEventListener('change', skip);
+    if (performance.now() > 2000 || document.hidden) skip();
+
+    const canvas = screen.querySelector('canvas');
+    if (canvas && !ended) stopMatrix = startMatrix(canvas, '#93a4ff');
+  } else screen?.remove();
+</script>
+
+<style>
+  :global(html.intro-active) {
+    overflow: hidden;
+  }
+
+  .intro-screen {
+    --terminal-bg: #0b0b0c;
+    --terminal-ink: #ececee;
+    --terminal-accent: #93a4ff;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    place-items: center;
+    background: var(--terminal-bg);
+    color: var(--terminal-ink);
+    contain: strict;
+    transition: transform 320ms var(--ease);
+  }
+  :global(.intro-active) .intro-screen,
+  .intro-screen.is-out {
+    display: grid;
+    animation: expire 0s 2.1s forwards;
+  }
+  .intro-screen.is-out {
+    transform: translateY(-100%);
+  }
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.5;
+    mask-image: radial-gradient(ellipse, transparent 12%, #000 85%);
+  }
+  .intro-screen__content {
+    position: relative;
+    display: grid;
+    gap: 1.75rem;
+    width: min(100% - 2.5rem, 46rem);
+  }
+  .intro-screen__log {
+    font:
+      clamp(0.8rem, 1.5vw, 1rem)/1.9 ui-monospace,
+      monospace;
+    color: var(--terminal-accent);
+  }
+  .intro-screen__log span {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    animation: type-line 180ms steps(24, end) both;
+    animation-delay: calc(var(--i) * 170ms);
+  }
+  .intro-screen__progress {
+    height: 2px;
+    background: var(--terminal-accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: load 1.5s var(--ease) both;
+  }
+  @keyframes load {
+    to {
+      transform: scaleX(1);
+    }
+  }
+  @keyframes type-line {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+  @keyframes expire {
+    to {
+      visibility: hidden;
+      pointer-events: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .intro-screen {
+      display: none !important;
+    }
+  }
+</style>
