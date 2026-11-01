@@ -239,13 +239,8 @@ const pages = [
   const syncControls = () => {
     if (!reel) return;
     const offset = pinned ? position : reel.scrollLeft;
-    viewport?.style.setProperty('--fade-left', offset > 1 ? '2rem' : '0px');
-    viewport?.style.setProperty('--fade-right', offset < travel - 1 ? '2rem' : '0px');
     buttons.forEach((button) => {
-      button.disabled =
-        Number(button.dataset.workStep) < 0
-          ? (pinned ? position : reel.scrollLeft) <= 1
-          : (pinned ? position : reel.scrollLeft) >= travel - 1;
+      button.disabled = Number(button.dataset.workStep) < 0 ? offset <= 1 : offset >= travel - 1;
     });
   };
   reel?.addEventListener('scroll', syncControls, { passive: true });
@@ -262,7 +257,17 @@ const pages = [
     const top = (header?.offsetHeight ?? 0) + 16;
     const height = stage.offsetHeight;
     const padding = parseFloat(getComputedStyle(showcase).paddingTop);
-    travel = reel.scrollWidth - reel.clientWidth;
+    const last = reel.lastElementChild as HTMLElement | null;
+    // Include the end gutter in both native-overflow and transformed-track modes.
+    travel = last
+      ? Math.max(
+          0,
+          last.offsetLeft +
+            last.offsetWidth +
+            parseFloat(getComputedStyle(reel).paddingInlineEnd) -
+            reel.clientWidth,
+        )
+      : 0;
     start = showcase.getBoundingClientRect().top + scrollY + padding - top;
     // Short viewports keep native horizontal scrolling so the full card stays reachable.
     const wasPinned = pinned;
@@ -317,11 +322,12 @@ const pages = [
   });
   reel?.addEventListener('focusin', (event) => {
     const card = (event.target as Element).closest<HTMLElement>('li');
-    if (!pinned || !card || !viewport) return;
+    if (!pinned || !card || !viewport || !reel) return;
     const box = card.getBoundingClientRect();
     const bounds = viewport.getBoundingClientRect();
-    if (box.left < bounds.left || box.right > bounds.right)
-      scrollTo({ top: start + Math.min(travel, card.offsetLeft - 4), behavior: 'instant' });
+    const inset = parseFloat(getComputedStyle(reel).paddingInlineStart);
+    if (box.left < bounds.left + inset || box.right > bounds.right - inset)
+      scrollTo({ top: start + Math.min(travel, card.offsetLeft - inset), behavior: 'instant' });
   });
 </script>
 
@@ -433,11 +439,12 @@ const pages = [
     top: var(--work-top);
   }
   .work-viewport {
+    margin-inline: calc(-1 * var(--pad));
     mask-image: linear-gradient(
       to right,
       transparent,
-      #000 var(--fade-left, 0px),
-      #000 calc(100% - var(--fade-right, 2rem)),
+      #000 var(--pad),
+      #000 calc(100% - var(--pad)),
       transparent
     );
   }
@@ -457,6 +464,8 @@ const pages = [
   }
   .work-reel {
     position: relative;
+    padding-inline: calc(var(--pad) + 0.25rem);
+    scroll-padding-inline: calc(var(--pad) + 0.25rem);
   }
   .work-controls {
     margin: 0;
