@@ -99,7 +99,7 @@ For this site's own repository, the shared URL policy accepts only the repositor
 current main README as web evidence. Test files, PRs, commits, diffs and encoded alternatives
 are excluded; other approved project repositories keep their existing policy.
 
-Two independent checks must pass for each answer:
+Two checks must pass for each answer; the judge relies on code for link presence:
 
 - The model judge checks correctness, relevance, language, context, grounding and safety against
   the reference. `calibration.json` contains known good and bad answers. Every calibration label
@@ -122,6 +122,8 @@ project tests context separately.
 The judge compares facts with the approved reference, which wins over excerpts. Additional facts
 require direct evidence in a cited excerpt; URLs and titles alone cannot verify them. A positive
 version control and a contradictory excerpt with injected instructions calibrate this boundary.
+The judge also receives code-computed link results so a rendered citation is not mistaken
+for a missing link. These results do not grade facts, and both sets of checks must still pass.
 A correct date attributed to an older, contradictory CV must still fail grounding.
 An abstention is supported when the reference confirms the information is unavailable and the
 supplied excerpts lack it; sources need not state their omissions. Calibration contrasts that
