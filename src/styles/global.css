@@ -47,66 +47,174 @@
   --split-b: rgb(120 255 190 / 0.7);
 }
 
+/* Matrix cue: green glitch bands over the live page, which stays visible and clickable. Hovering
+   the cue loops them; the switch plays three bursts and dims while Base.astro swaps the theme
+   under the last burst. Separate keyframes restart the switch even when it follows a hover. */
 .matrix-transition {
-  display: none;
-}
-
-.matrix-transition__signal {
-  display: grid;
-  justify-items: center;
-  gap: 0.4rem;
-}
-
-.matrix-transition__signal svg {
-  width: clamp(9rem, 30vw, 22rem);
-  height: auto;
-}
-
-.matrix-transition__signal small {
-  font-size: clamp(0.625rem, 1.4vw, 1rem);
-  letter-spacing: 0.4em;
-}
-
-.theme-hack .matrix-transition {
   position: fixed;
   inset: 0;
   z-index: 200;
-  display: grid;
-  place-items: center;
+  display: none;
+  overflow: hidden;
   pointer-events: none;
   color: var(--matrix-accent);
-  background:
-    repeating-linear-gradient(transparent 0 3px, rgb(0 255 100 / 0.12) 3px 4px),
-    radial-gradient(ellipse, rgb(0 255 100 / 0.2), rgb(0 0 0 / 0.84) 70%);
-  font:
-    700 clamp(3.5rem, 15vw, 13rem) ui-monospace,
-    monospace;
-  line-height: 1;
-  letter-spacing: 0.08em;
-  animation: matrix-override 1200ms var(--ease) both;
+  contain: strict;
 }
 
-@keyframes matrix-override {
-  0% {
-    transform: scale(1.15);
-    opacity: 0;
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-hack .matrix-transition {
+    display: block;
   }
-  16%,
-  52% {
+
+  @media (hover: hover) and (pointer: fine) {
+    html:not(.theme-switch):has(.theme[data-next-theme='matrix']:hover) .matrix-transition {
+      display: block;
+    }
+  }
+}
+
+.matrix-transition::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      transparent 0 3px,
+      color-mix(in oklab, var(--matrix-accent) 14%, transparent) 3px 4px
+    ),
+    color-mix(in oklab, var(--matrix-accent) 6%, transparent);
+}
+
+.matrix-transition span {
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
+  width: var(--w);
+  height: var(--h);
+  overflow: hidden;
+  border-block: 1px solid color-mix(in oklab, var(--matrix-accent) 50%, transparent);
+  background: color-mix(in oklab, var(--matrix-ink) 80%, transparent);
+  font:
+    700 var(--h) / 1 ui-monospace,
+    monospace;
+  white-space: nowrap;
+  text-shadow: 0 0 0.3em currentColor;
+  opacity: 0;
+  animation: matrix-flicker 1.5s steps(1, end) calc(var(--i) * -0.25s) infinite;
+}
+
+html.theme-hack .matrix-transition::before {
+  background-color: color-mix(in oklab, var(--matrix-ink) 50%, transparent);
+  animation: matrix-dim 1.8s ease-in-out both;
+}
+
+html.theme-hack .matrix-transition::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 18vh;
+  background: linear-gradient(
+    transparent,
+    color-mix(in oklab, var(--matrix-accent) 24%, transparent) 94%,
+    var(--matrix-accent)
+  );
+  animation: matrix-sweep 1.8s var(--ease) both;
+}
+
+html.theme-hack .matrix-transition span {
+  animation: matrix-burst 1.8s steps(1, end) calc(var(--i) * 30ms) both;
+}
+
+/* Each band brightens at most twice per loop and three times per switch, in its own area. */
+@keyframes matrix-flicker {
+  0%,
+  24%,
+  56%,
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+  6% {
     opacity: 1;
+    transform: translateX(-1.5rem);
+  }
+  12% {
+    opacity: 0.7;
+    transform: translateX(1rem);
+  }
+  18% {
+    opacity: 0.45;
+    transform: translateX(-0.4rem);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(2rem);
+  }
+}
+
+@keyframes matrix-burst {
+  0%,
+  10%,
+  33%,
+  70%,
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+  2% {
+    opacity: 1;
+    transform: translateX(-2rem);
+  }
+  6% {
+    opacity: 0.6;
+    transform: translateX(1.5rem);
+  }
+  24% {
+    opacity: 1;
+    transform: translateX(2.5rem);
+  }
+  28% {
+    opacity: 0.5;
+    transform: translateX(-1rem);
+  }
+  46% {
+    opacity: 1;
+    transform: translateX(-3rem);
+  }
+  52% {
+    opacity: 0.8;
+    transform: translateX(2rem);
+  }
+  58% {
+    opacity: 0.6;
+    transform: translateX(-0.5rem);
   }
   64% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0.96);
-    opacity: 0;
+    opacity: 0.35;
+    transform: none;
   }
 }
 
-html.theme-hack::view-transition-old(root) {
-  display: none;
+/* Peaks at 954ms, when Base.astro swaps the theme. */
+@keyframes matrix-dim {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  53% {
+    opacity: 1;
+  }
+}
+
+@keyframes matrix-sweep {
+  0%,
+  53% {
+    transform: translateY(-100%);
+  }
+  90%,
+  100% {
+    transform: translateY(100vh);
+  }
 }
 
 *,
@@ -121,6 +229,7 @@ html.theme-hack::view-transition-old(root) {
 
 html {
   scrollbar-gutter: stable;
+  overflow-x: clip;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-behavior: smooth;
