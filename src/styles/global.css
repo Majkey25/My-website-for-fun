@@ -54,12 +54,17 @@
 .matrix-transition__signal {
   display: grid;
   justify-items: center;
-  gap: 1rem;
+  gap: 0.4rem;
 }
 
 .matrix-transition__signal svg {
-  width: clamp(6rem, 18vw, 12rem);
+  width: clamp(9rem, 30vw, 22rem);
   height: auto;
+}
+
+.matrix-transition__signal small {
+  font-size: clamp(0.625rem, 1.4vw, 1rem);
+  letter-spacing: 0.4em;
 }
 
 .theme-hack .matrix-transition {
@@ -69,29 +74,33 @@
   display: grid;
   place-items: center;
   pointer-events: none;
-  color: var(--accent);
-  background: repeating-linear-gradient(transparent 0 3px, rgb(0 255 100 / 0.07) 3px 4px);
+  color: var(--matrix-accent);
+  background:
+    repeating-linear-gradient(transparent 0 3px, rgb(0 255 100 / 0.12) 3px 4px),
+    radial-gradient(ellipse, rgb(0 255 100 / 0.2), rgb(0 0 0 / 0.84) 70%);
   font:
-    700 clamp(1.25rem, 4vw, 3rem) ui-monospace,
+    700 clamp(3.5rem, 15vw, 13rem) ui-monospace,
     monospace;
-  letter-spacing: 0.12em;
-  animation: matrix-override 760ms steps(1, end) both;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  animation: matrix-override 1200ms var(--ease) both;
 }
 
 @keyframes matrix-override {
-  0%,
-  18% {
-    transform: translateX(-2%);
+  0% {
+    transform: scale(1.15);
+    opacity: 0;
   }
-  9%,
-  32% {
-    transform: translateX(2%);
+  16%,
+  52% {
+    opacity: 1;
   }
-  44% {
-    transform: none;
+  64% {
+    transform: scale(1);
+    opacity: 1;
   }
-  72%,
   100% {
+    transform: scale(0.96);
     opacity: 0;
   }
 }
