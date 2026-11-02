@@ -52,7 +52,7 @@
     "steps": [
       {
         "question": "What is SeliaScan?",
-        "reference": "SeliaScan is Matěj's Android document scanner, previously named ScanIt.",
+        "reference": "SeliaScan is Matěj's Android document scanner, previously named ScanIt, built with Kotlin, Jetpack Compose and Google ML Kit. It supports scanning, saving and sharing documents, local OCR, PDF/image workflows and document editing, including redaction, signatures, stamps and annotations. Its code is public on GitHub. A brief subset of these facts is enough.",
         "citation": true
       },
       {
