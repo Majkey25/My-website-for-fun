@@ -443,8 +443,12 @@ const pages = [
     mask-image: linear-gradient(
       to right,
       transparent,
-      #000 var(--pad),
-      #000 calc(100% - var(--pad)),
+      rgb(0 0 0 / 0.35) calc(var(--pad) * 0.4),
+      rgb(0 0 0 / 0.85) var(--pad),
+      #000 calc(var(--pad) * 2),
+      #000 calc(100% - var(--pad) * 2),
+      rgb(0 0 0 / 0.85) calc(100% - var(--pad)),
+      rgb(0 0 0 / 0.35) calc(100% - var(--pad) * 0.4),
       transparent
     );
   }
