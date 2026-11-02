@@ -308,7 +308,7 @@ async function chat(
         title,
         url,
         // Indexed public text and approved uploads, never live-search summaries.
-        ...(url === null || links !== undefined ? { excerpt: text.slice(0, 1200) } : {}),
+        ...(url === null || links !== undefined ? { excerpt: text } : {}),
         ...(links?.length ? { links } : {}),
       })),
     );

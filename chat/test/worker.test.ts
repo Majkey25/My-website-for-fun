@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildInput, readEvents } from '../src/answer.ts';
+import { buildInput, readEvents, type Message } from '../src/answer.ts';
 import worker, { HttpError, parseChat } from '../src/index.ts';
 import { issueSession, verifySession } from '../src/session.ts';
+import { MAX_SOURCE_CHARS } from '../src/sources.ts';
 import { MAX_CHAT_BYTES, MAX_FILE_BYTES } from '../../src/chat-file.ts';
 
 const SECRET = 'x'.repeat(40);
@@ -354,7 +355,7 @@ test('source links are derived once from indexed text for both model and browser
   const stream = await events(response);
   const source = stream.find(({ event }) => event === 'sources')?.data[0];
   assert.deepEqual(source.links, links);
-  assert.equal(source.excerpt, text.slice(0, 1200));
+  assert.equal(source.excerpt, text);
   const upstream = calls[0]!.body as { input: { content: string }[] };
   const envelope = upstream.input.at(-1)!.content;
   assert.equal(/ links="([^"]*)"/.exec(envelope)?.[1], links.join(' '));
@@ -1085,7 +1086,8 @@ test('documents are user-only bounded attachments and retain native input_file p
 
 test('the uploaded CV has a real document label and excerpt, and images never reach the index', async (t) => {
   let searched: unknown;
-  stubFetch(t, () =>
+  const text = `${'Earlier public context. '.repeat(100)}Safety evaluation work.${'x'.repeat(MAX_SOURCE_CHARS)}`;
+  const calls = stubFetch(t, () =>
     sse([
       { type: 'response.output_text.delta', delta: structuredAnswer('He builds AI tools [S1].') },
       { type: 'response.completed', response: {} },
@@ -1109,7 +1111,7 @@ test('the uploaded CV has a real document label and excerpt, and images never re
                 id: 'c1',
                 type: 'text',
                 score: 1,
-                text: 'Experience...',
+                text,
                 item: { key: 'owner-cv-page-1.md' },
               },
               // Any other hand-uploaded file without a URL stays out of the sources.
@@ -1135,8 +1137,19 @@ test('the uploaded CV has a real document label and excerpt, and images never re
     { role: 'user', content: JSON.stringify({ history: [], latest_question: 'Experience?' }) },
   ]);
   assert.deepEqual(stream[1]?.data, [
-    { id: 'S1', title: 'Matej_Teply_CV_EXT_26.pdf | p. 1', url: null, excerpt: 'Experience...' },
+    {
+      id: 'S1',
+      title: 'Matej_Teply_CV_EXT_26.pdf | p. 1',
+      url: null,
+      excerpt: text.slice(0, MAX_SOURCE_CHARS),
+    },
   ]);
+  const upstream = calls[0]!.body as { input: Message[] };
+  const content = upstream.input.at(-1)!.content;
+  assert(Array.isArray(content));
+  assert(
+    content.find((part) => part.type === 'input_text')?.text.includes(stream[1]?.data[0].excerpt),
+  );
 });
 
 test('attachment-only questions skip retrieval even after earlier text dialogue', async (t) => {

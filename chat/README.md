@@ -58,7 +58,7 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
   `sources` (sent again with the web results appended; the last list is the complete one),
   `delta`, then `suggestions` (`{ "questions": ["…", "…", "…"] }`) and `done`, or `error`.
   Provider safety refusals may omit suggestions. Citations `[S1]`…`[S10]` refer to the last `sources` list.
-  Indexed sources include a text excerpt of at most 1,200 characters and up to ten owned HTTPS
+  Indexed sources include the same text given to the assistant, at most 6,000 characters, and up to ten owned HTTPS
   links found in their capped text. The same links go to the model and browser. Direct links must
   match a supplied destination or internal navigation; model-written URLs do not extend this list.
   Relative and escaped body links are skipped. Live-search summaries get no excerpt or extra links.
@@ -123,7 +123,8 @@ The judge compares facts with the approved reference, which wins over excerpts. 
 require direct evidence in a cited excerpt; URLs and titles alone cannot verify them. A positive
 version control and a contradictory excerpt with injected instructions calibrate this boundary.
 A correct date attributed to an older, contradictory CV must still fail grounding.
-Claims outside the excerpt's 1,200-character prefix remain uncertain. These evals do not certify full index
+The judge receives the same bounded source text as the assistant; facts outside that retrieved text
+remain uncertain. These evals do not certify full index
 coverage or every embedding/chunk in the managed search service.
 
 Use the manually dispatched **Chat behavior evals** workflow on `main`. It uses the protected
@@ -361,7 +362,8 @@ Edit `src/sources.ts`:
   retrieved excerpts are visible to visitors before model generation. The model privacy prompt
   is not a substitute for reviewing uploads, and cannot make a private document safe to publish.
   Indexed public pages also send bounded excerpts for evaluation, without rendering or retaining
-  those web excerpts in browser history. Approved file excerpts and body links survive history.
+  those web excerpts in browser history. Approved file excerpts are displayed and retained up to
+  1,200 characters; body links survive history.
   The private profile records public source URLs, CV page provenance, research date, conflicting
   dates and unavailable facts. Refresh it when its source facts change; it is not a live feed.
 
