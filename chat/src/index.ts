@@ -19,6 +19,7 @@ import { hasStrongSecret, issueSession, verifySession } from './session.ts';
 import { OWNER_FILES, ownerUrl } from './sources.ts';
 import { searchWeb } from './web.ts';
 import { tokenUsage } from './metrics.ts';
+import type { ChatErrorCode } from '../../src/chat-errors.ts';
 
 const MAX_BODY_BYTES = 32 * 1024;
 const MAX_TURNS = 12;
@@ -37,8 +38,8 @@ const BASE_HEADERS = {
 
 export class HttpError extends Error {
   readonly status: number;
-  readonly code: string;
-  constructor(status: number, code: string) {
+  readonly code: ChatErrorCode;
+  constructor(status: number, code: ChatErrorCode) {
     super(code);
     this.status = status;
     this.code = code;
@@ -138,11 +139,20 @@ async function createSession(request: Request, env: Env, ip: string) {
     method: 'POST',
     body: form,
     signal: AbortSignal.timeout(10_000),
+  }).catch(() => {
+    throw new HttpError(503, 'verification_unavailable');
   });
+  if (!res.ok) throw new HttpError(503, 'verification_unavailable');
   const outcome = (await res.json().catch(() => null)) as {
     success?: unknown;
     hostname?: unknown;
+    'error-codes'?: unknown;
   } | null;
+  const codes = Array.isArray(outcome?.['error-codes']) ? outcome['error-codes'] : [];
+  if (codes.some((code) => code === 'missing-input-secret' || code === 'invalid-input-secret'))
+    throw new HttpError(503, 'configuration');
+  if (!outcome || typeof outcome.success !== 'boolean' || codes.includes('internal-error'))
+    throw new HttpError(503, 'verification_unavailable');
   if (outcome?.success !== true || outcome.hostname !== new URL(request.url).hostname)
     throw new HttpError(403, 'challenge');
   return issueSession(env.SESSION_SECRET);
@@ -323,7 +333,7 @@ async function chat(
         outcome = await relay(sources, false);
         usage.push(outcome.usage);
       }
-      if (!outcome.wrote) throw new UpstreamError('unavailable');
+      if (!outcome.wrote) throw new UpstreamError('incomplete');
       if (outcome.followups) await send('suggestions', { questions: outcome.followups });
       await send('done', {});
       console.log(
@@ -348,7 +358,13 @@ async function chat(
       const timedOut =
         signal.reason instanceof DOMException && signal.reason.name === 'TimeoutError';
       const code =
-        error instanceof UpstreamError ? error.code : timedOut ? 'timeout' : 'unavailable';
+        error instanceof UpstreamError
+          ? error.code
+          : timedOut
+            ? 'timeout'
+            : error instanceof SyntaxError
+              ? 'protocol'
+              : 'unavailable';
       const status = error instanceof UpstreamError ? error.status : 0;
       console.error(
         JSON.stringify({
@@ -425,7 +441,7 @@ export default {
       if (request.method !== 'POST') throw new HttpError(405, 'method');
       if (!env.OPENAI_API_KEY || !env.TURNSTILE_SECRET || !hasStrongSecret(env.SESSION_SECRET)) {
         console.error(JSON.stringify({ event: 'misconfigured', requestId }));
-        throw new HttpError(503, 'unavailable');
+        throw new HttpError(503, 'configuration');
       }
       const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
       if (pathname === '/api/session') return json(await createSession(request, env, ip), cors);

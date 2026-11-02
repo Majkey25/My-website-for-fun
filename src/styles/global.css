@@ -47,11 +47,8 @@
   --split-b: rgb(120 255 190 / 0.7);
 }
 
-/* Matrix cue: green glitch bands over the live page, which stays visible and clickable. Hovering
-   the cue loops them. The switch pulses them three times (360ms apart) under a deepening tint and
-   cuts to an opaque terminal at 900ms. Base.astro swaps the theme under it at 3200ms, then the
-   terminal lifts away behind a 600ms sweep. Separate keyframes restart the switch even when it
-   follows a hover. */
+/* Hover previews green bands. Clicking opens the terminal immediately; the theme changes
+   after its final simulated command, before the terminal lifts behind a short sweep. */
 .matrix-transition {
   position: fixed;
   inset: 0;
@@ -120,7 +117,7 @@
     ),
     color-mix(in oklab, var(--matrix-ink) 70%, #000);
   font:
-    500 clamp(0.75rem, 0.55rem + 1vw, 1.125rem) / 1.8 ui-monospace,
+    500 clamp(0.75rem, min(1.8svh, 3vw), 1.0625rem) / 1.5 ui-monospace,
     monospace;
   white-space: nowrap;
   text-shadow: 0 0 0.4em color-mix(in oklab, currentColor 45%, transparent);
@@ -135,28 +132,26 @@
   animation: matrix-type var(--t) steps(var(--n), start) var(--d) forwards;
 }
 
-/* Commands open on the 9-character prompt, then type one character per step. */
+/* Commands open on the shell prompt, then type one character per step. */
 .matrix-terminal > kbd {
-  --from: calc(100% - 9ch);
+  --from: calc(100% - var(--prompt));
   color: var(--matrix-accent);
 }
 
 html.theme-hack .matrix-terminal {
   display: grid;
-  animation: matrix-in 1ms 0.9s both;
 }
 
-html.theme-hack .matrix-transition::before {
-  background-color: color-mix(in oklab, var(--matrix-ink) 82%, transparent);
-  animation: matrix-in 0.9s ease-in both;
-}
-
+html.theme-hack .matrix-transition::before,
 html.theme-hack .matrix-transition > span {
-  left: -12%;
-  width: 124%;
-  height: 1em;
-  font-size: min(calc(var(--h) * 3.5), 9rem);
-  animation: matrix-burst 0.9s steps(1, end) calc(var(--i) * 30ms) both;
+  display: none;
+}
+
+@media (height < 32rem) {
+  .matrix-terminal {
+    padding: 1rem;
+    font-size: clamp(0.5rem, 1.9svh, 0.625rem);
+  }
 }
 
 /* Base.astro adds theme-reveal only after the swap, so the old theme never shows through. */
@@ -185,7 +180,7 @@ html.theme-reveal .matrix-transition::after {
   animation: matrix-sweep 0.6s var(--ease) both;
 }
 
-/* Each band brightens at most twice per loop; switch pulses stay 360ms apart. */
+/* Each hover band brightens at most twice per loop. */
 @keyframes matrix-flicker {
   0%,
   24%,
@@ -209,52 +204,6 @@ html.theme-reveal .matrix-transition::after {
   50% {
     opacity: 0.8;
     transform: translateX(2rem);
-  }
-}
-
-/* Three pulses, each wider and taller; the last holds until the terminal covers it. */
-@keyframes matrix-burst {
-  0% {
-    opacity: 0.85;
-    transform: translateX(-4vw) skewX(-5deg);
-  }
-  6% {
-    opacity: 0.6;
-    transform: translateX(3vw) skewX(4deg);
-  }
-  14%,
-  38%,
-  54%,
-  78%,
-  100% {
-    opacity: 0;
-    transform: none;
-  }
-  40% {
-    opacity: 1;
-    transform: translateX(8vw) skewX(8deg) scaleY(1.2);
-  }
-  46% {
-    opacity: 0.75;
-    transform: translateX(-7vw) skewX(-6deg) scaleY(1.2);
-  }
-  80% {
-    opacity: 1;
-    transform: translateX(-12vw) skewX(-10deg) scaleY(1.5);
-  }
-  86% {
-    opacity: 0.9;
-    transform: translateX(11vw) skewX(9deg) scaleY(1.5);
-  }
-  92% {
-    opacity: 1;
-    transform: translateX(-4vw) skewX(-3deg) scaleY(1.5);
-  }
-}
-
-@keyframes matrix-in {
-  from {
-    opacity: 0;
   }
 }
 

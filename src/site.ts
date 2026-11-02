@@ -16,6 +16,10 @@ export const slug = (name: string) =>
     .replace(/^-|-$/g, '');
 
 export const profile = {
+  usernameOrigin: {
+    cs: 'Majkey25 je moje uživatelské jméno na GitHubu. Spojuje křestní jméno Matěj, dětskou přezdívku, její výslovnost a oblíbené číslo 25. Líbí se mi také podobnost s anglickým „my key“, tedy „můj klíč“.',
+    en: 'Majkey25 is my GitHub username. It combines my first name, Matěj, a childhood nickname, its pronunciation and my favourite number, 25. I also like its resemblance to the English phrase “my key”.',
+  },
   email: 'majkeylab@gmail.com',
   web3formsAccessKey: '76152ab0-19d3-4ab4-b904-db44803a9c51',
   socials: [

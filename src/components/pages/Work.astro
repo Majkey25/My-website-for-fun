@@ -19,7 +19,6 @@ const sections = (Object.keys(groups) as (keyof typeof groups)[])
   .map((key) => ({ key, title: groups[key], list: projects.filter((p) => p.group === key) }))
   .filter((s) => s.list.length > 0);
 const pad = (n: number) => String(n).padStart(2, '0');
-const cases = projects.filter((p) => p.problem && p.approach && p.result).length;
 ---
 
 <Base
@@ -39,17 +38,9 @@ const cases = projects.filter((p) => p.problem && p.approach && p.result).length
       <GlitchText text={t.allProjects} scramble /> <span class="muted">({projects.length})</span>
     </h1>
     <p class="lead" data-enter style="--i: 2">
-      {cs ? (
-        <>
-          Aplikace, nástroje a experimenty. U {cases} projektů popisuji zadání, svůj podíl a
-          výsledek. Další dokumentaci najdete v odkazovaných repozitářích.
-        </>
-      ) : (
-        <>
-          Apps, tools and experiments. {cases} case studies explain the problem, my contribution and
-          the result. Linked repositories contain further documentation.
-        </>
-      )}
+      {cs
+        ? 'AI systémy, Android aplikace, weby a nástroje pro vývojáře.'
+        : 'AI systems, Android apps, web projects and developer tools.'}
     </p>
     <nav aria-label={t.groups} data-enter style="--i: 3">
       <ul class="inline-list">
@@ -72,31 +63,14 @@ const cases = projects.filter((p) => p.problem && p.approach && p.result).length
       <ul class="rows" data-reveal>
         {s.list.map((p) => (
           <li class="project">
-            {p.problem && p.approach && p.result ? (
-              <a class="row" href={href(`work/${slug(p.name)}/`)} data-desc={p.problem}>
+            <div class="row">
+              <a
+                class="project__summary"
+                href={href(`work/${slug(p.name)}/`)}
+                data-desc={p.problem}
+              >
                 <span class="row__num">
-                  <Arrow />
-                </span>
-                <span class="row__main">
-                  <span class="row__name">{p.name}</span>
-                  <span class="row__kind">{p.kind}</span>
-                </span>
-                <span class="row__meta">{t.caseStudy}</span>
-              </a>
-            ) : (
-              <div class="row">
-                <span class="row__num">
-                  {p.links[0] && (
-                    <a
-                      class="project__open"
-                      href={p.links[0].href}
-                      rel="noopener"
-                      target="_blank"
-                      aria-label={`${p.links[0].label}: ${p.name}`}
-                    >
-                      <Arrow direction="up-right" />
-                    </a>
-                  )}
+                  <Arrow direction="up-right" />
                 </span>
                 <span class="row__main">
                   <span class="row__name">
@@ -111,23 +85,27 @@ const cases = projects.filter((p) => p.problem && p.approach && p.result).length
                   <span class="row__kind">{p.kind}</span>
                   <span class="meta">{p.stack.join(' · ')}</span>
                 </span>
-                <span class="row__meta links">
-                  {p.links.map((l) => (
-                    <a
-                      class="action-link ext"
-                      href={l.href}
-                      rel="noopener"
-                      target="_blank"
-                      data-glitch
-                    >
-                      <GlitchText text={l.label} />
-                      <span class="sr-only"> · {p.name}</span>
-                    </a>
-                  ))}
-                  {p.source === 'private' && <span>{t.privateSource}</span>}
-                </span>
-              </div>
-            )}
+              </a>
+              <span class="row__meta links">
+                <a class="action-link" href={href(`work/${slug(p.name)}/`)} data-glitch>
+                  <GlitchText text={t.caseStudy} />
+                  <span class="sr-only"> · {p.name}</span>
+                </a>
+                {p.links.map((l) => (
+                  <a
+                    class="action-link ext"
+                    href={l.href}
+                    rel="noopener"
+                    target="_blank"
+                    data-glitch
+                  >
+                    <GlitchText text={l.label} />
+                    <span class="sr-only"> · {p.name}</span>
+                  </a>
+                ))}
+                {p.source === 'private' && <span>{t.privateSource}</span>}
+              </span>
+            </div>
           </li>
         ))}
       </ul>
@@ -156,15 +134,25 @@ const cases = projects.filter((p) => p.problem && p.approach && p.result).length
     gap: 0.5rem;
   }
 
-  .project__open {
-    display: inline-grid;
-    place-items: center;
-    min-width: 2.75rem;
-    min-height: 2.75rem;
-    margin: -0.65rem;
+  .project__summary {
+    display: grid;
+    grid-column: 1 / 3;
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: 1rem;
+    text-decoration: none;
+  }
+
+  .row:has(a:hover),
+  .row:focus-within {
+    background: var(--surface);
   }
 
   @media (width < 34rem) {
+    .project__summary {
+      grid-template-columns: 1.75rem minmax(0, 1fr);
+    }
+
     .links {
       display: flex;
       flex-wrap: wrap;

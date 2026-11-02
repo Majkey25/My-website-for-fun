@@ -38,41 +38,33 @@ const text = z.string().trim().min(1);
 
 const projects = defineCollection({
   loader: yamlList('src/data/projects.yaml'),
-  schema: z
-    .strictObject({
-      name: text,
-      formerly: text.optional(),
-      group: z.enum(['ai', 'tools', 'web', 'android', 'extensions', 'earlier']),
+  schema: z.strictObject({
+    name: text,
+    formerly: text.optional(),
+    group: z.enum(['ai', 'tools', 'web', 'android', 'extensions', 'earlier']),
+    kind: text,
+    stack: z.array(text).min(1),
+    featured: z
+      .strictObject({
+        order: z.number().int().min(1),
+        area: z.enum(['AI and language', 'Backend and web', 'Android apps']),
+      })
+      .optional(),
+    source: z.enum(['public', 'private']).default('public'),
+    problem: text,
+    approach: text,
+    specimen: z.strictObject({ before: text, after: text }).optional(),
+    result: text,
+    as_of: text,
+    cs: z.strictObject({
       kind: text,
-      stack: z.array(text).min(1),
-      featured: z
-        .strictObject({
-          order: z.number().int().min(1),
-          area: z.enum(['AI and language', 'Backend and web', 'Android apps']),
-        })
-        .optional(),
-      source: z.enum(['public', 'private']).default('public'),
-      problem: text.optional(),
-      approach: text.optional(),
-      specimen: z.strictObject({ before: text, after: text }).optional(),
-      result: text.optional(),
-      as_of: text.optional(),
-      cs: z.strictObject({
-        kind: text,
-        problem: text.optional(),
-        approach: text.optional(),
-        result: text.optional(),
-        as_of: text.optional(),
-      }),
-      links: z.array(z.strictObject({ label: text, href: z.url({ protocol: /^https$/ }) })).min(1),
-    })
-    // A case row on the home page needs the whole story.
-    .refine((p) => !p.featured || (p.problem && p.approach && p.result && p.as_of), {
-      error: 'Featured projects need problem, approach, result and as_of',
-    })
-    .refine((p) => !p.problem || (p.cs.problem && p.cs.approach && p.cs.result && p.cs.as_of), {
-      error: 'Case studies need a complete Czech translation',
+      problem: text,
+      approach: text,
+      result: text,
+      as_of: text,
     }),
+    links: z.array(z.strictObject({ label: text, href: z.url({ protocol: /^https$/ }) })).min(1),
+  }),
 });
 
 export const collections = { projects };

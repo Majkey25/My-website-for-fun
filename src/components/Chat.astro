@@ -88,11 +88,8 @@ const runtime = cs
       copy: 'Kopírovat',
       copied: 'Zkopírováno',
       retry: 'Zkusit znovu',
-      busy: 'Příliš mnoho otázek najednou. Zkuste to za minutu.',
-      quota: 'Asistent vyčerpal dostupný limit API. Napište mi prosím přes kontaktní formulář.',
-      challenge: 'Kontrola prohlížeče neprošla. Zkuste ji spustit znovu.',
-      unavailable: 'Odpověď nedorazila. Zkuste to znovu.',
-      stopped: 'Zastaveno.',
+      contact: 'Kontaktovat Matěje',
+      copyFailed: 'Text se nepodařilo zkopírovat. Označte jej a zkopírujte ručně.',
       image: 'Přiložený obrázek',
       attachmentExpired: 'Příloha už není dostupná. Pokud ji potřebujete, přiložte ji znovu.',
       attachmentLoading: 'Připravuji přílohu…',
@@ -118,12 +115,8 @@ const runtime = cs
       copy: 'Copy',
       copied: 'Copied',
       retry: 'Try again',
-      busy: 'Too many questions at once. Try again in a minute.',
-      quota:
-        'The assistant has reached its API allowance. Please write to me through the contact form.',
-      challenge: 'The browser check did not pass. Try again to restart it.',
-      unavailable: 'The answer did not arrive. Try again.',
-      stopped: 'Stopped.',
+      contact: 'Contact Matěj',
+      copyFailed: 'The text could not be copied. Select it and copy it manually.',
       image: 'Attached image',
       attachmentExpired: 'This attachment is no longer available. Attach it again if needed.',
       attachmentLoading: 'Preparing attachment…',
@@ -150,6 +143,7 @@ const runtime = cs
   data-text={JSON.stringify(runtime)}
   data-media={JSON.stringify(media)}
   data-starters={JSON.stringify(starters[lang])}
+  data-contact={href('contact/', lang)}
 >
   <button class="chat-launch" type="button" aria-haspopup="dialog" data-chat-open>
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -285,6 +279,13 @@ const runtime = cs
     type ChatSource as Source,
     type ChatTurn as Stored,
   } from '../chat-history';
+  import {
+    chatErrorCode,
+    chatHttpError,
+    chatErrors,
+    canRetryChatError,
+    type ChatErrorCode,
+  } from '../chat-errors';
   type Session = { token: string; expires: number };
   type Runtime = Record<
     | 'sources'
@@ -296,11 +297,8 @@ const runtime = cs
     | 'copy'
     | 'copied'
     | 'retry'
-    | 'busy'
-    | 'quota'
-    | 'challenge'
-    | 'unavailable'
-    | 'stopped'
+    | 'contact'
+    | 'copyFailed'
     | 'image'
     | 'attachmentExpired'
     | 'attachmentLoading'
@@ -338,7 +336,14 @@ const runtime = cs
   const MAX_ASSISTANT = 6000;
   const MAX_CHARS = 30_000;
 
-  class ChatError extends Error {}
+  class ChatError extends Error {
+    constructor(code: unknown) {
+      super(chatErrorCode(code));
+    }
+  }
+  const networkFailure = (error: unknown): never => {
+    throw error instanceof TypeError ? new ChatError('network') : error;
+  };
 
   // ---------- Markdown subset into DOM nodes ----------
 
@@ -459,7 +464,7 @@ const runtime = cs
 
   class SiteChat extends HTMLElement {
     #api = this.dataset.api ?? '';
-    #lang = this.dataset.lang === 'cs' ? 'cs' : 'en';
+    #lang: 'cs' | 'en' = this.dataset.lang === 'cs' ? 'cs' : 'en';
     #text = JSON.parse(this.dataset.text ?? '{}') as Runtime;
     #media = JSON.parse(this.dataset.media ?? '[]') as ProjectImage[];
     #dialog = this.querySelector('dialog')!;
@@ -1034,7 +1039,7 @@ const runtime = cs
             copy.textContent = this.#text.copied;
             setTimeout(() => (copy.textContent = this.#text.copy), 1600);
           } catch {
-            this.#status.textContent = this.#text.unavailable;
+            this.#status.textContent = this.#text.copyFailed;
           }
         });
         item.append(copy);
@@ -1133,9 +1138,19 @@ const runtime = cs
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ turnstile: proof }),
         signal: AbortSignal.any([signal, AbortSignal.timeout(10_000)]),
-      });
-      if (!res.ok) throw new ChatError(res.status === 429 ? 'busy' : 'challenge');
+      }).catch(networkFailure);
+      if (!res.ok)
+        throw new ChatError(chatHttpError(res.status, await res.json().catch(() => null)));
       const session = (await res.json()) as Session;
+      if (
+        !session ||
+        typeof session.token !== 'string' ||
+        !session.token ||
+        session.token.length > 512 ||
+        !Number.isSafeInteger(session.expires) ||
+        session.expires <= Date.now()
+      )
+        throw new ChatError('protocol');
       signal.throwIfAborted();
       this.#current = session;
       try {
@@ -1159,11 +1174,13 @@ const runtime = cs
             authorization: `Bearer ${token}`,
           },
           body,
-          signal,
-        });
+          // The Worker has a 60s answer deadline; leave 10s for transport failure.
+          signal: AbortSignal.any([signal, AbortSignal.timeout(70_000)]),
+        }).catch(networkFailure);
         if (res.status !== 401) return res;
+        await res.body?.cancel();
       }
-      throw new ChatError('challenge');
+      throw new ChatError('session');
     }
 
     async #answer() {
@@ -1205,7 +1222,9 @@ const runtime = cs
         )
           messages.shift();
         const res = await this.#post(body(), controller.signal);
-        if (!res.ok || !res.body) throw new ChatError(res.status === 429 ? 'busy' : 'unavailable');
+        if (!res.ok)
+          throw new ChatError(chatHttpError(res.status, await res.json().catch(() => null)));
+        if (!res.body) throw new ChatError('protocol');
         let buffer = '';
         let done = false;
         for await (const chunk of res.body.pipeThrough(new TextDecoderStream())) {
@@ -1223,26 +1242,30 @@ const runtime = cs
             else if (event === 'delta') {
               const delta = (data as { text?: unknown } | null)?.text;
               if (typeof delta !== 'string' || turn.content.length + delta.length > MAX_ASSISTANT)
-                throw new ChatError('unavailable');
+                throw new ChatError('protocol');
               if (!turn.content) this.#status.textContent = this.#text.writing;
               turn.content += delta;
               frame ||= requestAnimationFrame(paint);
             } else if (event === 'done') done = true;
-            else if (event === 'error') throw new ChatError((data as { code: string }).code);
+            else if (event === 'error')
+              throw new ChatError((data as { code?: unknown } | null)?.code);
           }
         }
         // Without `done` the connection dropped mid-answer.
-        if (!done || !turn.content.trim()) throw new ChatError('unavailable');
+        if (!done || !turn.content.trim()) throw new ChatError('protocol');
         this.#status.textContent = this.#text.ready;
       } catch (error) {
         if (stale()) return;
         failed = true;
-        const code = error instanceof ChatError ? error.message : 'unavailable';
-        const message = controller.signal.aborted
-          ? this.#text.stopped
-          : code === 'busy' || code === 'quota' || code === 'challenge'
-            ? this.#text[code]
-            : this.#text.unavailable;
+        const code = controller.signal.aborted
+          ? 'stopped'
+          : error instanceof ChatError
+            ? chatErrorCode(error.message)
+            : error instanceof Error && error.name === 'TimeoutError'
+              ? 'timeout'
+              : error instanceof SyntaxError
+                ? 'protocol'
+                : 'unavailable';
         // A cut-off or stopped answer stays readable but never enters the conversation, so it is
         // neither restored as complete after a reload nor sent back as context.
         if (turn.content.trim()) {
@@ -1252,7 +1275,7 @@ const runtime = cs
             .querySelector('.msg__body')!
             .replaceChildren(...markdown(turn.content, turn.sources ?? []));
         } else item.remove();
-        this.#failure(message, code !== 'quota', item);
+        this.#failure(code, item);
       } finally {
         cancelAnimationFrame(frame);
         if (!stale()) {
@@ -1267,12 +1290,14 @@ const runtime = cs
     }
 
     /** An inline error; the retry answers the question that is still last in the conversation. */
-    #failure(message: string, retry: boolean, partial: HTMLElement) {
+    #failure(code: ChatErrorCode, partial: HTMLElement) {
       this.#status.textContent = '';
       const note = document.createElement('div');
       note.className = 'msg msg--error';
-      note.textContent = `${message} `;
-      if (retry) {
+      note.setAttribute('role', 'alert');
+      note.dataset.error = code;
+      note.textContent = `${chatErrors[this.#lang][code]} `;
+      if (canRetryChatError(code)) {
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = this.#text.retry;
@@ -1283,6 +1308,10 @@ const runtime = cs
         });
         note.append(button);
       }
+      const contact = document.createElement('a');
+      contact.href = this.dataset.contact!;
+      contact.textContent = this.#text.contact;
+      note.append(' ', contact);
       this.#log.append(note);
       this.#log.scrollTop = this.#log.scrollHeight;
     }

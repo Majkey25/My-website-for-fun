@@ -3,6 +3,7 @@
 // only when each page it cites is on the fixed list in sources.ts.
 
 import type { Settings, Source } from './answer.ts';
+import { UpstreamError, upstreamFailure, providerFailure } from './answer.ts';
 import { OWNER_PAGES, ownerUrl } from './sources.ts';
 import { tokenUsage } from './metrics.ts';
 
@@ -95,8 +96,8 @@ export function evidence(response: unknown, first: number): { sources: Source[];
 }
 
 /**
- * Searches the owner's pages for `query`. A failure gives an empty list, so the answer still
- * comes from the indexed sources; only an aborted answer throws.
+ * Search outages fall back to indexed sources. Known provider limits stop the answer instead
+ * of making another generation request that cannot succeed.
  */
 export async function searchWeb(
   env: Settings,
@@ -132,12 +133,16 @@ export async function searchWeb(
       signal,
     });
     if (!response.ok) {
-      console.error(
-        JSON.stringify({ event: 'web_search_failed', requestId, status: response.status }),
-      );
-      return [];
+      throw await upstreamFailure(response);
     }
-    const body = (await response.json()) as { usage?: unknown; output?: { type?: string }[] };
+    const body = (await response.json()) as {
+      status?: unknown;
+      error?: unknown;
+      usage?: unknown;
+      output?: { type?: string }[];
+    };
+    if (body?.status === 'failed') throw providerFailure(0, body.error);
+    if (body?.status === 'incomplete') throw new UpstreamError('incomplete');
     const { sources, dropped } = evidence(body, first);
     console.log(
       JSON.stringify({
@@ -154,7 +159,18 @@ export async function searchWeb(
     return sources;
   } catch (error) {
     if (signal.aborted) throw error;
-    console.error(JSON.stringify({ event: 'web_search_failed', requestId }));
+    console.error(
+      JSON.stringify({
+        event: 'web_search_failed',
+        requestId,
+        ...(error instanceof UpstreamError ? { code: error.code, status: error.status } : {}),
+      }),
+    );
+    if (
+      error instanceof UpstreamError &&
+      ['credits', 'quota', 'busy', 'configuration'].includes(error.code)
+    )
+      throw error;
     return [];
   }
 }

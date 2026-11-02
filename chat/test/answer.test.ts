@@ -174,7 +174,7 @@ for (const [name, raw] of badPayloads)
     stub(t, sse([delta(raw), completed]));
     await assert.rejects(
       collect(),
-      (error) => error instanceof UpstreamError && error.code === 'unavailable',
+      (error) => error instanceof UpstreamError && error.code === 'protocol',
     );
   });
 

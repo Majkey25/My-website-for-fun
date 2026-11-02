@@ -113,8 +113,8 @@ coverage or every embedding/chunk in the managed search service.
 
 Use the manually dispatched **Chat behavior evals** workflow on `main`. It uses the protected
 `cloudflare` environment, whose deployment branch policy permits only `main`. Default: the three
-smoke cases, one repetition. Select the full set and three repetitions for a broader release
-check. Both spend existing API quota or credits; web tools may be billed separately. No purchase,
+smoke cases, one repetition. Run the full set once next; inspect its duration and usage before
+selecting three repetitions. Both spend existing API quota or credits; web tools may be billed separately. No purchase,
 recharge, provider fallback or retries are implemented. Managed retrieval may have separate
 Cloudflare inference usage; the request estimate is not an account spending cap. PR/fork checks
 run only free local tests.
@@ -137,7 +137,7 @@ workflow artifacts for 7 days. Source excerpts are removed when reports are seri
 an interrupted active case; the judge can still use them in memory. Never add real visitor data.
 
 Local commands use the same runner: `npm run eval:calibrate --prefix chat` or
-`npm run eval:live --prefix chat -- full 3`. Supply credentials only through a private environment;
+`npm run eval:live --prefix chat -- full 1`. Supply credentials only through a private environment;
 never paste them into commands or commit them. Reports go to ignored
 `.reference/tmp/chat-evals/report.json`. Type checks and `npm test --prefix chat` need no model calls.
 
@@ -173,6 +173,32 @@ rollback protection remain. The eval runner and runtime share the same owner URL
 Course catalog logic, model-driven SQL, privileged mutation tools, central visitor transcript
 storage and a separate evaluation service are unnecessary for this personal site. No private
 source code or company scenarios are distributed here.
+
+## Visitor errors
+
+The shared `src/chat-errors.ts` catalog defines every public error code, Czech/English message and retry policy. HTTP failures and SSE failures use the same catalog; unknown provider text is never displayed. Every failure offers the localized contact page, and partial answers never enter completed conversation history.
+
+| Code                       | Confirmed cause or boundary                                                                                                       | Visitor action                                                       |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `credits`                  | Provider explicitly reports `credit_balance_exhausted`.                                                                           | Contact the operator. No retry button or automatic extra model call. |
+| `quota`                    | Provider reports an enforced usage/spend limit or the broader `insufficient_quota` condition. This does not prove a zero balance. | Contact the operator. Retrying cannot restore the allowance.         |
+| `busy`                     | Application or provider request/token rate limit.                                                                                 | Wait a minute, then retry manually.                                  |
+| `configuration`            | Missing server configuration, invalid verification secret, or provider authentication/model access failure.                       | Operator repair; contact link.                                       |
+| `challenge`                | Browser proof failed, expired, was unsupported, or its script/check did not finish.                                               | Restart the check; allow `challenges.cloudflare.com` to load.        |
+| `verification_unavailable` | Siteverify failed to respond, returned an invalid response or reported an internal failure.                                       | Wait and retry; no session is issued.                                |
+| `session`                  | Chat bearer session was rejected even after one fresh browser check.                                                              | Resubmit and complete verification.                                  |
+| `invalid`                  | Request or attachment format was rejected.                                                                                        | New chat with shorter text or a different supported file.            |
+| `too_large`                | Actual request bytes exceed the application limit.                                                                                | New chat with a smaller message/file.                                |
+| `origin`                   | The page origin is not authorized.                                                                                                | Use the canonical Cloudflare address.                                |
+| `method`, `not_found`      | Unsupported request method or missing API route.                                                                                  | Reload; contact the operator if persistent.                          |
+| `timeout`                  | Server answer deadline, verification request timeout, or client transport deadline.                                               | Shorter question or retry later.                                     |
+| `incomplete`               | Provider stopped without a complete response, including output-token exhaustion.                                                  | Rephrase/shorten; partial text remains visibly incomplete.           |
+| `network`                  | Client connection failed or was interrupted.                                                                                      | Check connectivity and request blocking.                             |
+| `protocol`                 | Invalid provider output or client response/session/stream format.                                                                 | Retry; no completed history entry.                                   |
+| `unavailable`              | Unclassified upstream/server failure. The exact cause is unknown.                                                                 | Try later or contact the operator; do not invent a cause.            |
+| `stopped`                  | Visitor cancelled generation.                                                                                                     | Optional manual retry.                                               |
+
+Storage, clipboard and attachment preparation have separate localized UI messages: blocked/full/expired history, failed copy, unreadable/unsupported/oversized attachment and expired restored attachments. They do not masquerade as an AI billing or service failure. Quota errors never trigger purchases, recharge, provider fallback or automatic retries. Provider and verification mappings follow the [OpenAI error guide](https://developers.openai.com/api/docs/guides/error-codes) and [Turnstile validation contract](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/).
 
 ## Runtime protection
 

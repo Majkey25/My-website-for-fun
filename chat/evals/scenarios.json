@@ -133,5 +133,17 @@
         "maxFollowups": 0
       }
     ]
+  },
+  {
+    "id": "username-cs",
+    "lang": "cs",
+    "smoke": false,
+    "steps": [
+      {
+        "question": "Proč si Matěj říká Majkey25?",
+        "reference": "Majkey25 je Matějovo uživatelské jméno na GitHubu. Spojuje jeho křestní jméno, dětskou přezdívku, výslovnost a oblíbené číslo 25. Líbí se mu také podobnost s anglickým my key, tedy můj klíč. Nevymýšlet jinou konkrétní přezdívku ani další osobní údaje.",
+        "citation": true
+      }
+    ]
   }
 ]

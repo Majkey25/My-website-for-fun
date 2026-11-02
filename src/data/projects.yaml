@@ -24,27 +24,51 @@
 - name: Music Analyzer
   cs:
     kind: Rozdělení skladeb na šest stop, přehrávač a nastavení hlasitosti jednotlivých stop
+    problem: Procvičovat nebo rozebírat jeden part nahrané skladby je obtížné, když jsou všechny nástroje v jednom smíchaném souboru.
+    approach: Webová aplikace ve Flasku postavená na knihovnách jako Librosa, Spleeter a Demucs rozdělí nahraný soubor MP3 nebo WAV na šest stop pro zpěv, kytaru, baskytaru, klavír, bicí a ostatní nástroje.
+    result: Každou stopu lze zesílit, ztlumit nebo poslechnout samostatně, upravit tempo a upravené stopy stáhnout. Import z YouTube, změna výšky tónu, akordy a notový zápis jsou v README vedené jako plánované, zatím nehotové funkce.
+    as_of: listopad 2026
   group: ai
   kind: Separates songs into six stems, with a player and per-stem volume mixing
   stack: [Python]
+  problem: Practising or studying one part of a recorded song is hard when every instrument sits in a single mixed file.
+  approach: A Flask web app built with libraries such as Librosa, Spleeter and Demucs splits an uploaded MP3 or WAV file into six stems for vocals, guitar, bass, piano, drums and everything else.
+  result: Each stem can be turned up, muted or isolated, the tempo adjusted and the edited tracks downloaded. YouTube import, pitch shifting, chord display and sheet music are marked in the README as planned, not built.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/StudentTraineeCenter/music-analyzer' }
 
 - name: Transcriber
   cs:
     kind: Přepis M4A na Androidu pomocí lokálních i cloudových modelů
+    problem: Diktafon Samsung Voice Recorder ukládá soubory M4A, ne text, a některé nahrávky by telefon neměly opustit.
+    approach: Aplikace sleduje jednu zvolenou složku s nahrávkami a nové soubory přepisuje postupně přes WorkManager. Výchozí režim Local Smart směruje češtinu a francouzštinu na Omnilingual 300M a ostatní jazyky na Whisper Small. Modely Groq, Google, OpenAI a xAI jsou volitelné s vlastním API klíčem, který šifruje Android Keystore.
+    result: Po jednorázovém stažení zhruba 741 MB ověřených souborů modelu funguje lokální přepis offline a bez API klíče. Verze 0.3.1 vyžaduje výslovný souhlas před automatickým nahráváním do cloudu a aplikace nemá účet, analytiku, reklamy ani vlastní backend.
+    as_of: listopad 2026
   group: ai
   kind: Android M4A transcription with local and cloud models
   stack: [Kotlin, sherpa-onnx, Whisper]
+  problem: Samsung Voice Recorder saves M4A files, not text, and some recordings should never leave the phone.
+  approach: The app watches one chosen recordings folder and transcribes new files one at a time through WorkManager. The default Local Smart mode routes Czech and French to Omnilingual 300M and other languages to Whisper Small; Groq, Google, OpenAI and xAI models are optional with the user's own API key, encrypted with Android Keystore.
+  result: After a one-time download of about 741 MB of verified model files, local transcription works offline without an API key. Version 0.3.1 asks for explicit consent before automatic cloud uploads, and the app has no account, analytics, advertising or custom backend.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/Majkey25/transcriber-android' }
 
 - name: Local Voice
   cs:
-    kind: Diktování na Androidu s důrazem na lokální zpracování, významové úpravy a offline syntézu řeči
+    kind: Offline diktování pro Android s plovoucím mikrofonem
+    problem: Diktovat do libovolné aplikace na Androidu bez výměny používané klávesnice a s rozpoznáváním řeči přímo v telefonu.
+    approach: Překryv přes AccessibilityService přidá přesouvatelné tlačítko mikrofonu pro diktování klepnutím nebo podržením a poslední vložení lze do osmi sekund vrátit. Offline balíček o velikosti 601 MB pokrývá angličtinu, češtinu, němčinu, francouzštinu a španělštinu. Text upravuje slovník pro každý jazyk, zkratky spouštěné přesnou frází a čištění v režimech Raw, Light nebo Polished.
+    result: Verze 0.4.2 omezuje stahování modelů a před zkopírováním výsledku do schránky se ptá. Dvouminutová kalibrace hlasu porovná výstup lokálního Whisperu se zobrazeným textem a navrhne opravy do slovníku, model ale nepřetrénovává.
+    as_of: listopad 2026
   group: ai
-  kind: Local-first Android dictation, semantic editing and offline TTS
+  kind: Offline Android dictation with a floating microphone
   stack: [Kotlin, Whisper]
+  problem: Dictate into any Android app without giving up the keyboard already in use, with speech recognised on the phone.
+  approach: An AccessibilityService overlay adds a movable microphone button for toggle or push-to-talk dictation, and the last insertion can be undone within eight seconds. A 601 MB offline pack covers English, Czech, German, French and Spanish, while a per-language dictionary, exact-trigger snippets and Raw, Light or Polished cleanup shape the text.
+  result: Version 0.4.2 bounds model downloads and asks before copying a result to the clipboard. A two-minute voice calibration compares local Whisper output with the displayed text and proposes dictionary corrections; it does not retrain the model.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/Majkey25/local-voice-android' }
 
@@ -86,18 +110,34 @@
 - name: GitHub issues and PR export
   cs:
     kind: Export issues a pull requestů včetně komentářů a obrázků do deterministického Markdownu
+    problem: Mít čitelnou offline kopii issues a pull requestů, včetně soukromých repozitářů, se všemi komentáři a vloženými obrázky.
+    approach: Exportní skripty načítají issues, pull requesty, komentáře i komentáře z code review přes přihlášené GitHub CLI, ukládají surová data JSON pro offline přegenerování a pro každou položku zapíší jeden soubor Markdown s komentáři v původním pořadí. Obrázky z adres GitHub user-attachments, které přes API stáhnout nejde, stahuje krok v prohlížeči přes Playwright a odkazy vedou na lokální soubory.
+    result: Opakované běhy vytvářejí stejný Markdown. Stahování obrázků přijímá jen veřejné cíle HTTP(S) s limity například 25 MiB na obrázek a 1 000 obrázků na repozitář v jednom běhu. Neúspěšné obrázky se zapíší pro pozdější opakovaný pokus.
+    as_of: listopad 2026
   group: tools
   kind: Exports issues and pull requests with comments and images to deterministic Markdown
   stack: [Python, Playwright]
+  problem: Keep a readable offline copy of issues and pull requests, including from private repositories, with every comment and embedded image.
+  approach: Export scripts read issues, pull requests, comments and review comments through the authenticated GitHub CLI, keep the raw JSON for offline regeneration and write one Markdown file per item in the original comment order. Images on GitHub user-attachment URLs, which the API cannot download, are fetched by a Playwright browser step and linked as local files.
+  result: Repeated runs produce the same Markdown. Image downloads accept only public HTTP(S) destinations, with limits such as 25 MiB per image and 1,000 images per repository run, and failed images are recorded for a later recovery run.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/Majkey25/gh-issues-pr-export' }
 
 - name: ByteNoise
   cs:
     kind: Malý nástroj pro vratné znečitelnění textu s desktopovým a webovým rozhraním
+    problem: Aby text na první pohled nevypadal jako běžný čitelný text, ale bez předstírání, že jde o šifrování.
+    approach: Bajty UTF-8 se kombinují operací XOR s deterministickou maskou podle pozice a ukládají se jako znaky Unicode od U+0100. Stejný formát používá desktopová aplikace v Tkinteru i statická webová aplikace na GitHub Pages. Dekódování ignoruje vložené mezery a zalomení řádků a přečte i starší formát s přímým posunem.
+    result: Obě aplikace zpracují až 1 MiB textu v UTF-8 bez běhových závislostí třetích stran. README výslovně uvádí, že nejde o bezpečné šifrování a nehodí se pro tajné údaje.
+    as_of: listopad 2026
   group: tools
   kind: Tiny reversible text obfuscator with a desktop and web UI
   stack: [Python, Tkinter]
+  problem: Make text stop looking like plain text at a glance, without pretending to be encryption.
+  approach: UTF-8 bytes are XORed with a deterministic, position-based mask and stored as Unicode characters from U+0100. A Tkinter desktop app and a static GitHub Pages web app share the format, and decoding ignores pasted spaces and line breaks and still reads the older direct-offset format.
+  result: Both apps handle up to 1 MiB of UTF-8 text with no third-party runtime dependencies. The README states plainly that it is not secure encryption and not meant for secrets.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/Majkey25/ByteNoise' }
 
@@ -180,9 +220,17 @@
 - name: Exhalace
   cs:
     kind: Web rockové kapely Exhalace, který si kapela upravuje v Pages CMS
+    problem: Modernizovat první web Exhalace, české rockové coverkapely, tak aby kapela mohla upravovat koncerty a obsah bez zásahu do kódu.
+    approach: Statický web v Astro zachovává původní tmavý vzhled se skleněnými prvky. Koncerty, repertoár, galerie, sestava a nastavení jsou v YAML, upravují se přes Pages CMS a při sestavení je ověřuje Zod. Každý koncert má vlastní stránku a soubor do kalendáře a formulář pro objednání koncertu přeposílá FormSubmit bez vlastního serveru.
+    result: Web běží na exhalace.cz přes GitHub Pages. Každý pull request spouští Prettier, astro check, sestavení a Lighthouse CI a denní sestavení přesouvá odehrané koncerty do archivu.
+    as_of: listopad 2026
   group: web
   kind: Website for the rock band Exhalace, which the band edits in Pages CMS
   stack: [Astro 7, Pages CMS, FormSubmit]
+  problem: Modernise the first website of Exhalace, a Czech rock cover band, so the band can update concerts and content without touching code.
+  approach: A static Astro site keeps the original dark, glassy look. Concerts, repertoire, gallery, line-up and settings live in YAML edited through Pages CMS and validated with Zod at build time, each concert gets its own page and calendar file, and FormSubmit relays the booking form without a server.
+  result: Live on exhalace.cz through GitHub Pages. Every pull request runs Prettier, astro check, a build and Lighthouse CI, and a daily rebuild moves finished gigs to the archive.
+  as_of: Nov 2026
   links:
     - { label: exhalace.cz, href: 'https://www.exhalace.cz/' }
     - { label: Repository, href: 'https://github.com/Majkey25/exhalace' }
@@ -190,18 +238,34 @@
 - name: Media Downloader
   cs:
     kind: Stahování jednoho audio nebo video souboru z veřejné URL se zabezpečeným backendem
+    problem: Stáhnout jeden zvukový nebo video soubor z veřejné URL přes malou hostovanou službu, která musí zůstat bezpečná a v přísných serverových limitech.
+    approach: Statický frontend na GitHub Pages volá backend s Flaskem a FFmpeg na alwaysdata. Hlavním nástrojem je yt-dlp a připnutá verze youtube-dl slouží jako záloha jen pro přímé odkazy na jedno video z YouTube. Každá úloha běží v izolovaném pomocném procesu, obecný extraktor je vypnutý a všechny výsledky DNS musí být globálně směrovatelné, aby se snížilo riziko server-side request forgery.
+    result: Produkční nastavení omezuje média na 120 minut a 216 MiB na soubor, zpracovává jednu extrakci najednou a každému klientovi povoluje pět operací za hodinu. Média s DRM, za paywallem, soukromá a probíhající živá vysílání se odmítají. Hotové soubory se plánovaně mažou hned po úplném stažení, opuštěné po 10 nebo 30 minutách podle velikosti.
+    as_of: listopad 2026
   group: web
   kind: Downloads one audio or video file from a public URL, with a hardened backend
   stack: [Python, Flask, FFmpeg]
+  problem: Fetch one audio or video file from a public media URL through a small hosted service that has to stay safe and inside tight server limits.
+  approach: A static GitHub Pages front end calls a Flask and FFmpeg backend on alwaysdata. yt-dlp is the main engine, with a pinned youtube-dl fallback only for direct single YouTube videos; each job runs in an isolated helper process, the generic extractor is disabled and every DNS result must be globally routable, to reduce server-side request forgery risk.
+  result: The production profile caps media at 120 minutes and 216 MiB per file, runs one extraction job at a time and allows each client five operations an hour. DRM, paywalled, private and active live media is refused, and ready files are scheduled for removal right after a complete download, or after 10 or 30 minutes by size if abandoned.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/Majkey25/youtube_downloader' }
 
 - name: DownloadGithubDir
   cs:
     kind: Stažení složky z GitHub repozitáře jako ZIP přímo v prohlížeči
+    problem: Stáhnout jednu složku z repozitáře na GitHubu bez klonování celého repozitáře.
+    approach: Stránka načte obsah složky přes GitHub Git Trees API, soubory stáhne paralelně a v prohlížeči je zabalí do ZIPu pomocí JSZip. Volitelná větev, tag nebo token umožní stáhnout konkrétní verzi, získat vyšší limity API nebo přistoupit k soukromým repozitářům. Token se posílá jen na adresy GitHub API a nikam se neukládá.
+    result: Verze 1.0.1 běží jako statická stránka na GitHub Pages. Kvůli paměti prohlížeče končí na 4 000 souborech nebo 250 MiB a odmítne zkrácené stromy, složky se submoduly i nebezpečné názvy souborů, místo aby vytvořila neúplný ZIP.
+    as_of: listopad 2026
   group: web
   kind: Downloads a GitHub repository folder as a ZIP, entirely in the browser
   stack: [JavaScript, JSZip]
+  problem: Download a single folder from a GitHub repository without cloning the whole repository.
+  approach: The page lists the folder through GitHub's Git Trees API, fetches the files in parallel and packs them into a ZIP with JSZip, entirely in the browser. An optional branch, tag or token covers specific releases, higher rate limits and private repositories; the token goes only to GitHub API URLs and is never stored.
+  result: Version 1.0.1 runs as a static page on GitHub Pages. To bound browser memory it stops at 4,000 files or 250 MiB, and it refuses truncated trees, folders with submodules and unsafe file names instead of producing a partial ZIP.
+  as_of: Nov 2026
   links:
     - { label: Open, href: 'https://majkey25.github.io/DownloadGithubDir/' }
     - { label: Repository, href: 'https://github.com/Majkey25/DownloadGithubDir' }
@@ -209,18 +273,35 @@
 - name: art_by_justyna
   cs:
     kind: Web výtvarné umělkyně
+    problem: Výtvarná umělkyně potřebovala web, na kterém představí svou tvorbu.
+    approach: Statický web v HTML a CSS.
+    result: Zveřejněno na GitHub Pages.
+    as_of: listopad 2026
   group: web
   kind: Website for an artist
   stack: [HTML, CSS]
+  problem: An artist needed a website to present their art.
+  approach: A static website built with HTML and CSS.
+  result: Published on GitHub Pages.
+  as_of: Nov 2026
   links:
     - { label: Open, href: 'https://majkey25.github.io/art_by_justyna/' }
+    - { label: Repository, href: 'https://github.com/Majkey25/art_by_justyna' }
 
 - name: Petr Teplý
   cs:
     kind: Jednostránkový web firmy poskytující obchodní podporu
+    problem: Firma poskytující obchodní podporu potřebovala jednostránkový web, který představí její profil, odbornost, zkušenosti a trhy napříč Evropou.
+    approach: Jedna stránka HTML s vloženým CSS a JavaScriptem. Sekce se při posouvání postupně zobrazují, pokud návštěvník nepreferuje omezený pohyb, na úzkých displejích se hlavička při posouvání dolů skryje a písma i obrázky se načítají přímo z webu.
+    result: Běží na GitHub Pages bez kontaktního formuláře, analytiky, reklamních cookies a bez ukládání dat v prohlížeči.
+    as_of: listopad 2026
   group: web
   kind: One-page website for a commercial support business
   stack: [HTML, CSS]
+  problem: A commercial support business needed a one-page site presenting its profile, expertise, background and markets across Europe.
+  approach: A single HTML page with inline CSS and JavaScript. Sections reveal on scroll unless the visitor prefers reduced motion, the header hides while scrolling down on narrow screens, and fonts and images load from the site itself.
+  result: Live on GitHub Pages with no contact form, analytics, advertising cookies or browser storage.
+  as_of: Nov 2026
   links:
     - { label: Open, href: 'https://majkey25.github.io/petrteply/' }
     - { label: Repository, href: 'https://github.com/Majkey25/petrteply' }
@@ -293,9 +374,17 @@
 - name: SeliaSheets
   cs:
     kind: Soukromé studijní sešity pro telefony a tablety s důrazem na offline použití
+    problem: Studenti chtějí mít ručně psané poznámky, psaný text a importovaná PDF v jednom soukromém sešitu, který funguje offline na telefonu i tabletu.
+    approach: Stránky v pevném pořadí spojují AndroidX Ink s přítlakem, potlačením dlaně a predikcí pohybu, psaní textu přes celou stránku, kapitoly, obrázky, chytré tvary a zvýrazňování v PDF. Import PDF běží v izolovaném procesu, OCR v zařízení zpřístupní text importovaných obrázků vyhledávání a přenosné zálohy se před sloučením nebo nahrazením ověřují.
+    result: Verze 0.10.3 pro Android 10 a novější pod licencí Apache 2.0, bez vlastního účtu, reklam, analytiky a cloudové synchronizace. Verze 0.10.0-beta.2 prošla 651 testy na fyzickém telefonu s Androidem 10. Chování hardwarových stylusů ještě čeká na ověření s kompatibilním aktivním perem.
+    as_of: listopad 2026
   group: android
   kind: Private, offline-first study notebooks for phones and tablets
   stack: [Kotlin, Jetpack Compose, AndroidX Ink]
+  problem: Students want handwriting, typed notes and imported PDFs in one private notebook that works offline on phones and tablets.
+  approach: Ordered paper pages combine AndroidX Ink with pressure, palm cancellation and motion prediction, full-page typing, chapters, images, smart shapes and PDF highlights. PDF import runs in an isolated process, on-device OCR makes imported image text searchable, and portable backups are validated before they merge or replace anything.
+  result: Version 0.10.3 for Android 10 and newer, Apache 2.0 licensed, with no first-party account, ads, analytics or cloud sync. Version 0.10.0-beta.2 passed 651 tests on a physical Android 10 phone; hardware stylus behavior still needs a compatible active pen to verify.
+  as_of: Nov 2026
   links:
     - { label: Project page, href: 'https://majkey25.github.io/SeliaSheets/' }
     - { label: Repository, href: 'https://github.com/Majkey25/SeliaSheets' }
@@ -303,9 +392,17 @@
 - name: Selia Cycles
   cs:
     kind: Soukromý offline menstruační kalendář
+    problem: Menstruační kalendář uchovává citlivé zdravotní údaje, a proto by měl fungovat bez účtu, reklam a připojení k síti.
+    approach: Aplikace postavená na kalendáři ukládá menstruaci, příznaky, náladu, známky plodnosti a další denní záznamy do lokální databáze, se samostatnými profily a jednoduchým, standardním nebo podrobným zobrazením. Odhady vycházejí z vlastních zaznamenaných intervalů, ojedinělé odchylky nezapočítávají do typické délky, ukazují svou nejistotu a zůstávají vidět vedle skutečného průběhu.
+    result: Android 10 a novější, licence Apache 2.0, bez oprávnění k síti a se šesti jazyky rozhraní. README uvádí, že předpovědi jsou kalendářní odhady, které nic nediagnostikují, nepotvrzují ovulaci a neslouží jako antikoncepce.
+    as_of: listopad 2026
   group: android
   kind: Private offline period tracker
   stack: [Kotlin, Jetpack Compose]
+  problem: A period tracker holds sensitive health data, so it should work without an account, ads or a network connection.
+  approach: A calendar-first app stores periods, symptoms, mood, fertility signs and other daily records in a local database, with separate profiles and Simple, Standard or Detailed views. Estimates come from the user's own recorded intervals, leave isolated outliers out of the typical length, show their uncertainty and stay visible beside what actually happened.
+  result: Android 10 and newer, Apache 2.0 licensed, with no network permission and six interface languages. The README states that predictions are calendar estimates that do not diagnose a condition, confirm ovulation or provide contraception.
+  as_of: Nov 2026
   links:
     - { label: Project page, href: 'https://majkey25.github.io/SeliaCycles/' }
     - { label: Repository, href: 'https://github.com/Majkey25/SeliaCycles' }
@@ -313,20 +410,36 @@
 - name: SeliaLists
   cs:
     kind: Offline správce PDF a čtečka setlistů pro hudebníky
+    problem: Hudebníci, kteří čtou noty z telefonu nebo tabletu, potřebují setlisty, poznámky a otáčení stránek, které fungují offline.
+    approach: Importovaná PDF se ověří, uloží do soukromého úložiště a řadí do neomezeného počtu setlistů, které se čtou plynule přes hranice skladeb. K dispozici je zobrazení jedné stránky, poloviny stránky a na tabletu dvou stránek a stránky lze otáčet pedálem přes Bluetooth nebo klávesnicí. Poznámky jsou v samostatné vrstvě a obrazovka i export PDF používají stejný vykreslovač, takže exportovaná kopie odpovídá obrazovce a originál zůstane beze změny.
+    result: Android 10 a novější, licence MIT, bez účtu, reklam, analytiky, cloudové služby a oprávnění k internetu. Zálohy se před atomickým obnovením s možností návratu ověřují v dočasném umístění. Skenování přenechává aplikaci SeliaScan a naskenovaná PDF nemají OCR.
+    as_of: listopad 2026
   formerly: SheetSet
   group: android
   kind: Offline PDF organizer and setlist reader for musicians
   stack: [Kotlin, Jetpack Compose]
+  problem: Musicians reading scores from a phone or tablet need setlists, annotations and page turns that work offline.
+  approach: Imported PDFs are validated into private storage and arranged into unlimited setlists that read continuously across scores, with Single, Half and tablet Two-page layouts and Bluetooth pedal or keyboard page turns. Annotations live on a separate layer, and the screen and the PDF export share one renderer, so the exported copy matches the screen while the original stays untouched.
+  result: Android 10 and newer, MIT licensed, with no account, ads, analytics, cloud service or Internet permission. Backups are validated in staging before an atomic restore with rollback. Scanning is left to SeliaScan, and scanned PDFs have no OCR.
+  as_of: Nov 2026
   links:
-    - { label: Project page, href: 'https://majkey25.github.io/SheetSet/' }
-    - { label: Repository, href: 'https://github.com/Majkey25/SheetSet' }
+    - { label: Project page, href: 'https://majkey25.github.io/selia-lists/' }
+    - { label: Repository, href: 'https://github.com/Majkey25/selia-lists' }
 
 - name: QR Code Scanner & Creator
   cs:
     kind: Skener a stylovatelný generátor QR kódů se skenováním přímo v zařízení
+    problem: Skenovat QR kódy a vytvářet stylované kódy na Androidu tak, aby skenování i tvorba probíhaly v zařízení.
+    approach: Skenování používá CameraX nebo výběr fotek v Androidu se ZXing a rozpoznaný obsah, například Wi-Fi, kontakt nebo událost v kalendáři, předá odpovídající aplikaci v Androidu. Generátor zvládá devět typů obsahu od textu a webových adres po Wi-Fi, kontakty a události, s vlastními barvami, čtvercovými, zaoblenými nebo tečkovými moduly a volitelným logem.
+    result: Kódy se sdílejí jako soubory PNG 2048 × 2048 bez oprávnění k úložišti, s rozhraním v angličtině a češtině. Bezplatná verze zobrazuje reklamy s nastavením souhlasu a QR Premium přes Google Play je odstraní. Snímky z kamery, obrázky ani obsah QR kódů se reklamní službě neposílají.
+    as_of: listopad 2026
   group: android
   kind: QR scanner and styled creator with on-device scanning
   stack: [Kotlin, CameraX, ZXing]
+  problem: Scan QR codes and create styled ones on Android, with scanning and creation kept on the device.
+  approach: Scanning uses CameraX or the Android Photo Picker with ZXing, and recognized Wi-Fi, contact, calendar and other content is handed to the matching Android app. The creator covers nine content types, from text and websites to Wi-Fi, contacts and events, with custom colors, square, rounded or dot modules and an optional logo.
+  result: Codes are shared as 2048 × 2048 PNG files without storage permission, in an English and Czech interface. The free version shows ads with consent controls and QR Premium on Google Play removes them; camera frames, images and QR content are not sent to the ad service.
+  as_of: Nov 2026
   links:
     - { label: Project page, href: 'https://majkey25.github.io/QR-Code-Scanner-Creator/' }
     - { label: Repository, href: 'https://github.com/Majkey25/QR-Code-Scanner-Creator' }
@@ -334,107 +447,207 @@
 - name: Location Mock
   cs:
     kind: Jednoduché ovládání simulované polohy bez sledování
+    problem: Nastavit simulovanou polohu na Androidu malou aplikací, která neukládá historii polohy a nemá žádný vlastní backend.
+    approach: Přesné souřadnice, vyhledání adresy přes geokodér Androidu nebo předvolená města předá aplikace službě na popředí, která simulovanou polohu drží, dokud ji uživatel nezastaví v aplikaci nebo v oznámení. Verze z Google Play nemá oprávnění k internetu ani službu VPN. Samostatná verze z GitHubu přidává vestavěného klienta WireGuard pro konfiguraci, kterou si uživatel naimportuje.
+    result: Licence Apache 2.0, bez reklam, analytiky a účtu. README upozorňuje, že Android vložené souřadnice označuje jako simulované a že souřadnice GPS nemění IP adresu.
+    as_of: listopad 2026
   group: android
   kind: Minimal mock-location control with no tracking
   stack: [Kotlin]
+  problem: Set a mock location on Android with a small app that keeps no location history and runs no backend of its own.
+  approach: Exact coordinates, address search through Android's geocoder or city presets feed a foreground service that keeps the mock location active until it is stopped from the app or the notification. The Google Play build has no Internet permission or VPN service; the separate GitHub build adds an embedded WireGuard client for a configuration the user imports.
+  result: Apache 2.0 licensed, with no ads, analytics or account. The README warns that Android marks injected coordinates as mock and that GPS coordinates do not change an IP address.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/Majkey25/Location-Mock' }
 
 - name: scrollit
   cs:
     kind: Plovoucí nástroj pro automatické posouvání
+    problem: Číst dlouhou stránku na Androidu bez dotyku vyžaduje plynulé automatické posouvání, jenže mnoho aplikací, včetně Ultimate Guitar Tabs, ignoruje kolečko myši.
+    approach: Přetahovatelný plovoucí ovladač nad ostatními aplikacemi spouští a zastavuje posouvání a nastavuje rychlost ve 30 úrovních. Režim Touch používá gesta přes službu přístupnosti, režim AutoScroll přes Shizuku drží jeden systémový dotyk a posouvá ho každých 16 ms, takže posun je plynulý podobně jako posouvání prostředním tlačítkem myši ve Windows.
+    result: Vydáno na GitHubu jako APK v1.0.0 podepsané ladicím klíčem pro Android 14 a novější, určené pro telefony Samsung. Verze 1.0.1 žádá výslovný souhlas s gesty přístupnosti a odstraňuje nepoužívaný přístup k obsahu obrazovky. Když zvolený způsob posouvání není dostupný, aplikace zobrazí chybu a potichu nepřepne na jiný režim.
+    as_of: listopad 2026
   group: android
   kind: Floating auto-scroll utility
   stack: [Kotlin, Shizuku]
+  problem: Reading a long page on Android without touching the screen needs steady automatic scrolling, yet many apps, including Ultimate Guitar Tabs, ignore mouse-wheel events.
+  approach: A draggable floating overlay starts and stops scrolling in other apps and sets one of 30 speed levels. Touch mode uses Accessibility gestures; AutoScroll mode uses Shizuku to hold one system-level touch and move it every 16 ms, which gives a continuous scroll similar to middle-click scrolling on Windows.
+  result: Released on GitHub as a debug-signed v1.0.0 APK for Android 14 and newer, made for Samsung phones. Version 1.0.1 asks for explicit Accessibility consent and drops unused screen-content access, and when the selected backend is unavailable the app shows an error instead of silently switching modes.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/Majkey25/scrollit' }
 
 - name: SumRead
   cs:
     kind: Překryv s textem obrazovky, OCR a předčítáním v zařízení a volitelnými AI souhrny s vlastním klíčem (archivováno)
+    problem: Získat text z libovolné části obrazovky, nechat si ho přečíst, shrnout nebo se na něj zeptat, přičemž výchozí zpracování probíhá v zařízení.
+    approach: Plovoucí tlačítko spustí snímání vybrané oblasti přes MediaProjection se souhlasem uživatele a OCR z ML Kit i převod textu na řeč v Androidu běží v zařízení. Volitelná shrnutí a chat nad zachyceným textem, uchovávaný jen v paměti, používají Groq, Gemini nebo OpenAI s vlastním klíčem, který šifruje Android Keystore.
+    result: Zachycený text ani historie chatu se ve výchozím stavu neukládají. Veřejná vydání APK zůstávají zablokovaná, dokud nebude zajištěna kontinuita podpisu a sestavení bez ladicího režimu. Zdrojový kód je veřejný, ale proprietární.
+    as_of: listopad 2026
   group: android
   kind: Screen-text overlay with on-device OCR and speech, and optional AI summaries with your own key (archived)
   stack: [Kotlin, Jetpack Compose, ML Kit]
+  problem: Pull the text out of any part of the screen to hear it, summarize it or ask about it, with local processing as the default.
+  approach: A floating overlay starts a user-approved MediaProjection capture of a selected region, and ML Kit OCR and Android text-to-speech run on the device. Optional summaries and a memory-only chat grounded in the captured text use Groq, Gemini or OpenAI with the user's own key, encrypted with Android Keystore.
+  result: Captured text and chat history are not stored by default. Public APK releases stay blocked until signing continuity and a non-debuggable build are in place, and the source is public but proprietary.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/Majkey25/SumRead' }
 
 - name: Tab equalizer
   cs:
     kind: Zvukový ekvalizér pro jednotlivé karty v Chrome, Chromiu a Brave
+    problem: Upravit zvuk jedné karty prohlížeče beze změny zbytku prohlížeče nebo systémového zvuku.
+    approach: Rozšíření pro Manifest V3 zachytává jen kartu, kterou uživatel zapne, a vede její zvuk přes řetězec Web Audio v offscreen dokumentu s předzesílením, 10pásmovým ekvalizérem, kompresorem, vyvážením nebo monem, hlavní hlasitostí až 200 % a závěrečným limiterem. Nastavení ve výchozím stavu platí jen pro kartu, lze si ho zapamatovat pro web a předvolby se importují a exportují jako JSON.
+    result: Podporuje Chrome, Chromium a Brave bez oprávnění k webům, účtů, analytiky a síťových požadavků rozšíření. CI před zveřejněním vydání s kontrolními součty SHA-256 načte skutečné rozbalené rozšíření v Chromium for Testing.
+    as_of: listopad 2026
   group: extensions
   kind: Per-tab audio equalizer for Chrome, Chromium and Brave
   stack: [JavaScript, Web Audio, MV3]
+  problem: Adjust the sound of one browser tab without changing the rest of the browser or the system audio.
+  approach: A Manifest V3 extension captures only a tab the user enables and runs its audio through an offscreen Web Audio chain with preamp, 10-band EQ, compressor, balance or mono, master volume up to 200% and a final limiter. Settings stay per tab by default, can be remembered per site, and presets import and export as JSON.
+  result: Supported on Chrome, Chromium and Brave, with no host permissions, accounts, analytics or extension network requests. CI loads the real unpacked extension in Chromium for Testing before it publishes a release with SHA-256 checksums.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/Majkey25/chromium-tab-equalizer' }
 
 - name: No Cookies & Ads
   cs:
     kind: Blokování reklam, sledování, cookies třetích stran a cookie lišt
+    problem: Reklamy, sledovací prvky, cookies třetích stran a cookie lišty zahlcují prohlížení a jejich blokování by nemělo vyžadovat telemetrii ani účet.
+    approach: Engine AdGuard pro MV3 filtruje požadavky a skrývá prvky stránek s výchozí přísnou sadou filtrů včetně českých a slovenských seznamů a s připnutými doplňky ze seznamů Brave. Rozšíření žádá Chrome o blokování cookies třetích stran a vypnutí Related Website Sets. Strukturální záloha skrývá pevně umístěné lišty souhlasu podle rozvržení, ne podle jazyka stránky, a nikdy za uživatele nepotvrdí souhlas.
+    result: Licence GPL-3.0, bez analytiky, telemetrie, účtu a vzdáleně spouštěného kódu. Testy v prohlížeči načítají zabalené rozšíření v izolovaném profilu Chromia a kontrolují cookie překryvy, posouvání, běžné dialogy a výjimky pro weby. README upozorňuje, že skrytí lišty neznamená odmítnutí souhlasu.
+    as_of: listopad 2026
   group: extensions
   kind: Blocks ads, trackers, third-party cookies and cookie banners
   stack: [JavaScript, MV3, AdGuard rules]
+  problem: Ads, trackers, third-party cookies and cookie banners clutter browsing, and blocking them should not need telemetry or an account.
+  approach: The AdGuard MV3 engine filters requests and hides page elements with a strict preset on by default, including Czech and Slovak lists, plus pinned Brave list additions. The extension asks Chrome to block third-party cookies and disable Related Website Sets, and a structural fallback hides fixed consent containers by layout rather than page language, without ever clicking Accept.
+  result: GPL-3.0 licensed, with no analytics, telemetry, account or remote executable code. Browser tests load the packaged extension in an isolated Chromium profile to check cookie overlays, scrolling, ordinary dialogs and allowlisting. The README notes that hiding a banner does not reject consent.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/Majkey25/no-cookies-ads' }
 
 - name: YouTube skipper
   cs:
     kind: Přeskakování úseků nahlášených komunitou SponsorBlock
+    problem: Přeskakovat sponzorované úseky a další části videí na YouTube nahlášené komunitou, aniž by rozšíření potřebovalo přístup ke všem webům.
+    approach: Dotazy na SponsorBlock posílají jen první čtyři znaky hashe SHA-256 z ID videa a rozšíření si z vrácené skupiny vybere přesné video. Každou kategorii lze přeskočit automaticky, zobrazit pro ni tlačítko nebo ji ignorovat. Ve výchozím stavu se automaticky přeskakují sponzorované úseky a vlastní propagace a značky na časové ose jsou volitelné.
+    result: Funguje na YouTube, YouTube Music a mobilní verzi YouTube s přístupem jen k těmto stránkám a k API SponsorBlock. Odpovědi zůstávají v paměti deset minut a dotazy nad limit nechají přehrávání běžet bez přeskakování.
+    as_of: listopad 2026
   group: extensions
   kind: Skips SponsorBlock community-reported segments
   stack: [JavaScript, MV3]
+  problem: Skip sponsor segments and other community-reported parts of YouTube videos without giving an extension access to every website.
+  approach: SponsorBlock lookups send only the first four characters of the video ID's SHA-256 hash, and the extension picks the exact video from the returned group. Each category can skip automatically, show a skip button or be ignored; Sponsor and Self promotion skip by default, and timeline markers are optional.
+  result: Works on YouTube, YouTube Music and mobile YouTube pages, with access only to those pages and the SponsorBlock API. Responses are cached in memory for ten minutes, and over-limit lookups leave playback running without skipping.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/Majkey25/youtube-skipper' }
 
 - name: Songsterr auto continue
   cs:
     kind: Automatické kliknutí na bezplatné pokračování s pauzami při synchronizaci v Songsterru
+    problem: Bezplatné přehrávání Original Audio na Songsterru přeruší výzva, na kterou je pokaždé potřeba kliknout, aby přehrávání pokračovalo s pauzami při synchronizaci.
+    approach: Jeden content script hlídá viditelný dialog s přerušením a aktivuje jen akci s přesným textem „continue with sync pauses“. Opakuje ji každých 50 ms, dokud výzva skutečně nezmizí, protože web kliknutí přijímá zhruba až po 450 ms. Rozpoznává vlastní ovládací prvky dialogu, ne generované názvy tříd ani text nadpisu, které se na živém webu už změnily.
+    result: Verze 0.1.10 běží jen na songsterr.com bez dalších oprávnění, nastavení, síťových požadavků a analytiky. Nikdy neklikne na Upgrade ani Use Synth a pauzy při synchronizaci zachovává. Testy načítají skutečné rozšíření v Chromiu nad kódem výzvy zachyceným z živého webu.
+    as_of: listopad 2026
   group: extensions
   kind: Clicks Songsterr's free "continue with sync pauses" action
   stack: [JavaScript, MV3, Playwright]
+  problem: Free Original Audio playback on Songsterr stops at a prompt that has to be clicked each time to continue with sync pauses.
+  approach: One content script watches for a visible interruption dialog and activates only the action whose exact text is "continue with sync pauses", repeating every 50 ms until the prompt is really gone, because the site starts accepting the click only after about 450 ms. It matches the dialog's own controls rather than generated class names or headline text, which the live site has already changed.
+  result: Version 0.1.10 runs only on songsterr.com with no extra permissions, settings, network requests or analytics. It never clicks Upgrade or Use Synth and keeps Songsterr's sync pauses, and tests load the real extension in Chromium against prompt markup captured from the live site.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/Majkey25/songsterr-auto-continue' }
 
 - name: Tab copy
   cs:
     kind: Kopírování URL vybraných karet v jejich pořadí
+    problem: Zkopírovat URL vybraných karet prohlížeče ve skutečném pořadí a seznam odkazů zase otevřít jako karty.
+    approach: V okně rozšíření se karty vybírají kliknutím nebo s klávesou Shift a tlačítko COPY zapíše jednu URL na řádek v pořadí karet. Vložení čte schránku až po kliknutí, vybere odkazy HTTP(S) z textu, Markdownu, HTML, JSON nebo CSV a otevře je ve stejném pořadí v novém okně.
+    result: Funguje v prohlížečích založených na Chromiu s podporou Manifest V3, včetně Chrome a Edge, bez analytiky, ukládání dat, backendu a běhových závislostí. Jedno vložení otevře nejvýše 100 odkazů a odkazy s jinými protokoly ignoruje.
+    as_of: listopad 2026
   group: extensions
   kind: Copies the URLs of selected tabs in order
   stack: [JavaScript, MV3]
+  problem: Copy the URLs of chosen browser tabs in their real order, and reopen a list of links as tabs.
+  approach: In the popup, a click or Shift-click selects tabs and COPY writes one URL per line in tab order. Pasting reads the clipboard only after a click, extracts HTTP(S) links from text, Markdown, HTML, JSON or CSV and opens them in order in a new window.
+  result: Works in Manifest V3 Chromium browsers, including Chrome and Edge, with no analytics, storage, backend or runtime dependencies. One paste opens at most 100 links, and links with other protocols are ignored.
+  as_of: Nov 2026
   links:
     - { label: Repository, href: 'https://github.com/Majkey25/tab-copy-extension' }
 
 - name: Unit calculator
   cs:
     kind: Převody vzdálenosti na čas, teploty a hmotnosti
+    problem: Rychlé běžné převody v telefonu, například jak dlouho trvá urazit vzdálenost při dané průměrné rychlosti.
+    approach: Responzivní webová stránka se třemi převodníky pro vzdálenost a průměrnou rychlost na čas, teplotu ve stupních Celsia, Fahrenheita a v kelvinech a hmotnost v kilogramech, gramech a librách.
+    result: Běží v prohlížeči na GitHub Pages a je navržená pro použití na mobilu.
+    as_of: listopad 2026
   group: earlier
   kind: Distance-to-time, temperature and weight conversions
   stack: [HTML, JavaScript]
+  problem: Quick everyday conversions on a phone, such as how long a distance takes at a given average speed.
+  approach: A responsive web page with three converters for distance and average speed to time, temperature in Celsius, Fahrenheit and Kelvin, and weight in kilograms, grams and pounds.
+  result: Runs in the browser on GitHub Pages, designed for use on a phone.
+  as_of: Nov 2026
   links:
     - { label: Open, href: 'https://majkey25.github.io/calculator/' }
+    - { label: Repository, href: 'https://github.com/Majkey25/calculator' }
 
 - name: Buffon's needle
   cs:
     kind: Monte Carlo simulace Buffonovy jehly
+    problem: Zviditelnit úlohu Buffonovy jehly porovnáním teoretické pravděpodobnosti protnutí se simulací.
+    approach: Statická stránka spočítá teoretickou pravděpodobnost protnutí a spustí animovanou simulaci Monte Carlo s generátorem náhodných čísel řízeným seedem, takže běhy lze přesně zopakovat. Hody se kreslí na canvas a výsledky se průběžně vykreslují do grafů v Chart.js.
+    result: Běží na GitHub Pages bez backendu a nástrojů pro sestavení, česky i anglicky, na počítači i na mobilu.
+    as_of: listopad 2026
   group: earlier
   kind: Monte Carlo simulation of Buffon's needle
   stack: [JavaScript, Chart.js]
+  problem: Make Buffon's needle problem visible by setting its theoretical crossing probability beside a simulation.
+  approach: A static page computes the theoretical intersection probability and runs an animated Monte Carlo simulation with a seeded random generator, so runs can be repeated exactly. Throws are drawn on a canvas and the results plotted live with Chart.js.
+  result: Runs on GitHub Pages with no backend or build tools, in Czech and English, on desktop and mobile.
+  as_of: Nov 2026
   links:
     - { label: Open, href: 'https://majkey25.github.io/buffoncalc/' }
+    - { label: Repository, href: 'https://github.com/Majkey25/buffoncalc' }
 
 - name: QR code generator
   cs:
     kind: Statický generátor QR kódů
+    problem: Rychle vytvořit QR kód pro libovolný text nebo URL a stáhnout ho.
+    approach: Statická stránka postavená na knihovně qr-code-styling nastaví barvu teček, rohů a pozadí, styl teček a rohů a volitelné logo a zobrazí náhled.
+    result: Kód stáhne jako PNG 2048 × 2048 nebo jako vektorový soubor SVG.
+    as_of: listopad 2026
   group: earlier
   kind: Static QR code generator
   stack: [JavaScript]
+  problem: Create a QR code for any text or URL and download it quickly.
+  approach: A static page built on the qr-code-styling library sets dot, corner and background colors, dot and corner styles and an optional logo, then shows a preview.
+  result: Downloads the code as a 2048 × 2048 PNG or as an SVG vector file.
+  as_of: Nov 2026
   links:
     - { label: Open, href: 'https://majkey25.github.io/qrcode_generator/' }
+    - { label: Repository, href: 'https://github.com/Majkey25/qrcode_generator' }
 
 - name: Wheel
   cs:
     kind: Rozhodovací kolo štěstí
+    problem: Vybrat jednu možnost z mnoha, když je těžké se rozhodnout.
+    approach: Webová stránka s kolem štěstí v HTML a JavaScriptu, které se zastaví na jedné z možností.
+    result: Běží v prohlížeči na GitHub Pages.
+    as_of: listopad 2026
   group: earlier
   kind: Spin-the-wheel decision helper
   stack: [HTML, JavaScript]
+  problem: Pick one option out of many when deciding is hard.
+  approach: A spin-the-wheel web page built with HTML and JavaScript that stops on one of the options.
+  result: Runs in the browser on GitHub Pages.
+  as_of: Nov 2026
   links:
     - { label: Open, href: 'https://majkey25.github.io/wheel/' }
+    - { label: Repository, href: 'https://github.com/Majkey25/wheel' }

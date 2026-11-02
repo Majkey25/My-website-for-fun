@@ -126,7 +126,15 @@ export function buildInput(turns: Turn[], sources: Source[], lang: Lang): Messag
 }
 
 export class UpstreamError extends Error {
-  readonly code: 'busy' | 'quota' | 'unavailable';
+  readonly code:
+    | 'busy'
+    | 'credits'
+    | 'quota'
+    | 'configuration'
+    | 'invalid'
+    | 'incomplete'
+    | 'protocol'
+    | 'unavailable';
   readonly status: number;
   constructor(code: UpstreamError['code'], status = 0) {
     super(code);
@@ -136,21 +144,31 @@ export class UpstreamError extends Error {
 }
 
 // A spending ceiling and a temporary rate limit need different client messages.
-async function failure(response: Response): Promise<UpstreamError> {
-  const body = (await response.json().catch(() => null)) as { error?: { code?: unknown } } | null;
-  const code = body?.error?.code;
+export function providerFailure(status: number, error: unknown): UpstreamError {
+  const detail = error && typeof error === 'object' ? (error as Record<string, unknown>) : {};
+  const code = detail.code;
+  if (code === 'credit_balance_exhausted') return new UpstreamError('credits', status);
   if (
-    typeof code === 'string' &&
-    [
-      'insufficient_quota',
-      'credit_balance_exhausted',
-      'organization_usage_limit_exceeded',
-      'organization_spend_limit_exceeded',
-      'project_spend_limit_exceeded',
-    ].includes(code)
+    (typeof code === 'string' &&
+      [
+        'insufficient_quota',
+        'organization_usage_limit_exceeded',
+        'organization_spend_limit_exceeded',
+        'project_spend_limit_exceeded',
+      ].includes(code)) ||
+    detail.type === 'insufficient_quota'
   )
-    return new UpstreamError('quota', response.status);
-  return new UpstreamError(response.status === 429 ? 'busy' : 'unavailable', response.status);
+    return new UpstreamError('quota', status);
+  if (status === 429 || code === 'rate_limit_exceeded' || code === 'slow_down')
+    return new UpstreamError('busy', status);
+  if ([401, 403, 404].includes(status)) return new UpstreamError('configuration', status);
+  if ([400, 413, 415, 422].includes(status)) return new UpstreamError('invalid', status);
+  return new UpstreamError('unavailable', status);
+}
+
+export async function upstreamFailure(response: Response): Promise<UpstreamError> {
+  const body = (await response.json().catch(() => null)) as { error?: unknown } | null;
+  return providerFailure(response.status, body?.error);
 }
 
 type StreamEvent = {
@@ -160,7 +178,8 @@ type StreamEvent = {
   output_index?: unknown;
   content_index?: unknown;
   item?: { type?: unknown; name?: unknown; arguments?: unknown };
-  response?: { usage?: Usage };
+  code?: unknown;
+  response?: { usage?: Usage; error?: unknown };
 };
 
 /** Decode only the first JSON string while retaining the full bounded payload for validation. */
@@ -172,8 +191,7 @@ class AnswerText {
   closed = false;
 
   push(delta: string): string {
-    if (this.raw.length + delta.length > MAX_STRUCTURED_CHARS)
-      throw new UpstreamError('unavailable');
+    if (this.raw.length + delta.length > MAX_STRUCTURED_CHARS) throw new UpstreamError('protocol');
     this.raw += delta;
     if (!this.position) {
       const prefix = /^\s*\{\s*"answer"\s*:\s*"/.exec(this.raw);
@@ -193,21 +211,21 @@ class AnswerText {
         try {
           text += JSON.parse(`"${this.raw.slice(this.position, end)}"`) as string;
         } catch {
-          throw new UpstreamError('unavailable');
+          throw new UpstreamError('protocol');
         }
         this.position = end;
       } else {
-        if (char < ' ') throw new UpstreamError('unavailable');
+        if (char < ' ') throw new UpstreamError('protocol');
         text += char;
         this.position++;
       }
     }
     this.answer += text;
-    if (this.answer.length > MAX_ANSWER_CHARS) throw new UpstreamError('unavailable');
+    if (this.answer.length > MAX_ANSWER_CHARS) throw new UpstreamError('protocol');
     // A Unicode escape or provider delta may split a surrogate pair between chunks.
     const end = /[\uD800-\uDBFF]$/.test(this.answer) ? this.answer.length - 1 : this.answer.length;
     const ready = this.answer.slice(this.sent, end);
-    if (!ready.isWellFormed()) throw new UpstreamError('unavailable');
+    if (!ready.isWellFormed()) throw new UpstreamError('protocol');
     this.sent = end;
     return ready;
   }
@@ -217,7 +235,7 @@ class AnswerText {
     try {
       data = JSON.parse(this.raw);
     } catch {
-      throw new UpstreamError('unavailable');
+      throw new UpstreamError('protocol');
     }
     if (
       !data ||
@@ -233,7 +251,7 @@ class AnswerText {
       !Array.isArray(data.followups) ||
       data.followups.length > 3
     )
-      throw new UpstreamError('unavailable');
+      throw new UpstreamError('protocol');
     const questions: string[] = [];
     for (const question of data.followups) {
       if (
@@ -242,11 +260,11 @@ class AnswerText {
         question.length > MAX_QUESTION_CHARS ||
         !question.isWellFormed()
       )
-        throw new UpstreamError('unavailable');
+        throw new UpstreamError('protocol');
       questions.push(question.trim());
     }
     const normalized = questions.map((q) => q.normalize('NFKC').toLowerCase().replace(/\s+/g, ' '));
-    if (new Set(normalized).size !== questions.length) throw new UpstreamError('unavailable');
+    if (new Set(normalized).size !== questions.length) throw new UpstreamError('protocol');
     return questions;
   }
 }
@@ -321,7 +339,7 @@ export async function* streamAnswer(
     }),
     signal,
   });
-  if (!response.ok) throw await failure(response);
+  if (!response.ok) throw await upstreamFailure(response);
   if (!response.body) throw new UpstreamError('unavailable', response.status);
   for await (const event of readEvents(response.body)) {
     signal.throwIfAborted();
@@ -354,12 +372,9 @@ export async function* streamAnswer(
       if (refusal.trim() && !answer.raw && !query) return { usage: event.response?.usage };
       if (query || refusal) throw new UpstreamError('unavailable');
       return { usage: event.response?.usage, followups: answer.finish() };
-    } else if (
-      event.type === 'response.failed' ||
-      event.type === 'response.incomplete' ||
-      event.type === 'error'
-    )
-      throw new UpstreamError('unavailable');
+    } else if (event.type === 'response.incomplete') throw new UpstreamError('incomplete');
+    else if (event.type === 'response.failed') throw providerFailure(0, event.response?.error);
+    else if (event.type === 'error') throw providerFailure(0, { code: event.code });
   }
-  throw new UpstreamError('unavailable');
+  throw new UpstreamError('incomplete');
 }

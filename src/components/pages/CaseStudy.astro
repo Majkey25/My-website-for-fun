@@ -32,14 +32,14 @@ const story = [
 
 <Base
   lang={lang}
-  title={`${p.name}: ${t.caseStudy}`}
+  title={p.name}
   description={`${p.name}: ${p.kind}. ${p.problem}`}
   image={media?.image}
   imageAlt={media?.alt[lang]}
 >
   <article class="case wrap">
     <p class="meta" data-enter style="--i: 0">
-      <a href={href()}>~</a> / <a href={href('#work')}>{t.work.toLowerCase()}</a> / {pad(i + 1)}
+      <a href={href()}>~</a> / <a href={href('work/')}>{t.work.toLowerCase()}</a> / {pad(i + 1)}
     </p>
     <h1 class="title" data-enter style="--i: 0">
       <GlitchText text={p.name} scramble />
@@ -75,8 +75,7 @@ const story = [
           alt={media.alt[lang]}
           widths={[400, 800, 1200, 1800]}
           sizes="(max-width: 48rem) 90vw, 46rem"
-          loading="lazy"
-          decoding="async"
+          priority
         />
         <figcaption class="meta">
           <a href={media.source} rel="noopener" target="_blank">
