@@ -186,6 +186,13 @@ export function checks(
   const destinations = [
     ...response.answer.matchAll(/\[[^\]\n]+\]\((https:\/\/[^\s)]+|\/(?!\/)[^\s)]*)\)/g),
   ].map((m) => canonicalUrl(m[1]!));
+  const linkTargets = destinations.every(
+    (url) =>
+      url !== null &&
+      (response.sources.some((source) => source.url === url) ||
+        url === `${SITE}/contact/` ||
+        url === `${SITE}/cs/contact/`),
+  );
   destinations.push(...used.map((s) => s.url));
   return {
     nonempty: !!response.answer.trim(),
@@ -194,6 +201,7 @@ export function checks(
     ),
     citationIds: cited.every((c) => response.sources.some((s) => s.id === c)),
     citation: !step.citation || used.length > 0,
+    linkTargets,
     exactLinks: (step.requiredUrls ?? []).every((url) => destinations.includes(url)),
     sourceLink:
       !step.sourceUrls || used.some((s) => s.url !== null && step.sourceUrls!.includes(s.url)),
