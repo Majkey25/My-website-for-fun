@@ -73,6 +73,7 @@ test('public eval cases are bounded, bilingual and include both calibration clas
     ),
   );
   const negative = samples.find((s) => !s.judgePass)!;
+  assert.throws(() => calibrations([...samples, { ...samples[0], id: 'excess' }], cases));
   for (const fails of [undefined, [], ['unknown'], ['language', 'language']])
     assert.throws(() => calibrations([samples[0], { ...negative, fails }], cases));
   assert.throws(() => calibrations([{ ...samples[0], fails: ['language'] }, negative], cases));

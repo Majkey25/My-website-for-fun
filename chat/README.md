@@ -113,10 +113,12 @@ Two checks must pass for each answer; the judge relies on code for link presence
   Markdown destinations must match a supplied source URL, a supplied body link or the canonical
   localized contact form. Body links are independently checked against the owner URL policy.
 
-The judge starts with `gpt-6-luna`, low reasoning. `CHAT_EVAL_MODEL` in the GitHub environment can
+The judge uses [`gpt-6-luna`](https://developers.openai.com/api/docs/models/gpt-6-luna) with medium reasoning after low-effort grades misread supported citations.
+The effort is recorded in each report; the public assistant still uses its configured low effort.
+`CHAT_EVAL_MODEL` in the GitHub environment can
 select another Responses model after checking access, cost, supported schema/reasoning settings
 and calibration. Using the same model family as the assistant is not independent human review.
-Twelve prepared samples establish limited agreement, not general evaluator reliability. A false
+Thirteen prepared samples establish limited agreement, not general evaluator reliability. A false
 former name with a misleading citation tests correctness and grounding; an answer about another
 project tests context separately.
 The judge compares facts with the approved reference, which wins over excerpts. Additional facts
@@ -129,6 +131,7 @@ An abstention is supported when the reference confirms the information is unavai
 supplied excerpts lack it; sources need not state their omissions. Calibration contrasts that
 limitation with failure to answer a known question;
 positive claims still need evidence, and unknown does not mean nonexistent.
+A mixed-source control covers a file excerpt without a URL cited beside a clickable contact page.
 The judge receives the same bounded source text as the assistant; facts outside that retrieved text
 remain uncertain. These evals do not certify full index
 coverage or every embedding/chunk in the managed search service.
