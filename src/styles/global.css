@@ -48,7 +48,7 @@
 }
 
 /* Matrix cue: green glitch bands over the live page, which stays visible and clickable. Hovering
-   the cue loops them; the switch plays three bursts and dims while Base.astro swaps the theme
+   the cue loops them; the switch plays four bursts and dims while Base.astro swaps the theme
    under the last burst. Separate keyframes restart the switch even when it follows a hover. */
 .matrix-transition {
   position: fixed;
@@ -104,28 +104,32 @@
 }
 
 html.theme-hack .matrix-transition::before {
-  background-color: color-mix(in oklab, var(--matrix-ink) 50%, transparent);
-  animation: matrix-dim 1.8s ease-in-out both;
+  background-color: color-mix(in oklab, var(--matrix-ink) 82%, transparent);
+  animation: matrix-dim 2.4s ease-in-out both;
 }
 
 html.theme-hack .matrix-transition::after {
   content: '';
   position: absolute;
   inset: 0 0 auto;
-  height: 18vh;
+  height: 42vh;
   background: linear-gradient(
     transparent,
-    color-mix(in oklab, var(--matrix-accent) 24%, transparent) 94%,
+    color-mix(in oklab, var(--matrix-accent) 45%, transparent) 94%,
     var(--matrix-accent)
   );
-  animation: matrix-sweep 1.8s var(--ease) both;
+  animation: matrix-sweep 2.4s var(--ease) both;
 }
 
 html.theme-hack .matrix-transition span {
-  animation: matrix-burst 1.8s steps(1, end) calc(var(--i) * 30ms) both;
+  left: -12%;
+  width: 124%;
+  height: 1em;
+  font-size: min(calc(var(--h) * 3.5), 9rem);
+  animation: matrix-burst 2.4s steps(1, end) calc(var(--i) * 30ms) both;
 }
 
-/* Each band brightens at most twice per loop and three times per switch, in its own area. */
+/* Each band brightens at most twice per loop; switch bursts stay 528ms apart. */
 @keyframes matrix-flicker {
   0%,
   24%,
@@ -154,64 +158,69 @@ html.theme-hack .matrix-transition span {
 
 @keyframes matrix-burst {
   0%,
-  10%,
-  33%,
-  70%,
+  15%,
+  37%,
+  59%,
+  81%,
   100% {
     opacity: 0;
     transform: none;
   }
   2% {
     opacity: 1;
-    transform: translateX(-2rem);
+    transform: translateX(-10vw) skewX(-8deg);
   }
   6% {
-    opacity: 0.6;
-    transform: translateX(1.5rem);
+    opacity: 0.8;
+    transform: translateX(8vw) skewX(6deg);
   }
   24% {
     opacity: 1;
-    transform: translateX(2.5rem);
+    transform: translateX(10vw) skewX(8deg);
   }
   28% {
-    opacity: 0.5;
-    transform: translateX(-1rem);
+    opacity: 0.75;
+    transform: translateX(-8vw) skewX(-6deg);
   }
   46% {
     opacity: 1;
-    transform: translateX(-3rem);
+    transform: translateX(-12vw) skewX(-10deg);
   }
-  52% {
+  50% {
     opacity: 0.8;
-    transform: translateX(2rem);
+    transform: translateX(10vw) skewX(8deg);
   }
-  58% {
-    opacity: 0.6;
-    transform: translateX(-0.5rem);
+  68% {
+    opacity: 1;
+    transform: translateX(9vw) skewX(10deg);
   }
-  64% {
-    opacity: 0.35;
+  72% {
+    opacity: 0.8;
+    transform: translateX(-10vw) skewX(-8deg);
+  }
+  78% {
+    opacity: 0.45;
     transform: none;
   }
 }
 
-/* Peaks at 954ms, when Base.astro swaps the theme. */
+/* Peaks at 1704ms, when Base.astro swaps the theme. */
 @keyframes matrix-dim {
   0%,
   100% {
     opacity: 0;
   }
-  53% {
+  71% {
     opacity: 1;
   }
 }
 
 @keyframes matrix-sweep {
   0%,
-  53% {
+  71% {
     transform: translateY(-100%);
   }
-  90%,
+  98%,
   100% {
     transform: translateY(100vh);
   }

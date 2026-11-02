@@ -26,7 +26,7 @@ Personal site of Matěj Teplý (Majkey), AI/ML engineer and backend developer:
 - On desktop, an animated wireframe workbench fills the hero's assistant slot while AI is off.
   It is removed automatically when the assistant is enabled. The configured assistant has a
   bottom-right launcher on desktop and phones; phone navigation uses a native menu popover.
-- Light and dark theme (follows the system, remembers a manual choice), a session-only Matrix theme, and a print stylesheet.
+- Light and dark theme (follows the system, remembers a manual choice), a session-only Matrix surprise offered randomly as the third to eighth theme choice, and a print stylesheet. Theme progress survives navigation within the tab; an information icon beside the control offers a hint.
 
 ## Editing
 
