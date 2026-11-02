@@ -58,6 +58,10 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
   `sources` (sent again with the web results appended; the last list is the complete one),
   `delta`, then `suggestions` (`{ "questions": ["…", "…", "…"] }`) and `done`, or `error`.
   Provider safety refusals may omit suggestions. Citations `[S1]`…`[S10]` refer to the last `sources` list.
+  Indexed sources include a text excerpt of at most 1,200 characters and up to ten owned HTTPS
+  links found in their capped text. The same links go to the model and browser. Direct links must
+  match a supplied destination or internal navigation; model-written URLs do not extend this list.
+  Relative and escaped body links are skipped. Live-search summaries get no excerpt or extra links.
 - One structured model response streams the answer first and returns zero to three useful follow-up
   questions, without another generation call. Closing replies need no suggestions. Only the latest
   suggestions appear above the composer. The browser inserts at most two authentic project
@@ -106,17 +110,20 @@ Two independent checks must pass for each answer:
   and suggestion counts. A correct-sounding answer with a homepage link instead of the requested
   contact page fails. Retrieved but uncited links do not satisfy the requirement. EOF or an SSE
   error cannot be counted as a completed answer.
-  Markdown destinations must match a supplied source URL or the canonical localized contact form;
-  copying a different link from the source body fails, since the interface would suppress it.
+  Markdown destinations must match a supplied source URL, a supplied body link or the canonical
+  localized contact form. Body links are independently checked against the owner URL policy.
 
 The judge starts with `gpt-6-luna`, low reasoning. `CHAT_EVAL_MODEL` in the GitHub environment can
 select another Responses model after checking access, cost, supported schema/reasoning settings
 and calibration. Using the same model family as the assistant is not independent human review.
-Seven prepared samples establish limited agreement, not general evaluator reliability. A false
+Ten prepared samples establish limited agreement, not general evaluator reliability. A false
 former name with a misleading citation tests correctness and grounding; an answer about another
 project tests context separately.
-The judge compares facts with the approved reference; public citation URLs alone do not prove
-that every sentence is entailed by the unseen page text. These evals do not certify full index
+The judge compares facts with the approved reference, which wins over excerpts. Additional facts
+require direct evidence in a cited excerpt; URLs and titles alone cannot verify them. A positive
+version control and a contradictory excerpt with injected instructions calibrate this boundary.
+A correct date attributed to an older, contradictory CV must still fail grounding.
+Claims outside the excerpt's 1,200-character prefix remain uncertain. These evals do not certify full index
 coverage or every embedding/chunk in the managed search service.
 
 Use the manually dispatched **Chat behavior evals** workflow on `main`. It uses the protected
@@ -353,6 +360,8 @@ Edit `src/sources.ts`:
   an owner-curated public repository inventory. Upload only material approved for public answers:
   retrieved excerpts are visible to visitors before model generation. The model privacy prompt
   is not a substitute for reviewing uploads, and cannot make a private document safe to publish.
+  Indexed public pages also send bounded excerpts for evaluation, without rendering or retaining
+  those web excerpts in browser history. Approved file excerpts and body links survive history.
   The private profile records public source URLs, CV page provenance, research date, conflicting
   dates and unavailable facts. Refresh it when its source facts change; it is not a live feed.
 

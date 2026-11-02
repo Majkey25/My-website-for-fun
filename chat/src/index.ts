@@ -16,7 +16,7 @@ import { isImage } from './image.ts';
 import { isChatFile, MAX_ATTACHMENTS, MAX_CHAT_BYTES } from '../../src/chat-file.ts';
 import { ingest } from './ingest.ts';
 import { hasStrongSecret, issueSession, verifySession } from './session.ts';
-import { OWNER_FILES, ownerUrl } from './sources.ts';
+import { MAX_SOURCE_CHARS, OWNER_FILES, ownerLinks, ownerUrl } from './sources.ts';
 import { searchWeb } from './web.ts';
 import { tokenUsage } from './metrics.ts';
 import type { ChatErrorCode } from '../../src/chat-errors.ts';
@@ -27,7 +27,6 @@ const MAX_USER_CHARS = 2000;
 const MAX_ASSISTANT_CHARS = 6000;
 const MAX_TOTAL_CHARS = 30_000;
 const MAX_SOURCES = 6;
-const MAX_SOURCE_CHARS = 6000;
 const ANSWER_TIMEOUT_MS = 60_000;
 
 const BASE_HEADERS = {
@@ -246,7 +245,7 @@ async function retrieve(env: Env, turns: Turn[], requestId: string): Promise<Sou
         topScore: chunks[0]?.score ?? null,
       }),
     );
-    return [...sources.values()];
+    return [...sources.values()].map((source) => ({ ...source, links: ownerLinks(source.text) }));
   } catch {
     // Answering without sources is still safe: the model is told to say it does not know.
     console.error(JSON.stringify({ event: 'search_failed', requestId }));
@@ -304,11 +303,13 @@ async function chat(
   const listSources = (sources: Source[]) =>
     send(
       'sources',
-      sources.map(({ id, title, url, text }) => ({
+      sources.map(({ id, title, url, text, links }) => ({
         id,
         title,
         url,
-        ...(url === null ? { excerpt: text.slice(0, 1200) } : {}),
+        // Indexed public text and approved uploads, never live-search summaries.
+        ...(url === null || links !== undefined ? { excerpt: text.slice(0, 1200) } : {}),
+        ...(links?.length ? { links } : {}),
       })),
     );
   /** Streams one answer call to the visitor; `wrote` tells whether any text went out. */
