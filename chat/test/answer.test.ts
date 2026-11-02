@@ -195,7 +195,10 @@ test('separate output parts cannot be spliced into one valid answer', async (t) 
       completed,
     ]),
   );
-  await assert.rejects(collect(), UpstreamError);
+  await assert.rejects(
+    collect(),
+    (error) => error instanceof UpstreamError && error.code === 'protocol',
+  );
 });
 
 test('a refusal cannot be mixed into a structured answer', async (t) => {
@@ -207,8 +210,51 @@ test('a refusal cannot be mixed into a structured answer', async (t) => {
       completed,
     ]),
   );
-  await assert.rejects(collect(), UpstreamError);
+  await assert.rejects(
+    collect(),
+    (error) => error instanceof UpstreamError && error.code === 'protocol',
+  );
 });
+
+test('a successful HTTP response without a body is a protocol error', async (t) => {
+  stub(t, new Response(null));
+  await assert.rejects(
+    collect(),
+    (error) => error instanceof UpstreamError && error.code === 'protocol',
+  );
+});
+
+for (const [name, events] of [
+  ['oversized refusal', [{ ...delta('x'.repeat(6001)), type: 'response.refusal.delta' }]],
+  [
+    'answer after search',
+    [
+      {
+        type: 'response.output_item.done',
+        item: { type: 'function_call', name: 'search_web', arguments: '{"query":"projects"}' },
+      },
+      delta('{"answer":"Answer.'),
+    ],
+  ],
+  [
+    'search mixed with an answer at completion',
+    [
+      delta('{"answer":"Answer.","followups":[]}'),
+      {
+        type: 'response.output_item.done',
+        item: { type: 'function_call', name: 'search_web', arguments: '{"query":"projects"}' },
+      },
+      completed,
+    ],
+  ],
+] satisfies [string, Event[]][])
+  test(`${name} is a protocol error`, async (t) => {
+    stub(t, sse(events));
+    await assert.rejects(
+      collect(new AbortController().signal, true),
+      (error) => error instanceof UpstreamError && error.code === 'protocol',
+    );
+  });
 
 test('cancellation after visible text prevents completion and reaches the provider fetch', async (t) => {
   const controller = new AbortController();

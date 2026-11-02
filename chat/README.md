@@ -187,15 +187,15 @@ The shared `src/chat-errors.ts` catalog defines every public error code, Czech/E
 | `credits`                  | Provider explicitly reports `credit_balance_exhausted`.                                                                           | Contact the operator. No retry button or automatic extra model call. |
 | `quota`                    | Provider reports an enforced usage/spend limit or the broader `insufficient_quota` condition. This does not prove a zero balance. | Contact the operator. Retrying cannot restore the allowance.         |
 | `busy`                     | Application or provider request/token rate limit.                                                                                 | Wait a minute, then retry manually.                                  |
-| `configuration`            | Missing server configuration, invalid verification secret, or provider authentication/model access failure.                       | Operator repair; contact link.                                       |
+| `configuration`            | Missing server configuration, invalid verification secret/sitekey/domain, or provider authentication/model access failure.        | Operator repair; contact link.                                       |
 | `challenge`                | Browser proof failed, expired, was unsupported, or its script/check did not finish.                                               | Restart the check; allow `challenges.cloudflare.com` to load.        |
-| `verification_unavailable` | Siteverify failed to respond, returned an invalid response or reported an internal failure.                                       | Wait and retry; no session is issued.                                |
+| `verification_unavailable` | Siteverify failed to respond, returned an invalid response, reported an internal failure, or its client request timed out.        | Wait and retry; no session is issued.                                |
 | `session`                  | Chat bearer session was rejected even after one fresh browser check.                                                              | Resubmit and complete verification.                                  |
 | `invalid`                  | Request or attachment format was rejected.                                                                                        | New chat with shorter text or a different supported file.            |
 | `too_large`                | Actual request bytes exceed the application limit.                                                                                | New chat with a smaller message/file.                                |
 | `origin`                   | The page origin is not authorized.                                                                                                | Use the canonical Cloudflare address.                                |
 | `method`, `not_found`      | Unsupported request method or missing API route.                                                                                  | Reload; contact the operator if persistent.                          |
-| `timeout`                  | Server answer deadline, verification request timeout, or client transport deadline.                                               | Shorter question or retry later.                                     |
+| `timeout`                  | Server answer deadline or client answer transport deadline.                                                                       | Shorter question or retry later.                                     |
 | `incomplete`               | Provider stopped without a complete response, including output-token exhaustion.                                                  | Rephrase/shorten; partial text remains visibly incomplete.           |
 | `network`                  | Client connection failed or was interrupted.                                                                                      | Check connectivity and request blocking.                             |
 | `protocol`                 | Invalid provider output or client response/session/stream format.                                                                 | Retry; no completed history entry.                                   |
@@ -203,6 +203,13 @@ The shared `src/chat-errors.ts` catalog defines every public error code, Czech/E
 | `stopped`                  | Visitor cancelled generation.                                                                                                     | Optional manual retry.                                               |
 
 Storage, clipboard and attachment preparation have separate localized UI messages: blocked/full/expired history, failed copy, unreadable/unsupported/oversized attachment and expired restored attachments. They do not masquerade as an AI billing or service failure. Quota errors never trigger purchases, recharge, provider fallback or automatic retries. Provider and verification mappings follow the [OpenAI error guide](https://developers.openai.com/api/docs/guides/error-codes) and [Turnstile validation contract](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/).
+
+Documented image/prompt failure codes in a Responses terminal event map to `invalid`, including
+when the HTTP status is 200. See the [Response error schema](https://developers.openai.com/api/reference/resources/responses/methods/retrieve).
+Invalid widget sitekey/domain codes map to `configuration`; iframe load failure remains a
+retryable browser challenge, following the [Turnstile client error codes](https://developers.cloudflare.com/turnstile/troubleshooting/client-side-errors/error-codes/).
+Web-search-specific permissions and outages fall back to indexed sources. Credits, quota and
+rate limits still stop further generation calls.
 
 ## Runtime protection
 

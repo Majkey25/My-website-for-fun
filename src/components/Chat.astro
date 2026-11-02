@@ -1123,7 +1123,15 @@ const runtime = cs
           size: 'flexible',
           retry: 'never',
           callback: resolve,
-          'error-callback': () => reject(new ChatError('challenge')),
+          'error-callback': (code: unknown) =>
+            reject(
+              new ChatError(
+                typeof code === 'string' &&
+                  ['110100', '110110', '110200', '400020', '400021', '400070'].includes(code)
+                  ? 'configuration'
+                  : 'challenge',
+              ),
+            ),
           'timeout-callback': () => reject(new ChatError('challenge')),
           'unsupported-callback': () => reject(new ChatError('challenge')),
         });
@@ -1133,15 +1141,25 @@ const runtime = cs
         if (id) turnstile.remove(id);
       });
       signal.throwIfAborted();
-      const res = await fetch(`${this.#api}/session`, {
+      // Siteverify has a 10s server deadline; leave 5s for transport and its error response.
+      const verification = AbortSignal.any([signal, AbortSignal.timeout(15_000)]);
+      const session = await fetch(`${this.#api}/session`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ turnstile: proof }),
-        signal: AbortSignal.any([signal, AbortSignal.timeout(10_000)]),
-      }).catch(networkFailure);
-      if (!res.ok)
-        throw new ChatError(chatHttpError(res.status, await res.json().catch(() => null)));
-      const session = (await res.json()) as Session;
+        signal: verification,
+      })
+        .then(async (res) => {
+          if (!res.ok)
+            throw new ChatError(chatHttpError(res.status, await res.json().catch(() => null)));
+          return (await res.json()) as Session;
+        })
+        .catch((error: unknown) => {
+          const cause = verification.aborted ? verification.reason : error;
+          if (cause instanceof DOMException && cause.name === 'TimeoutError')
+            throw new ChatError('verification_unavailable');
+          return networkFailure(error);
+        });
       if (
         !session ||
         typeof session.token !== 'string' ||

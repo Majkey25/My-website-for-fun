@@ -57,7 +57,7 @@ export const chatErrors = {
     quota:
       'AI asistent dosáhl limitu využití nebo rozpočtu provozovatele. Chat teď nemůže odpovídat. Napište mi prosím přes kontakt.',
     configuration:
-      'AI asistent nemá správně nastavené připojení nebo přístup k modelu. Opravu musí provést provozovatel. Použijte prosím kontakt.',
+      'AI asistent nemá správně nastavené připojení, model nebo ověření prohlížeče. Opravu musí provést provozovatel. Použijte prosím kontakt.',
     challenge:
       'Kontrola prohlížeče se nenačetla nebo nebyla dokončena. Spusťte ji znovu. Prohlížeč musí povolit načtení challenges.cloudflare.com.',
     verification_unavailable:
@@ -91,7 +91,7 @@ export const chatErrors = {
     quota:
       'The assistant has reached its operator’s usage or spending limit. Chat cannot answer right now. Please use the contact page.',
     configuration:
-      'The assistant connection or model access is not configured correctly. The site operator needs to fix it. Please use the contact page.',
+      'The assistant connection, model access or browser verification is not configured correctly. The site operator needs to fix it. Please use the contact page.',
     challenge:
       'The browser check did not load or finish. Try starting it again. Your browser must allow challenges.cloudflare.com to load.',
     verification_unavailable:

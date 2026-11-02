@@ -96,8 +96,8 @@ export function evidence(response: unknown, first: number): { sources: Source[];
 }
 
 /**
- * Search outages fall back to indexed sources. Known provider limits stop the answer instead
- * of making another generation request that cannot succeed.
+ * Search outages and tool permissions fall back to indexed sources. Known usage/rate limits
+ * stop further generation requests that cannot succeed.
  */
 export async function searchWeb(
   env: Settings,
@@ -169,10 +169,7 @@ export async function searchWeb(
         ...(error instanceof UpstreamError ? { code: error.code, status: error.status } : {}),
       }),
     );
-    if (
-      error instanceof UpstreamError &&
-      ['credits', 'quota', 'busy', 'configuration'].includes(error.code)
-    )
+    if (error instanceof UpstreamError && ['credits', 'quota', 'busy'].includes(error.code))
       throw error;
     return [];
   }

@@ -501,6 +501,8 @@ test('provider HTTP and stream failures preserve safe actionable causes', async 
     { status: 500, code: 'server_error', expected: 'unavailable' },
     { status: 429, type: 'insufficient_quota', expected: 'quota' },
     { status: 200, code: 'credit_balance_exhausted', expected: 'credits' },
+    { status: 200, code: 'invalid_image', expected: 'invalid' },
+    { status: 200, code: 'image_parse_error', expected: 'invalid' },
   ];
   for (const sample of cases) {
     const error = { code: sample.code, type: sample.type, message: 'private-provider-canary' };
@@ -1330,39 +1332,40 @@ test('spent web-search credits stop before another generation request', async (t
   assert(!JSON.stringify(stream).includes('private-credit-canary'));
 });
 
-test('a failed web search still ends with an answer from the sources', async (t) => {
-  let call = 0;
-  stubFetch(t, () => {
-    call++;
-    if (call === 1)
+for (const status of [400, 401, 403, 404])
+  test(`web search HTTP ${status} falls back to indexed sources`, async (t) => {
+    let call = 0;
+    stubFetch(t, () => {
+      call++;
+      if (call === 1)
+        return sse([
+          {
+            type: 'response.output_item.done',
+            item: { type: 'function_call', name: 'search_web', arguments: '{"query":"x"}' },
+          },
+          { type: 'response.completed', response: {} },
+        ]);
+      if (call === 2)
+        return Response.json({ error: { message: 'tool not supported' } }, { status });
       return sse([
-        {
-          type: 'response.output_item.done',
-          item: { type: 'function_call', name: 'search_web', arguments: '{"query":"x"}' },
-        },
+        { type: 'response.output_text.delta', delta: structuredAnswer('I do not know.') },
         { type: 'response.completed', response: {} },
       ]);
-    if (call === 2)
-      return Response.json({ error: { message: 'tool not supported' } }, { status: 400 });
-    return sse([
-      { type: 'response.output_text.delta', delta: structuredAnswer('I do not know.') },
-      { type: 'response.completed', response: {} },
-    ]);
+    });
+    const { token } = await issueSession(SECRET);
+    const res = await worker.fetch(
+      post(
+        '/api/chat',
+        { lang: 'en', messages: [{ role: 'user', content: 'Hi' }] },
+        { authorization: `Bearer ${token}` },
+      ),
+      env(),
+    );
+    const stream = await events(res);
+    assert.equal(call, 3);
+    assert.deepEqual(stream.at(-1), { event: 'done', data: {} });
+    assert.equal(stream.filter((e) => e.event === 'sources').at(-1)?.data.length, 1);
   });
-  const { token } = await issueSession(SECRET);
-  const res = await worker.fetch(
-    post(
-      '/api/chat',
-      { lang: 'en', messages: [{ role: 'user', content: 'Hi' }] },
-      { authorization: `Bearer ${token}` },
-    ),
-    env(),
-  );
-  const stream = await events(res);
-  assert.equal(call, 3);
-  assert.deepEqual(stream.at(-1), { event: 'done', data: {} });
-  assert.equal(stream.filter((e) => e.event === 'sources').at(-1)?.data.length, 1);
-});
 
 test('server-sent events survive split chunks, CRLF and multi-byte characters', async () => {
   const text = 'data: {"type":"a","delta":"Matěj"}\r\n\r\ndata: {"type":"b"}\n\ndata: [DONE]\n\n';

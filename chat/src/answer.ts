@@ -2,6 +2,7 @@
 // streamed OpenAI Responses API call.
 
 import type { ChatFile } from '../../src/chat-file.ts';
+import type { ChatErrorCode } from '../../src/chat-errors.ts';
 
 export type Lang = 'cs' | 'en';
 /** Attachments are validated at the request boundary, on user turns only. */
@@ -126,15 +127,7 @@ export function buildInput(turns: Turn[], sources: Source[], lang: Lang): Messag
 }
 
 export class UpstreamError extends Error {
-  readonly code:
-    | 'busy'
-    | 'credits'
-    | 'quota'
-    | 'configuration'
-    | 'invalid'
-    | 'incomplete'
-    | 'protocol'
-    | 'unavailable';
+  readonly code: ChatErrorCode;
   readonly status: number;
   usage?: Usage;
   constructor(code: UpstreamError['code'], status = 0) {
@@ -163,6 +156,27 @@ export function providerFailure(status: number, error: unknown): UpstreamError {
   if (status === 429 || code === 'rate_limit_exceeded' || code === 'slow_down')
     return new UpstreamError('busy', status);
   if ([401, 403, 404].includes(status)) return new UpstreamError('configuration', status);
+  if (
+    typeof code === 'string' &&
+    [
+      'invalid_prompt',
+      'invalid_image',
+      'invalid_image_format',
+      'invalid_base64_image',
+      'invalid_image_url',
+      'image_too_large',
+      'image_too_small',
+      'image_parse_error',
+      'image_content_policy_violation',
+      'invalid_image_mode',
+      'image_file_too_large',
+      'unsupported_image_media_type',
+      'empty_image_file',
+      'failed_to_download_image',
+      'image_file_not_found',
+    ].includes(code)
+  )
+    return new UpstreamError('invalid', status);
   if ([400, 413, 415, 422].includes(status)) return new UpstreamError('invalid', status);
   return new UpstreamError('unavailable', status);
 }
@@ -341,7 +355,7 @@ export async function* streamAnswer(
     signal,
   });
   if (!response.ok) throw await upstreamFailure(response);
-  if (!response.body) throw new UpstreamError('unavailable', response.status);
+  if (!response.body) throw new UpstreamError('protocol', response.status);
   for await (const event of readEvents(response.body)) {
     signal.throwIfAborted();
     if (
@@ -349,15 +363,15 @@ export async function* streamAnswer(
       typeof event.delta === 'string'
     ) {
       const nextPart = JSON.stringify([event.item_id, event.output_index, event.content_index]);
-      if (part !== undefined && part !== nextPart) throw new UpstreamError('unavailable');
+      if (part !== undefined && part !== nextPart) throw new UpstreamError('protocol');
       part = nextPart;
       if (event.type === 'response.refusal.delta') {
-        if (answer.raw || query) throw new UpstreamError('unavailable');
+        if (answer.raw || query) throw new UpstreamError('protocol');
         refusal += event.delta;
-        if (refusal.length > MAX_ANSWER_CHARS) throw new UpstreamError('unavailable');
+        if (refusal.length > MAX_ANSWER_CHARS) throw new UpstreamError('protocol');
         yield event.delta;
       } else {
-        if (refusal || query) throw new UpstreamError('unavailable');
+        if (refusal || query) throw new UpstreamError('protocol');
         const text = answer.push(event.delta);
         if (text) yield text;
       }
@@ -379,7 +393,7 @@ export async function* streamAnswer(
         if (event.type === 'response.failed') throw providerFailure(0, event.response?.error);
         if (query && !answer.raw && !refusal) return { usage, query };
         if (refusal.trim() && !answer.raw && !query) return { usage };
-        if (query || refusal) throw new UpstreamError('unavailable');
+        if (query || refusal) throw new UpstreamError('protocol');
         return { usage, followups: answer.finish() };
       } catch (error) {
         if (error instanceof UpstreamError) error.usage = usage;
