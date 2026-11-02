@@ -59,6 +59,33 @@ const bands = [
   [67, 0, 76, 0.875],
   [82, 20, 58, 2.75],
 ] as const;
+// Matrix switch terminal: inert text that CSS types (speed: ms per character, 0 = instant).
+// Nothing runs and the output is fictional. Times are ms after the click; typing ends near
+// 2950ms, leaving slack before the theme swaps at 3200ms.
+const prompt = '~/init $ ';
+let typedAt = 950;
+const terminal = (
+  [
+    [noise(32), 4],
+    [noise(32), 4],
+    [noise(32), 4],
+    [`${prompt}pwd`, 18],
+    ['/home/visitor/init', 0],
+    [`${prompt}ls src/`, 18],
+    ['components layouts pages styles', 0],
+    [`${prompt}npm run build`, 18],
+    ['> astro build', 0],
+    [`building [${'#'.repeat(16)}] 33/33`, 8],
+    ['[ok] 33 pages built in 2.4s', 0],
+    [`${prompt}export THEME=matrix`, 18],
+  ] as const
+).map(([text, speed]) => {
+  const command = text.startsWith(prompt);
+  const steps = speed ? text.length - (command ? prompt.length : 0) : 1;
+  const style = `--d:${typedAt}ms;--t:${steps * speed || 1}ms;--n:${steps}`;
+  typedAt += steps * speed + (command ? 90 : 40);
+  return { Line: command ? ('kbd' as const) : ('samp' as const), text, style };
+});
 // Prefetch internal pages on hover; their scripts start only when the visitor navigates.
 const speculation = {
   prefetch: [{ where: { href_matches: href('*') }, eagerness: 'moderate' }],
@@ -161,6 +188,7 @@ const structured = {
     <script is:inline>
       (() => {
         let theme;
+        let surprise;
         try {
           theme = localStorage.getItem('theme');
         } catch {}
@@ -168,8 +196,18 @@ const structured = {
           theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         try {
           if (sessionStorage.getItem('theme:matrix') === '1') theme = 'matrix';
+          surprise = Number(sessionStorage.getItem('theme:surprise'));
         } catch {}
         document.documentElement.dataset.theme = theme;
+        // The rule of set() below, before first paint, so the theme icon never cycles on load.
+        document.documentElement.dataset.nextTheme =
+          theme === 'matrix'
+            ? 'light'
+            : surprise === 1
+              ? 'matrix'
+              : theme === 'dark'
+                ? 'light'
+                : 'dark';
         if (theme !== 'light')
           document
             .querySelector('meta[name="theme-color"]')
@@ -211,6 +249,11 @@ const structured = {
           {noise(64).repeat(5)}
         </span>
       ))}
+      <div class="matrix-terminal">
+        {terminal.map(({ Line, text, style }) => (
+          <Line style={style}>{text}</Line>
+        ))}
+      </div>
     </div>
     <a class="skip" href="#main">
       {t.skip}
@@ -263,7 +306,7 @@ const structured = {
             ))}
           </nav>
           <div class="theme-controls">
-            <button class="theme" type="button" data-next-theme="dark">
+            <button class="theme" type="button">
               <span class="sr-only">{t.theme}</span>
               <svg class="theme__moon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M20.5 13a8.5 8.5 0 0 1-9.5-9.5A8.5 8.5 0 1 0 20.5 13Z" />
@@ -346,7 +389,7 @@ const structured = {
         if ((event.target as Element).closest('a')) closeMenu();
       });
 
-      // Classic themes reveal from the button; Matrix uses glyph bursts over the live page.
+      // Classic themes reveal from the button; Matrix escalates glyph bursts into a terminal.
       const button = document.querySelector<HTMLButtonElement>('.theme');
       const meta = document.querySelector('meta[name="theme-color"]');
       const themeLabel = button?.querySelector('.sr-only')?.textContent?.trim() ?? 'Theme';
@@ -366,15 +409,16 @@ const structured = {
       let remaining = loadSurprise();
       const set = (theme: string) => {
         root.dataset.theme = theme;
+        // Matrix always exits to light. Keep in sync with the inline script in <head>.
         const next =
           theme === 'matrix'
-            ? systemTheme
+            ? 'light'
             : remaining === 1
               ? 'matrix'
               : theme === 'dark'
                 ? 'light'
                 : 'dark';
-        if (button) button.dataset.nextTheme = next;
+        root.dataset.nextTheme = next;
         meta?.setAttribute(
           'content',
           theme === 'light' ? '#fafaf9' : theme === 'matrix' ? '#040a06' : '#0b0b0c',
@@ -403,7 +447,7 @@ const structured = {
       });
       button?.addEventListener('click', async () => {
         if (root.classList.contains('theme-switch')) return;
-        const next = button.dataset.nextTheme!;
+        const next = root.dataset.nextTheme!;
         const remainingAfter =
           next === 'matrix'
             ? rollSurprise()
@@ -427,21 +471,32 @@ const structured = {
               localStorage.setItem('theme', next);
             } catch {}
         };
-        if (matchMedia('(prefers-reduced-motion: reduce)').matches) return apply();
+        const motion = matchMedia('(prefers-reduced-motion: reduce)');
+        if (motion.matches) return apply();
         if (next === 'matrix') {
-          // Swap under the last burst; finish before navigation can freeze a cached page.
+          // Swap under the opaque terminal after its last line (global.css), then reveal. Escape,
+          // a hidden tab or leaving the page finishes at once, so a cached page never freezes.
           closeMenu();
           root.classList.add('theme-switch', 'theme-hack');
-          const swap = setTimeout(apply, 1700);
-          const finish = () => {
-            clearTimeout(swap);
-            clearTimeout(end);
+          let timer = setTimeout(() => {
             apply();
-            root.classList.remove('theme-switch', 'theme-hack');
-            removeEventListener('pagehide', finish);
+            root.classList.add('theme-reveal');
+            timer = setTimeout(finish, 700);
+          }, 3200);
+          const stop = new AbortController();
+          const finish = () => {
+            clearTimeout(timer);
+            stop.abort();
+            if (root.dataset.theme !== next) apply();
+            root.classList.remove('theme-switch', 'theme-hack', 'theme-reveal');
           };
-          const end = setTimeout(finish, 2400);
-          addEventListener('pagehide', finish, { once: true });
+          const { signal } = stop;
+          addEventListener('pagehide', finish, { signal });
+          addEventListener('keydown', (e) => e.key === 'Escape' && finish(), { signal });
+          document.addEventListener('visibilitychange', () => document.hidden && finish(), {
+            signal,
+          });
+          motion.addEventListener('change', () => motion.matches && finish(), { signal });
           return;
         }
         if (!document.startViewTransition) return apply();
@@ -832,7 +887,7 @@ const structured = {
     width: 3.25rem;
     height: 3.25rem;
     overflow: hidden;
-    border: 1px solid var(--rule);
+    border: 1px solid transparent;
     border-radius: 50%;
     background: var(--surface);
   }
@@ -856,11 +911,12 @@ const structured = {
     transform: none;
   }
 
-  .theme:where(:not([data-next-theme='matrix'])) {
+  /* <html data-next-theme> is set before first paint; :where keeps hover and focus stronger. */
+  :global(html:where(:not([data-next-theme='matrix']))) .theme {
     background: transparent;
   }
 
-  .theme:where(:not([data-next-theme='matrix']))::before {
+  :global(html:where(:not([data-next-theme='matrix']))) .theme::before {
     transform: scale(0.4);
     transition:
       transform 320ms var(--ease),
@@ -882,8 +938,8 @@ const structured = {
       opacity 180ms var(--ease);
   }
 
-  .theme[data-next-theme='dark'] .theme__moon,
-  .theme[data-next-theme='light'] .theme__sun {
+  :global(html[data-next-theme='dark']) .theme .theme__moon,
+  :global(html[data-next-theme='light']) .theme .theme__sun {
     opacity: 1;
     transform: none;
   }
@@ -895,6 +951,7 @@ const structured = {
     grid-template-columns: repeat(8, minmax(0, 1fr));
     gap: 1px;
     overflow: hidden;
+    border-radius: 50%;
     opacity: 0.8;
     transition: opacity 180ms var(--ease);
     font:
@@ -912,7 +969,7 @@ const structured = {
   }
 
   .theme__matrix span:nth-child(3n) {
-    opacity: 0.45;
+    opacity: 0.7;
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -921,21 +978,21 @@ const structured = {
       transform: none;
     }
 
-    .theme[data-next-theme='matrix']:hover .theme__matrix {
+    :global(html[data-next-theme='matrix']) .theme:hover .theme__matrix {
       opacity: 1;
     }
   }
 
-  .theme[data-next-theme='matrix'] {
+  :global(html[data-next-theme='matrix']) .theme {
     color: var(--matrix-accent);
     background: #000;
   }
 
-  .theme[data-next-theme='matrix']::before {
+  :global(html[data-next-theme='matrix']) .theme::before {
     background: color-mix(in oklab, var(--matrix-accent) 12%, #000);
   }
 
-  .theme[data-next-theme='matrix'] .theme__matrix {
+  :global(html[data-next-theme='matrix']) .theme__matrix {
     display: grid;
   }
 
@@ -950,11 +1007,11 @@ const structured = {
     }
 
     @media (hover: hover) and (pointer: fine) {
-      .theme[data-next-theme='dark']:hover .theme__moon {
+      :global(html[data-next-theme='dark']) .theme:hover .theme__moon {
         transform: rotate(-24deg);
       }
 
-      .theme[data-next-theme='light']:hover .theme__sun {
+      :global(html[data-next-theme='light']) .theme:hover .theme__sun {
         transform: rotate(60deg);
       }
     }

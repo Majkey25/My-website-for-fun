@@ -145,7 +145,10 @@ const pages = [
             const ratio = media.image.width / media.image.height;
             const portrait = ratio < 1;
             return (
-              <li>
+              <li
+                class:list={{ 'work-card--portrait': portrait }}
+                style={portrait ? `--project-ratio:${ratio}` : undefined}
+              >
                 <a class="work-scene" href={href(`work/${slug(project.name)}/`)}>
                   <h3 class="work-scene__name">{project.name}</h3>
                   <Image
@@ -298,14 +301,21 @@ const pages = [
   }
   const move = (direction: number, behavior: ScrollBehavior) => {
     if (!reel) return;
-    const distance =
-      (reel.querySelector('li')?.getBoundingClientRect().width ?? reel.clientWidth) + 16;
+    const offset = pinned ? position : reel.scrollLeft;
+    const inset = parseFloat(getComputedStyle(reel).paddingInlineStart);
+    const stops = Array.from(reel.children, (card) =>
+      Math.max(0, Math.min(travel, (card as HTMLElement).offsetLeft - inset)),
+    );
+    if (direction < 0) stops.reverse();
+    const target =
+      stops.find((stop) => (direction < 0 ? stop < offset - 1 : stop > offset + 1)) ??
+      (direction < 0 ? 0 : travel);
     if (pinned)
       scrollTo({
-        top: start + Math.max(0, Math.min(travel, position + distance * direction)),
+        top: start + target,
         behavior,
       });
-    else reel.scrollBy({ left: distance * direction, behavior });
+    else reel.scrollTo({ left: target, behavior });
   };
   buttons.forEach((button) => {
     button.addEventListener('click', (event) => {
@@ -413,6 +423,14 @@ const pages = [
     background: var(--accent);
     color: var(--on-accent);
   }
+  .ask__field button :global(svg) {
+    transition: translate 180ms var(--ease);
+  }
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .ask__field button:hover :global(svg) {
+      translate: 3px 0;
+    }
+  }
   .ask__starter {
     padding: 0.4rem 0;
     border: 0;
@@ -443,12 +461,12 @@ const pages = [
     mask-image: linear-gradient(
       to right,
       transparent,
-      rgb(0 0 0 / 0.35) calc(var(--pad) * 0.4),
-      rgb(0 0 0 / 0.85) var(--pad),
-      #000 calc(var(--pad) * 2),
-      #000 calc(100% - var(--pad) * 2),
-      rgb(0 0 0 / 0.85) calc(100% - var(--pad)),
-      rgb(0 0 0 / 0.35) calc(100% - var(--pad) * 0.4),
+      rgb(0 0 0 / 0.35) calc(var(--pad) * 0.2),
+      rgb(0 0 0 / 0.85) calc(var(--pad) * 0.55),
+      #000 var(--pad),
+      #000 calc(100% - var(--pad)),
+      rgb(0 0 0 / 0.85) calc(100% - var(--pad) * 0.55),
+      rgb(0 0 0 / 0.35) calc(100% - var(--pad) * 0.2),
       transparent
     );
   }
@@ -467,6 +485,10 @@ const pages = [
     will-change: transform;
   }
   .work-reel {
+    --work-image-height: clamp(12rem, 34svh, 24rem);
+    --card-padding: clamp(1.25rem, 2.5vw, 2rem);
+    --portrait-min: 15rem;
+    align-items: flex-start;
     position: relative;
     padding-inline: calc(var(--pad) + 0.25rem);
     scroll-padding-inline: calc(var(--pad) + 0.25rem);
@@ -477,13 +499,23 @@ const pages = [
   .work-reel > li {
     flex-basis: 60%;
   }
+  .work-reel > li.work-card--portrait {
+    flex-basis: clamp(
+      var(--portrait-min),
+      calc(var(--work-image-height) * var(--project-ratio) + 2 * var(--card-padding)),
+      24rem
+    );
+  }
   .work-scene {
     min-height: 0;
-    padding: clamp(1.25rem, 2.5vw, 2rem);
+    padding: var(--card-padding);
     gap: 1rem;
   }
   .work-scene__name {
     font-size: clamp(1.6rem, 3.5vw, 3rem);
+  }
+  .work-card--portrait .work-scene__name {
+    font-size: clamp(1.6rem, 2.5vw, 2rem);
   }
   .work-scene .muted {
     font-size: 0.875rem;
@@ -493,7 +525,7 @@ const pages = [
     align-self: center;
     width: auto;
     height: auto;
-    max-height: clamp(12rem, 34svh, 24rem);
+    max-height: var(--work-image-height);
     aspect-ratio: auto;
     object-fit: contain;
     border: 0;
@@ -546,11 +578,12 @@ const pages = [
     }
   }
   @media (width < 40rem) {
+    .work-reel {
+      --work-image-height: clamp(11rem, 24svh, 14rem);
+      --portrait-min: 12rem;
+    }
     .work-reel > li {
       flex-basis: 84%;
-    }
-    .work-scene__image {
-      max-height: clamp(11rem, 24svh, 14rem);
     }
   }
   @media (prefers-reduced-motion: reduce) {
