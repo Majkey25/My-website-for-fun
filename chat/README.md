@@ -106,6 +106,8 @@ Two independent checks must pass for each answer:
   and suggestion counts. A correct-sounding answer with a homepage link instead of the requested
   contact page fails. Retrieved but uncited links do not satisfy the requirement. EOF or an SSE
   error cannot be counted as a completed answer.
+  Markdown destinations must match a supplied source URL or the canonical localized contact form;
+  copying a different link from the source body fails, since the interface would suppress it.
 
 The judge starts with `gpt-6-luna`, low reasoning. `CHAT_EVAL_MODEL` in the GitHub environment can
 select another Responses model after checking access, cost, supported schema/reasoning settings

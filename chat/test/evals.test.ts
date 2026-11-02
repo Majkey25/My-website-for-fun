@@ -103,6 +103,32 @@ test('exact localized links cannot be replaced by a homepage or an unused source
   );
 });
 
+test('answer links cannot copy destinations from a source body that the renderer will suppress', () => {
+  const step = { question: 'SeliaScan?', reference: 'Android document scanner.' };
+  const sources = [
+    {
+      id: 'S1',
+      title: 'SeliaScan',
+      url: 'https://init-chat.majkeylab.workers.dev/work/seliascan/',
+    },
+  ];
+  assert.equal(
+    checks(step, {
+      ...sample,
+      answer: '[GitHub](https://github.com/Majkey25/ScanIt) [S1]',
+      sources,
+    }).linkTargets,
+    false,
+  );
+  for (const answer of [
+    '[SeliaScan](https://init-chat.majkeylab.workers.dev/work/seliascan/)',
+    'Read the project page [S1].',
+    '[Contact](/contact/)',
+    '[Kontakt](/cs/contact/)',
+  ])
+    assert.equal(checks(step, { ...sample, answer, sources }).linkTargets, true);
+});
+
 test('uncertain, missing or malformed model grades never become a pass', () => {
   assert(passed(grade(verdict())));
   assert(!passed(grade(verdict('uncertain'))));
