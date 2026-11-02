@@ -54,7 +54,6 @@ const text = cs
       back: 'Zpět',
       note: 'Otázky i přílohy zpracuje OpenAI přes Cloudflare. OpenAI může sdílený obsah použít k trénování modelů. Přílohy se neukládají do místní historie. Nesdílejte citlivé údaje.',
       attach: 'Přiložit soubor',
-      attachment: 'Soubor',
       remove: 'Odebrat přílohu',
       remember: 'Uložit tento chat na zařízení na 7 dní',
       privacy: 'Soukromí',
@@ -73,7 +72,6 @@ const text = cs
       back: 'Back',
       note: 'Questions and attachments go to OpenAI through Cloudflare. OpenAI may use shared content to train models. Attachments are not saved in local history. Do not share sensitive data.',
       attach: 'Attach a file',
-      attachment: 'File',
       remove: 'Remove attachment',
       remember: 'Save this chat on this device for 7 days',
       privacy: 'Privacy',
@@ -92,7 +90,7 @@ const runtime = cs
       retry: 'Zkusit znovu',
       busy: 'Příliš mnoho otázek najednou. Zkuste to za minutu.',
       quota: 'Asistent vyčerpal dostupný limit API. Napište mi prosím přes kontaktní formulář.',
-      challenge: 'Kontrola prohlížeče neprošla. Obnovte stránku a zkuste to znovu.',
+      challenge: 'Kontrola prohlížeče neprošla. Zkuste ji spustit znovu.',
       unavailable: 'Odpověď nedorazila. Zkuste to znovu.',
       stopped: 'Zastaveno.',
       image: 'Přiložený obrázek',
@@ -123,7 +121,7 @@ const runtime = cs
       busy: 'Too many questions at once. Try again in a minute.',
       quota:
         'The assistant has reached its API allowance. Please write to me through the contact form.',
-      challenge: 'The browser check did not pass. Reload the page and try again.',
+      challenge: 'The browser check did not pass. Try again to restart it.',
       unavailable: 'The answer did not arrive. Try again.',
       stopped: 'Stopped.',
       image: 'Attached image',
@@ -230,7 +228,6 @@ const runtime = cs
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6ZM14 2v6h6M8 15h8M12 11v8" />
         </svg>
-        <span aria-hidden="true">{text.attachment}</span>
       </button>
       <label class="sr-only" for="chat-input">
         {text.label}
@@ -345,7 +342,8 @@ const runtime = cs
 
   // ---------- Markdown subset into DOM nodes ----------
 
-  const INLINE = /(\*\*[^*\n]+\*\*|`[^`\n]+`|\[S\d{1,2}\]|\[[^\]\n]+\]\(https:\/\/[^)\s]+\))/g;
+  const INLINE =
+    /(\*\*[^*\n]+\*\*|`[^`\n]+`|\[S\d{1,2}\]|\[[^\]\n]+\]\((?:https:\/\/|\/(?!\/))[^)\s]+\))/g;
 
   function inline(text: string, sources: Source[]): Node[] {
     return text.split(INLINE).flatMap((part, i): Node[] => {
@@ -382,11 +380,25 @@ const runtime = cs
         return [link];
       }
       const [, label = '', url = ''] = /^\[([^\]]+)\]\((.+)\)$/.exec(part) ?? [];
-      if (!sources.some((source) => source.url === url)) return [document.createTextNode(label)];
+      let destination: URL;
+      try {
+        destination = new URL(url, location.href);
+      } catch {
+        return [document.createTextNode(label)];
+      }
+      const internal =
+        destination.origin === location.origin &&
+        [...document.querySelectorAll<HTMLAnchorElement>('.header__nav a')].some(
+          (link) => link.href === destination.href,
+        );
+      if (!internal && !sources.some((source) => source.url === destination.href))
+        return [document.createTextNode(label)];
       const link = document.createElement('a');
-      link.href = url;
-      link.target = '_blank';
-      link.rel = 'noopener';
+      link.href = destination.href;
+      if (!internal) {
+        link.target = '_blank';
+        link.rel = 'noopener';
+      }
       link.textContent = label;
       return [link];
     });
@@ -474,7 +486,6 @@ const runtime = cs
     #busy: AbortController | null = null;
     #turnstile: Promise<Turnstile> | null = null;
     #current: Session | null = null;
-    #minting: Promise<string> | null = null;
 
     connectedCallback() {
       let local = null;
@@ -563,10 +574,8 @@ const runtime = cs
         if (question && this.#busy) this.#input.value = question;
         else if (question) this.ask(question);
       });
-      // Someone started typing elsewhere on the page: pass the browser check now.
-      document.addEventListener('chat:warm', () =>
-        this.#session(new AbortController().signal).catch(() => undefined),
-      );
+      // Preload the script without starting an invisible challenge in the closed dialog.
+      document.addEventListener('chat:warm', () => this.#widget().catch(() => undefined));
     }
 
     open() {
@@ -575,8 +584,7 @@ const runtime = cs
       document.documentElement.classList.add('chat-open');
       this.#dialog.showModal();
       this.#log.scrollTop = this.#log.scrollHeight;
-      // Pass the browser check while the visitor types; the first question then needs no wait.
-      this.#session(new AbortController().signal).catch(() => undefined);
+      this.#widget().catch(() => undefined);
     }
 
     ask(raw: string) {
@@ -616,15 +624,9 @@ const runtime = cs
     }
 
     #syncSuggestions() {
-      const last = this.#turns.at(-1);
-      const questions = this.#busy
-        ? []
-        : !last
-          ? this.#startList
-          : last.role === 'assistant'
-            ? (last.followups ?? [])
-            : [];
-      const key = JSON.stringify(questions);
+      const last = this.#turns.findLast((turn) => turn.role === 'assistant');
+      const questions = last ? (last.followups ?? []) : this.#startList;
+      const key = JSON.stringify([questions, !!this.#busy]);
       if (this.#suggest.dataset.questions === key) return;
       this.#suggest.dataset.questions = key;
       this.#suggest.hidden = !questions.length;
@@ -633,8 +635,10 @@ const runtime = cs
           const li = document.createElement('li');
           const button = document.createElement('button');
           button.type = 'button';
+          button.disabled = !!this.#busy;
           button.dataset.chatAsk = question;
           button.textContent = question;
+          button.title = question;
           li.append(button);
           return li;
         }),
@@ -1077,7 +1081,7 @@ const runtime = cs
       return this.#turnstile;
     }
 
-    /** A valid session token. Callers waiting at the same time share one browser check. */
+    /** Reuse a valid session; otherwise the submitted question owns its browser check. */
     #session(signal: AbortSignal, fresh = false): Promise<string> {
       if (!fresh) {
         try {
@@ -1088,7 +1092,7 @@ const runtime = cs
         if (this.#current && this.#current.expires - Date.now() > 60_000)
           return Promise.resolve(this.#current.token);
       }
-      const pending = (this.#minting ??= this.#mint().finally(() => (this.#minting = null)));
+      const pending = this.#mint(signal);
       return new Promise<string>((resolve, reject) => {
         const abort = () => reject(new ChatError('stopped'));
         if (signal.aborted) return abort();
@@ -1097,16 +1101,22 @@ const runtime = cs
       });
     }
 
-    async #mint(): Promise<string> {
+    async #mint(signal: AbortSignal): Promise<string> {
       const turnstile = await this.#widget();
+      signal.throwIfAborted();
       let id = '';
       let timer: ReturnType<typeof setTimeout>;
+      let abort: () => void;
       const proof = await new Promise<string>((resolve, reject) => {
+        abort = () => reject(new ChatError('stopped'));
+        signal.addEventListener('abort', abort, { once: true });
         timer = setTimeout(() => reject(new ChatError('challenge')), 120_000);
         id = turnstile.render(this.#check, {
           sitekey: this.dataset.siteKey,
           language: this.#lang,
-          appearance: 'interaction-only',
+          appearance: 'always',
+          size: 'flexible',
+          retry: 'never',
           callback: resolve,
           'error-callback': () => reject(new ChatError('challenge')),
           'timeout-callback': () => reject(new ChatError('challenge')),
@@ -1114,16 +1124,19 @@ const runtime = cs
         });
       }).finally(() => {
         clearTimeout(timer);
-        setTimeout(() => turnstile.remove(id));
+        signal.removeEventListener('abort', abort);
+        if (id) turnstile.remove(id);
       });
+      signal.throwIfAborted();
       const res = await fetch(`${this.#api}/session`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ turnstile: proof }),
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.any([signal, AbortSignal.timeout(10_000)]),
       });
       if (!res.ok) throw new ChatError(res.status === 429 ? 'busy' : 'challenge');
       const session = (await res.json()) as Session;
+      signal.throwIfAborted();
       this.#current = session;
       try {
         sessionStorage.setItem(SESSION, JSON.stringify(session));
@@ -1573,27 +1586,31 @@ const runtime = cs
   .chat__suggest {
     grid-row: 6;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.5rem;
     min-width: 0;
     padding: 0.4rem var(--gap);
   }
 
   .chat__suggest li {
+    flex: 0 1 auto;
     min-width: 0;
     max-width: 100%;
   }
 
   .chat__suggest button {
-    display: block;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
     max-width: 100%;
     min-height: 2.75rem;
-    padding: 0.5rem 0.75rem;
+    padding: 0.45rem 0.6rem;
     border: 1px solid var(--rule);
     border-radius: 0.7rem;
     background: var(--surface);
     color: var(--ink);
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     line-height: 1.35;
     text-align: left;
     transition:
@@ -1604,6 +1621,11 @@ const runtime = cs
   .chat__suggest button:is(:hover, :focus-visible) {
     border-color: var(--accent);
     background: color-mix(in oklab, var(--accent) 14%, var(--surface));
+  }
+
+  .chat__suggest button:disabled {
+    opacity: 0.55;
+    cursor: default;
   }
 
   @media (width < 40rem) {
@@ -1618,6 +1640,7 @@ const runtime = cs
       max-width: 85%;
     }
     .chat__suggest button {
+      display: block;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -2038,19 +2061,7 @@ const runtime = cs
   }
 
   .chat__attach {
-    display: flex;
-    gap: 0.4rem;
-    width: auto;
-    padding: 0.5rem;
-    border-radius: 1rem;
     color: var(--ink);
-    font-size: 0.8125rem;
-  }
-
-  @media (width < 40rem) {
-    .chat__attach span {
-      display: none;
-    }
   }
 
   @media (height < 34rem) {
