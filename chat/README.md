@@ -116,13 +116,17 @@ Two independent checks must pass for each answer:
 The judge starts with `gpt-6-luna`, low reasoning. `CHAT_EVAL_MODEL` in the GitHub environment can
 select another Responses model after checking access, cost, supported schema/reasoning settings
 and calibration. Using the same model family as the assistant is not independent human review.
-Ten prepared samples establish limited agreement, not general evaluator reliability. A false
+Twelve prepared samples establish limited agreement, not general evaluator reliability. A false
 former name with a misleading citation tests correctness and grounding; an answer about another
 project tests context separately.
 The judge compares facts with the approved reference, which wins over excerpts. Additional facts
 require direct evidence in a cited excerpt; URLs and titles alone cannot verify them. A positive
 version control and a contradictory excerpt with injected instructions calibrate this boundary.
 A correct date attributed to an older, contradictory CV must still fail grounding.
+An abstention is supported when the reference confirms the information is unavailable and the
+supplied excerpts lack it; sources need not state their omissions. Calibration contrasts that
+limitation with failure to answer a known question;
+positive claims still need evidence, and unknown does not mean nonexistent.
 The judge receives the same bounded source text as the assistant; facts outside that retrieved text
 remain uncertain. These evals do not certify full index
 coverage or every embedding/chunk in the managed search service.
