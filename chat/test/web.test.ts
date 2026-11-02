@@ -2,7 +2,37 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { evidence, SEARCH_DOMAINS } from '../src/web.ts';
-import { ownerUrl } from '../src/sources.ts';
+import { MAX_SOURCE_CHARS, ownerLinks, ownerUrl } from '../src/sources.ts';
+
+test('source-body links stay owned, bounded and separate from model output', () => {
+  const text = [
+    '[Project](https://majkey25.github.io/ScanIt/?utm_source=chat#readme)',
+    '<a href="https://github.com/Majkey25/ScanIt">Repository</a>',
+    '`https://majkey25.github.io/ByteNoise/`',
+    'https://www.instagram.com/_majkey_.',
+    'https://github.com/Majkey25/ScanIt',
+    'https://github.com/Majkey25/init/pull/73/files',
+    'https://raw.githubusercontent.com/Majkey25/init/main/chat/evals/calibration.json',
+    'https://evil.test/ https://user@github.com/Majkey25/ScanIt',
+    '[Local](CHANGELOG.md) [Escaped](https://github.com/Majkey25/not\\_a_link)',
+    '[Parentheses](https://github.com/Majkey25/not(a)link)',
+  ].join('\n');
+  assert.deepEqual(ownerLinks(text), [
+    'https://majkey25.github.io/ScanIt/',
+    'https://github.com/Majkey25/ScanIt',
+    'https://majkey25.github.io/ByteNoise/',
+    'https://www.instagram.com/_majkey_',
+  ]);
+  assert.equal(
+    ownerLinks(
+      Array.from({ length: 20 }, (_, i) => `https://github.com/Majkey25/repo${i}\n`).join(''),
+    ).length,
+    10,
+  );
+  const cut = 'https://github.com/Majkey25/truncated';
+  assert.deepEqual(ownerLinks('x'.repeat(MAX_SOURCE_CHARS - cut.length) + cut), []);
+  assert.deepEqual(ownerLinks(`https://github.com/Majkey25/${'x'.repeat(2050)}\n`), []);
+});
 
 test('only the owner pages pass, whatever the search adds or disguises', () => {
   assert.equal(

@@ -1,7 +1,13 @@
 import type { ChatFile } from './chat-file.ts';
 
 // Stored chat text is untrusted. Attachments stay in memory, never browser storage.
-export type ChatSource = { id: string; title: string; url: string | null; excerpt?: string };
+export type ChatSource = {
+  id: string;
+  title: string;
+  url: string | null;
+  excerpt?: string;
+  links?: string[];
+};
 export type ChatTurn = {
   role: 'user' | 'assistant';
   content: string;
@@ -28,6 +34,16 @@ const MAX_HISTORY_CHARS = 2 * 1024 * 1024;
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+function sourceUrl(value: unknown): string | null {
+  if (typeof value !== 'string' || value.length > 2048) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 export function chatSources(value: unknown): ChatSource[] {
   if (!Array.isArray(value)) return [];
   return value.slice(0, 10).flatMap((source: unknown): ChatSource[] => {
@@ -35,26 +51,30 @@ export function chatSources(value: unknown): ChatSource[] {
       !record(source) ||
       typeof source.id !== 'string' ||
       !/^S(?:[1-9]|10)$/.test(source.id) ||
-      typeof source.title !== 'string' ||
-      (source.url !== null && (typeof source.url !== 'string' || source.url.length > 2048))
+      typeof source.title !== 'string'
     )
       return [];
-    if (source.url === null)
-      return [
-        {
-          id: source.id,
-          title: source.title.slice(0, 160),
-          url: null,
-          ...(typeof source.excerpt === 'string' ? { excerpt: source.excerpt.slice(0, 1200) } : {}),
-        },
-      ];
-    try {
-      const url = new URL(source.url);
-      if (url.protocol !== 'https:' || url.username || url.password) return [];
-      return [{ id: source.id, title: source.title.slice(0, 160), url: url.href }];
-    } catch {
-      return [];
+    const url = source.url === null ? null : sourceUrl(source.url);
+    if (source.url !== null && url === null) return [];
+    const links: string[] = [];
+    if (source.links !== undefined) {
+      if (!Array.isArray(source.links) || source.links.length > 10) return [];
+      for (const link of source.links as unknown[]) {
+        if (typeof link !== 'string' || sourceUrl(link) !== link) return [];
+        links.push(link);
+      }
     }
+    return [
+      {
+        id: source.id,
+        title: source.title.slice(0, 160),
+        url,
+        ...(url === null && typeof source.excerpt === 'string'
+          ? { excerpt: source.excerpt.slice(0, 1200) }
+          : {}),
+        ...(links.length ? { links } : {}),
+      },
+    ];
   });
 }
 

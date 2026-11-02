@@ -195,6 +195,10 @@ test('thread and message caps preserve the active chat without mutating live sta
       title: 'CV document',
       url: null,
       excerpt: '\u0001'.repeat(1200),
+      links: Array.from(
+        { length: 10 },
+        (_, link) => `https://github.com/Majkey25/${link}${'x'.repeat(1950)}`,
+      ),
     })),
   }));
   const bounded = writeThreads(
@@ -224,4 +228,38 @@ test('stored citations cannot activate unsafe URLs and private-file excerpts rem
     ]),
     [{ id: 'S10', title: 'CV document', url: null, excerpt: 'Page 1: professional experience' }],
   );
+});
+
+test('source links survive history while URL excerpts stay transient', () => {
+  const links = ['https://github.com/Majkey25/ScanIt'];
+  const sources = [
+    {
+      id: 'S1',
+      title: 'Scanner',
+      url: 'https://init-chat.majkeylab.workers.dev/work/seliascan/',
+      links,
+      excerpt: 'Transient web evidence',
+    },
+    { id: 'S2', title: 'Approved file', url: null, links, excerpt: 'Approved file evidence' },
+  ];
+  const value = thread('links', now, true, [
+    { role: 'assistant', content: '[Repository](https://github.com/Majkey25/ScanIt)', sources },
+  ]);
+  const raw = writeThreads([value], value.id, true, now);
+  assert(!raw.includes('Transient web evidence'));
+  assert.deepEqual(readThreads(null, raw, now).threads[0]?.turns[0]?.sources, [
+    { id: 'S1', title: sources[0]!.title, url: sources[0]!.url, links },
+    sources[1],
+  ]);
+  for (const invalid of [
+    'not an array',
+    [null],
+    ['javascript:alert(1)'],
+    ['https://user:password@example.org/'],
+    ['https://GITHUB.com/Majkey25'],
+    ['https://example.org/' + 'x'.repeat(2048)],
+    Array.from({ length: 11 }, () => links[0]),
+  ])
+    for (const source of sources)
+      assert.deepEqual(chatSources([{ ...source, links: invalid }]), []);
 });

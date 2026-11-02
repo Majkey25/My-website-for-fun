@@ -1,5 +1,7 @@
 // What the assistant may learn from. The crawl never leaves the hosts listed here.
 
+export const MAX_SOURCE_CHARS = 6000;
+
 /** Every page in these sitemaps is indexed. */
 export const SITEMAPS = ['https://init-chat.majkeylab.workers.dev/sitemap.xml'];
 
@@ -132,6 +134,25 @@ export function ownerUrl(raw: string): string | null {
     );
   });
   return owned ? url.href : null;
+}
+
+/** Absolute owner URLs present in the exact text supplied to the model. */
+// shortcut: relative and escaped links are skipped; resolve them if recorded answers need them.
+export function ownerLinks(text: string): string[] {
+  const links = new Set<string>();
+  for (const match of text.matchAll(/https:\/\/[^\s<>()[\]"'`\\]+/g)) {
+    const end = match.index + match[0].length;
+    // Ignore unsupported escapes and URLs cut at the source-text limit.
+    if (
+      ['\\', '(', '['].includes(text[end] ?? '') ||
+      (end === MAX_SOURCE_CHARS && text.length === MAX_SOURCE_CHARS)
+    )
+      continue;
+    const url = ownerUrl(match[0].replace(/[.,;:!?*]+$/, ''));
+    if (url && url.length <= 2048) links.add(url);
+    if (links.size === 10) break;
+  }
+  return [...links];
 }
 
 /** Identifies the crawler to site owners, as robots.txt rules expect. */

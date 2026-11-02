@@ -120,6 +120,21 @@ test('answer links cannot copy destinations from a source body that the renderer
     }).linkTargets,
     false,
   );
+  assert.equal(
+    checks(step, {
+      ...sample,
+      answer: '[GitHub](https://github.com/Majkey25/ScanIt) [S1]',
+      sources: [{ ...sources[0]!, links: ['https://github.com/Majkey25/ScanIt'] }],
+    }).linkTargets,
+    true,
+  );
+  assert.equal(
+    checks(step, {
+      ...sample,
+      sources: [{ ...sources[0]!, links: ['https://github.com/Majkey25/init/pull/73/files'] }],
+    }).approvedSources,
+    false,
+  );
   for (const answer of [
     '[SeliaScan](https://init-chat.majkeylab.workers.dev/work/seliascan/)',
     'Read the project page [S1].',
@@ -162,6 +177,7 @@ test('judge input cannot see calibration labels, transport metadata or unrelated
         title: 'Public page',
         url: 'https://init-chat.majkeylab.workers.dev/',
         token: 'nested-never-to-model',
+        excerpt: 'Android 10 and newer.',
       },
     ],
     judgePass: true,
@@ -175,12 +191,24 @@ test('judge input cannot see calibration labels, transport metadata or unrelated
     ['question', 'reference', 'language', 'history', 'answer', 'sources', 'followups'].sort(),
   );
   assert(!JSON.stringify(input).includes('never-to-model') && !('judgePass' in input));
+  assert.equal(input.sources[0].excerpt, 'Android 10 and newer.');
 });
 
 test('SSE preserves UTF-8 across byte boundaries and requires a complete successful terminal event', async () => {
   const events: [string, unknown][] = [
     ['status', { stage: 'search' }],
-    ['sources', []],
+    [
+      'sources',
+      [
+        {
+          id: 'S1',
+          title: 'Scanner',
+          url: 'https://init-chat.majkeylab.workers.dev/work/seliascan/',
+          excerpt: 'x'.repeat(1201),
+          links: ['https://github.com/Majkey25/ScanIt'],
+        },
+      ],
+    ],
     ['delta', { text: 'Matěj žije v Česku.' }],
     ['suggestions', { questions: [] }],
     ['done', {}],
@@ -188,6 +216,8 @@ test('SSE preserves UTF-8 across byte boundaries and requires a complete success
   const result = await readAnswer(sse(events, 1, true));
   assert.equal(result.answer, 'Matěj žije v Česku.');
   assert.deepEqual(result.followups, []);
+  assert.equal(result.sources[0]?.excerpt?.length, 1200);
+  assert.deepEqual(result.sources[0]?.links, ['https://github.com/Majkey25/ScanIt']);
   assert(result.ms >= result.firstTokenMs && result.firstTokenMs >= 0);
   await assert.rejects(readAnswer(sse(events.slice(0, -1))), /incomplete/);
   await assert.rejects(

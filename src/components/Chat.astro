@@ -391,12 +391,19 @@ const runtime = cs
       } catch {
         return [document.createTextNode(label)];
       }
+      // Saved contact links must survive a switch between page languages.
+      const navigationHref = destination.href.replace(/\/cs\/contact\/$/, '/contact/');
       const internal =
         destination.origin === location.origin &&
         [...document.querySelectorAll<HTMLAnchorElement>('.header__nav a')].some(
-          (link) => link.href === destination.href,
+          (link) => link.href.replace(/\/cs\/contact\/$/, '/contact/') === navigationHref,
         );
-      if (!internal && !sources.some((source) => source.url === destination.href))
+      if (
+        !internal &&
+        !sources.some(
+          (source) => source.url === destination.href || source.links?.includes(destination.href),
+        )
+      )
         return [document.createTextNode(label)];
       const link = document.createElement('a');
       link.href = destination.href;
