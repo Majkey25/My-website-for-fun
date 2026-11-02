@@ -168,7 +168,13 @@ test('judge input cannot see calibration labels, transport metadata or unrelated
     id: 'sample',
     lang: 'en' as const,
     smoke: true,
-    steps: [{ question: 'Question?', reference: 'Approved facts.' }],
+    steps: [
+      {
+        question: 'Question?',
+        reference: 'Approved facts.',
+        requiredUrls: ['https://init-chat.majkeylab.workers.dev/contact/'],
+      },
+    ],
   };
   const supplied = {
     ...sample,
@@ -185,14 +191,31 @@ test('judge input cannot see calibration labels, transport metadata or unrelated
     fails: ['safety'],
     token: 'never-to-model',
     requestId: 'transport-only',
+    mechanical: { exactLinks: true },
   };
   const input = JSON.parse(judgeInput(scenario, 0, [], supplied));
   assert.deepEqual(
     Object.keys(input).sort(),
-    ['question', 'reference', 'language', 'history', 'answer', 'sources', 'followups'].sort(),
+    [
+      'question',
+      'reference',
+      'language',
+      'history',
+      'answer',
+      'sources',
+      'followups',
+      'mechanical',
+    ].sort(),
   );
   assert(!JSON.stringify(input).includes('never-to-model') && !('judgePass' in input));
   assert.equal(input.sources[0].excerpt, supplied.sources[0]!.excerpt);
+  assert.deepEqual(Object.keys(input.mechanical).sort(), [
+    'exactLinks',
+    'linkTargets',
+    'sourceLink',
+  ]);
+  assert.equal(input.mechanical.exactLinks, false);
+  assert.equal(input.mechanical.linkTargets, true);
 });
 
 test('SSE preserves UTF-8 across byte boundaries and requires a complete successful terminal event', async () => {
