@@ -48,8 +48,10 @@
 }
 
 /* Matrix cue: green glitch bands over the live page, which stays visible and clickable. Hovering
-   the cue loops them; the switch plays four bursts and dims while Base.astro swaps the theme
-   under the last burst. Separate keyframes restart the switch even when it follows a hover. */
+   the cue loops them. The switch pulses them three times (360ms apart) under a deepening tint and
+   cuts to an opaque terminal at 900ms. Base.astro swaps the theme under it at 3200ms, then the
+   terminal lifts away behind a 600ms sweep. Separate keyframes restart the switch even when it
+   follows a hover. */
 .matrix-transition {
   position: fixed;
   inset: 0;
@@ -67,7 +69,7 @@
   }
 
   @media (hover: hover) and (pointer: fine) {
-    html:not(.theme-switch):has(.theme[data-next-theme='matrix']:hover) .matrix-transition {
+    html[data-next-theme='matrix']:not(.theme-switch):has(.theme:hover) .matrix-transition {
       display: block;
     }
   }
@@ -85,7 +87,7 @@
     color-mix(in oklab, var(--matrix-accent) 6%, transparent);
 }
 
-.matrix-transition span {
+.matrix-transition > span {
   position: absolute;
   top: var(--y);
   left: var(--x);
@@ -103,12 +105,74 @@
   animation: matrix-flicker 1.5s steps(1, end) calc(var(--i) * -0.25s) infinite;
 }
 
-html.theme-hack .matrix-transition::before {
-  background-color: color-mix(in oklab, var(--matrix-ink) 82%, transparent);
-  animation: matrix-dim 2.4s ease-in-out both;
+/* Decorative only: Base.astro renders the lines as escaped text; each types on its own delay. */
+.matrix-terminal {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-content: start;
+  justify-items: start;
+  padding: clamp(1.25rem, 6vw, 6rem);
+  background:
+    repeating-linear-gradient(
+      transparent 0 3px,
+      color-mix(in oklab, var(--matrix-accent) 5%, transparent) 3px 4px
+    ),
+    color-mix(in oklab, var(--matrix-ink) 70%, #000);
+  font:
+    500 clamp(0.75rem, 0.55rem + 1vw, 1.125rem) / 1.8 ui-monospace,
+    monospace;
+  white-space: nowrap;
+  text-shadow: 0 0 0.4em color-mix(in oklab, currentColor 45%, transparent);
 }
 
-html.theme-hack .matrix-transition::after {
+.matrix-terminal > * {
+  --from: 100%;
+  font: inherit;
+  color: color-mix(in oklab, var(--matrix-accent) 68%, transparent);
+  clip-path: inset(0 100% 0 0);
+  /* `start` rounds up: Chrome can finish at progress 0.9999, where `end` drops the last step. */
+  animation: matrix-type var(--t) steps(var(--n), start) var(--d) forwards;
+}
+
+/* Commands open on the 9-character prompt, then type one character per step. */
+.matrix-terminal > kbd {
+  --from: calc(100% - 9ch);
+  color: var(--matrix-accent);
+}
+
+html.theme-hack .matrix-terminal {
+  display: grid;
+  animation: matrix-in 1ms 0.9s both;
+}
+
+html.theme-hack .matrix-transition::before {
+  background-color: color-mix(in oklab, var(--matrix-ink) 82%, transparent);
+  animation: matrix-in 0.9s ease-in both;
+}
+
+html.theme-hack .matrix-transition > span {
+  left: -12%;
+  width: 124%;
+  height: 1em;
+  font-size: min(calc(var(--h) * 3.5), 9rem);
+  animation: matrix-burst 0.9s steps(1, end) calc(var(--i) * 30ms) both;
+}
+
+/* Base.astro adds theme-reveal only after the swap, so the old theme never shows through. */
+html.theme-reveal .matrix-terminal {
+  animation: matrix-out 0.6s var(--ease) both;
+}
+
+html.theme-reveal .matrix-transition::before {
+  content: none;
+}
+
+html.theme-reveal .matrix-transition > span {
+  display: none;
+}
+
+html.theme-reveal .matrix-transition::after {
   content: '';
   position: absolute;
   inset: 0 0 auto;
@@ -118,18 +182,10 @@ html.theme-hack .matrix-transition::after {
     color-mix(in oklab, var(--matrix-accent) 45%, transparent) 94%,
     var(--matrix-accent)
   );
-  animation: matrix-sweep 2.4s var(--ease) both;
+  animation: matrix-sweep 0.6s var(--ease) both;
 }
 
-html.theme-hack .matrix-transition span {
-  left: -12%;
-  width: 124%;
-  height: 1em;
-  font-size: min(calc(var(--h) * 3.5), 9rem);
-  animation: matrix-burst 2.4s steps(1, end) calc(var(--i) * 30ms) both;
-}
-
-/* Each band brightens at most twice per loop; switch bursts stay 528ms apart. */
+/* Each band brightens at most twice per loop; switch pulses stay 360ms apart. */
 @keyframes matrix-flicker {
   0%,
   24%,
@@ -156,72 +212,73 @@ html.theme-hack .matrix-transition span {
   }
 }
 
+/* Three pulses, each wider and taller; the last holds until the terminal covers it. */
 @keyframes matrix-burst {
-  0%,
-  15%,
-  37%,
-  59%,
-  81%,
+  0% {
+    opacity: 0.85;
+    transform: translateX(-4vw) skewX(-5deg);
+  }
+  6% {
+    opacity: 0.6;
+    transform: translateX(3vw) skewX(4deg);
+  }
+  14%,
+  38%,
+  54%,
+  78%,
   100% {
     opacity: 0;
     transform: none;
   }
-  2% {
+  40% {
     opacity: 1;
-    transform: translateX(-10vw) skewX(-8deg);
-  }
-  6% {
-    opacity: 0.8;
-    transform: translateX(8vw) skewX(6deg);
-  }
-  24% {
-    opacity: 1;
-    transform: translateX(10vw) skewX(8deg);
-  }
-  28% {
-    opacity: 0.75;
-    transform: translateX(-8vw) skewX(-6deg);
+    transform: translateX(8vw) skewX(8deg) scaleY(1.2);
   }
   46% {
+    opacity: 0.75;
+    transform: translateX(-7vw) skewX(-6deg) scaleY(1.2);
+  }
+  80% {
     opacity: 1;
-    transform: translateX(-12vw) skewX(-10deg);
+    transform: translateX(-12vw) skewX(-10deg) scaleY(1.5);
   }
-  50% {
-    opacity: 0.8;
-    transform: translateX(10vw) skewX(8deg);
+  86% {
+    opacity: 0.9;
+    transform: translateX(11vw) skewX(9deg) scaleY(1.5);
   }
-  68% {
+  92% {
     opacity: 1;
-    transform: translateX(9vw) skewX(10deg);
-  }
-  72% {
-    opacity: 0.8;
-    transform: translateX(-10vw) skewX(-8deg);
-  }
-  78% {
-    opacity: 0.45;
-    transform: none;
+    transform: translateX(-4vw) skewX(-3deg) scaleY(1.5);
   }
 }
 
-/* Peaks at 1704ms, when Base.astro swaps the theme. */
-@keyframes matrix-dim {
-  0%,
-  100% {
+@keyframes matrix-in {
+  from {
     opacity: 0;
   }
-  71% {
-    opacity: 1;
+}
+
+@keyframes matrix-out {
+  to {
+    opacity: 0;
+    transform: translateY(-2rem);
+  }
+}
+
+@keyframes matrix-type {
+  from {
+    clip-path: inset(0 var(--from) 0 0);
+  }
+  to {
+    clip-path: inset(0);
   }
 }
 
 @keyframes matrix-sweep {
-  0%,
-  71% {
+  from {
     transform: translateY(-100%);
   }
-  98%,
-  100% {
+  to {
     transform: translateY(100vh);
   }
 }

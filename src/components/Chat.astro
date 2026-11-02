@@ -1964,7 +1964,14 @@ const runtime = cs
     transition:
       opacity 180ms ease,
       filter 180ms ease,
-      transform 220ms var(--ease-out);
+      transform 220ms var(--ease-out),
+      translate 180ms var(--ease);
+  }
+
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .chat__form:not(.is-busy) .chat__send:hover .chat__send-icon {
+      translate: 0 -3px;
+    }
   }
 
   .chat__send .chat__stop-icon {
