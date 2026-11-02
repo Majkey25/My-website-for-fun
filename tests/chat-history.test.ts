@@ -215,6 +215,11 @@ test('thread and message caps preserve the active chat without mutating live sta
 });
 
 test('stored citations cannot activate unsafe URLs and private-file excerpts remain available', () => {
+  assert.equal(
+    chatSources([{ id: 'S1', title: 'CV', url: null, excerpt: 'x'.repeat(6000) }])[0]?.excerpt
+      ?.length,
+    1200,
+  );
   const sources = [
     { id: 'S1', title: 'Safe', url: 'https://github.com/Majkey25' },
     { id: 'S2', title: 'Script', url: 'javascript:alert(1)' },

@@ -13,6 +13,7 @@ import {
   scenarios,
   type Answer,
 } from '../evals/evaluate.ts';
+import { MAX_SOURCE_CHARS } from '../src/sources.ts';
 
 const sample: Pick<Answer, 'answer' | 'sources' | 'followups'> = {
   answer: 'Use the [contact form](/cs/contact/).',
@@ -177,7 +178,7 @@ test('judge input cannot see calibration labels, transport metadata or unrelated
         title: 'Public page',
         url: 'https://init-chat.majkeylab.workers.dev/',
         token: 'nested-never-to-model',
-        excerpt: 'Android 10 and newer.',
+        excerpt: `${'Earlier public context. '.repeat(100)}Android 10 and newer.`,
       },
     ],
     judgePass: true,
@@ -191,7 +192,7 @@ test('judge input cannot see calibration labels, transport metadata or unrelated
     ['question', 'reference', 'language', 'history', 'answer', 'sources', 'followups'].sort(),
   );
   assert(!JSON.stringify(input).includes('never-to-model') && !('judgePass' in input));
-  assert.equal(input.sources[0].excerpt, 'Android 10 and newer.');
+  assert.equal(input.sources[0].excerpt, supplied.sources[0]!.excerpt);
 });
 
 test('SSE preserves UTF-8 across byte boundaries and requires a complete successful terminal event', async () => {
@@ -204,7 +205,7 @@ test('SSE preserves UTF-8 across byte boundaries and requires a complete success
           id: 'S1',
           title: 'Scanner',
           url: 'https://init-chat.majkeylab.workers.dev/work/seliascan/',
-          excerpt: 'x'.repeat(1201),
+          excerpt: 'x'.repeat(MAX_SOURCE_CHARS + 1),
           links: ['https://github.com/Majkey25/ScanIt'],
         },
       ],
@@ -216,7 +217,7 @@ test('SSE preserves UTF-8 across byte boundaries and requires a complete success
   const result = await readAnswer(sse(events, 1, true));
   assert.equal(result.answer, 'Matěj žije v Česku.');
   assert.deepEqual(result.followups, []);
-  assert.equal(result.sources[0]?.excerpt?.length, 1200);
+  assert.equal(result.sources[0]?.excerpt?.length, MAX_SOURCE_CHARS);
   assert.deepEqual(result.sources[0]?.links, ['https://github.com/Majkey25/ScanIt']);
   assert(result.ms >= result.firstTokenMs && result.firstTokenMs >= 0);
   await assert.rejects(readAnswer(sse(events.slice(0, -1))), /incomplete/);

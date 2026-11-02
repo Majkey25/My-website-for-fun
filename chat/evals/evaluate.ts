@@ -4,7 +4,7 @@ import {
   type ChatSource,
   type ChatTurn,
 } from '../../src/chat-history.ts';
-import { ownerUrl } from '../src/sources.ts';
+import { MAX_SOURCE_CHARS, ownerUrl } from '../src/sources.ts';
 import { chatErrorCode } from '../../src/chat-errors.ts';
 
 export type HistoryTurn = Pick<ChatTurn, 'role' | 'content'>;
@@ -128,7 +128,7 @@ function sources(value: unknown): ChatSource[] {
     const raw: unknown = value[index];
     // Grading needs web evidence; browser history deliberately retains only file excerpts.
     return record(raw) && typeof raw.excerpt === 'string'
-      ? { ...source, excerpt: raw.excerpt.slice(0, 1200) }
+      ? { ...source, excerpt: raw.excerpt.slice(0, MAX_SOURCE_CHARS) }
       : source;
   });
 }
