@@ -135,6 +135,22 @@
     ]
   },
   {
+    "id": "former-name-cs",
+    "lang": "cs",
+    "smoke": false,
+    "steps": [
+      {
+        "question": "Jak se dříve jmenovala Intoniva a k čemu slouží?",
+        "reference": "Intoniva se dříve jmenovala TuneItAll. Je to offline ladička hudebních nástrojů pro Android s automatickým, ručním a chromatickým režimem, bez účtu, reklam a síťového oprávnění.",
+        "citation": true,
+        "sourceUrls": [
+          "https://init-chat.majkeylab.workers.dev/cs/work/intoniva/",
+          "https://init-chat.majkeylab.workers.dev/work/intoniva/"
+        ]
+      }
+    ]
+  },
+  {
     "id": "username-cs",
     "lang": "cs",
     "smoke": false,

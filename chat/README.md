@@ -86,6 +86,8 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
 `evals/scenarios.json` holds the public-profile regression set. It covers Czech and English,
 project facts and links, conversation references and explicit topic changes, dated corrections,
 unknown prices, private information, prompt injection and closing replies without suggestions.
+The Czech former-name case requires a cited project page that states the name history, rather
+than accepting a repository whose image filename happens to contain the old name.
 These are test references, never runtime answers. Add a sanitized case when a real defect is
 confirmed; do not copy visitor transcripts or private company test banks into this public repo.
 Negative calibration answers are deliberately incorrect controls, not claims about the owner.
@@ -108,7 +110,9 @@ Two independent checks must pass for each answer:
 The judge starts with `gpt-6-luna`, low reasoning. `CHAT_EVAL_MODEL` in the GitHub environment can
 select another Responses model after checking access, cost, supported schema/reasoning settings
 and calibration. Using the same model family as the assistant is not independent human review.
-Six prepared samples establish limited agreement, not general evaluator reliability.
+Seven prepared samples establish limited agreement, not general evaluator reliability. A false
+former name with a misleading citation tests correctness and grounding; an answer about another
+project tests context separately.
 The judge compares facts with the approved reference; public citation URLs alone do not prove
 that every sentence is entailed by the unseen page text. These evals do not certify full index
 coverage or every embedding/chunk in the managed search service.
@@ -216,8 +220,10 @@ rate limits still stop further generation calls.
 The source manifest includes the owner's 43 public repository READMEs discovered on 1 November 2026,
 Weather research notes and Music Analyzer. The sitemap supplies the site's public pages. Crawls
 advance in batches within the 45-fetch limit, including robots and redirects; changed documents keep
-their working index version until the replacement completes. New repositories require a manifest
-update. Two discovered repositories without a README are described only in the owner-curated catalog.
+their working index version until a later visit confirms that the replacement completed. With the
+current corpus a sweep needs multiple six-hour batches, so both versions can remain searchable
+between visits. Search can also briefly return an item after its deletion. New repositories require
+a manifest update. Two discovered repositories without a README are described only in the owner-curated catalog.
 
 | Layer            | Mechanism                                                                                                                                                                                                                                |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -325,7 +331,8 @@ Edit `src/sources.ts`:
 - `SITEMAPS` are crawled page by page and `DOCUMENTS` are fetched as they are (Markdown, HTML or
   PDF up to 4 MiB). Every redirect hop is checked before fetching and counts toward the request
   budget; robots and sitemap bodies are capped at 512 KiB. A replacement must finish indexing
-  before the last working version is removed; failed indexing is retried. Confirmed 404, 410
+  before a later visit removes the last working version; failed indexing is retried. Search
+  retirement is eventually consistent, so a deleted item can briefly remain in results. Confirmed 404, 410
   and robots withdrawals are removed independently of the partial-crawl deletion guard.
   Previously indexed sitemap pages are rechecked even after omission, so their later removal
   can be confirmed without trusting a shrunken sitemap alone. Redirect targets must also pass
@@ -333,6 +340,9 @@ Edit `src/sources.ts`:
   The sitemap follows the canonical Cloudflare site. Retrieval logs only result count and top
   score, without question or source text; binding failures are reported instead of silently
   appearing as zero matches.
+  Query rewriting preserves the latest question's language and meaning, resolving missing references
+  from bounded history. Similarity caching is disabled for chat so nearby questions with different
+  topics or languages do not reuse the instance's cached search result.
 - `OWNER_PAGES` is the fixed list of the owner's profiles and sites that live web search may
   cite, taken from `src/site.ts` and `src/data/projects.yaml`. A test fails when either file
   links somewhere outside it. The Worker never fetches these pages itself; OpenAI's search does.

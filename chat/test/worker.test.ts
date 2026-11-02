@@ -330,6 +330,7 @@ test('retrieval isolates the latest question while retaining bounded follow-up c
             ai_search_options: {
               query_rewrite: { enabled: boolean; rewrite_prompt: string };
               retrieval: { keyword_match_mode: string };
+              cache: { enabled: boolean };
             };
           }) => {
             searched = true;
@@ -342,6 +343,7 @@ test('retrieval isolates the latest question while retaining bounded follow-up c
             assert.equal(input.ai_search_options.query_rewrite.enabled, true);
             assert.ok(input.ai_search_options.query_rewrite.rewrite_prompt);
             assert.equal(input.ai_search_options.retrieval.keyword_match_mode, 'or');
+            assert.equal(input.ai_search_options.cache.enabled, false);
             return { chunks: [] };
           },
         },

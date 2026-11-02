@@ -44,8 +44,8 @@
     "judgePass": false
   },
   {
-    "id": "lost-context",
-    "fails": ["context"],
+    "id": "wrong-former-name",
+    "fails": ["correctness", "grounding"],
     "scenario": "context-en",
     "step": 1,
     "answer": "It was previously called Selia Weather, a weather forecast application [S1].",
@@ -56,6 +56,16 @@
         "url": "https://init-chat.majkeylab.workers.dev/work/seliascan/"
       }
     ],
+    "followups": [],
+    "judgePass": false
+  },
+  {
+    "id": "entity-drift",
+    "fails": ["context"],
+    "scenario": "context-en",
+    "step": 1,
+    "answer": "Intoniva was previously called TuneItAll.",
+    "sources": [],
     "followups": [],
     "judgePass": false
   },
