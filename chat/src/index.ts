@@ -16,8 +16,9 @@ import { isImage } from './image.ts';
 import { isChatFile, MAX_ATTACHMENTS, MAX_CHAT_BYTES } from '../../src/chat-file.ts';
 import { ingest } from './ingest.ts';
 import { hasStrongSecret, issueSession, verifySession } from './session.ts';
-import { OWNER_FILES } from './sources.ts';
-import { ownerUrl, searchWeb } from './web.ts';
+import { OWNER_FILES, ownerUrl } from './sources.ts';
+import { searchWeb } from './web.ts';
+import { tokenUsage } from './metrics.ts';
 
 const MAX_BODY_BYTES = 32 * 1024;
 const MAX_TURNS = 12;
@@ -163,7 +164,7 @@ async function withAbort<T>(work: () => Promise<T>, signal: AbortSignal): Promis
 }
 
 /** Best chunks grouped per document, numbered S1, S2, ... in rank order. */
-async function retrieve(env: Env, turns: Turn[]): Promise<Source[]> {
+async function retrieve(env: Env, turns: Turn[], requestId: string): Promise<Source[]> {
   const question = turns.at(-1)?.content.trim();
   if (!question) return [];
   const history = turns
@@ -195,13 +196,6 @@ async function retrieve(env: Env, turns: Turn[]): Promise<Source[]> {
         },
       },
     });
-    console.log(
-      JSON.stringify({
-        event: 'retrieval',
-        chunks: chunks.length,
-        topScore: chunks[0]?.score ?? null,
-      }),
-    );
     // A replacement can finish indexing before the next crawl removes its old version.
     const versions = new Map<string, { key: string; timestamp: number }>();
     for (const chunk of chunks) {
@@ -231,15 +225,29 @@ async function retrieve(env: Env, turns: Turn[]): Promise<Source[]> {
           text: chunk.text.slice(0, MAX_SOURCE_CHARS),
         });
     }
+    console.log(
+      JSON.stringify({
+        event: 'retrieval',
+        requestId,
+        chunks: chunks.length,
+        sources: sources.size,
+        topScore: chunks[0]?.score ?? null,
+      }),
+    );
     return [...sources.values()];
   } catch {
     // Answering without sources is still safe: the model is told to say it does not know.
-    console.error(JSON.stringify({ event: 'search_failed' }));
+    console.error(JSON.stringify({ event: 'search_failed', requestId }));
     return [];
   }
 }
 
-async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Response> {
+async function chat(
+  request: Request,
+  env: Env,
+  cors: HeadersInit,
+  requestId: string,
+): Promise<Response> {
   const token = /^Bearer (\S{1,512})$/.exec(request.headers.get('authorization') ?? '')?.[1];
   const session = token ? await verifySession(env.SESSION_SECRET, token) : null;
   if (!session) throw new HttpError(401, 'session');
@@ -268,6 +276,7 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
   let retrievalMs: number | null = null;
   let firstTokenMs: number | null = null;
   let webMs: number | null = null;
+  const usage: Outcome['usage'][] = [];
   const listSources = (sources: Source[]) =>
     send(
       'sources',
@@ -296,10 +305,9 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
     try {
       await send('status', { stage: 'search' });
       const retrievalStarted = Date.now();
-      const sources = await withAbort(() => retrieve(env, turns), signal);
+      const sources = await withAbort(() => retrieve(env, turns, requestId), signal);
       retrievalMs = Date.now() - retrievalStarted;
       await listSources(sources);
-      const usage: Outcome['usage'][] = [];
       let outcome = await relay(sources, true);
       usage.push(outcome.usage);
       // At most one web search per answer, and only when nothing was written yet.
@@ -307,7 +315,7 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
       if (outcome.query && !outcome.wrote) {
         await send('status', { stage: 'web' });
         const webStarted = Date.now();
-        const found = await searchWeb(env, outcome.query, sources.length, signal);
+        const found = await searchWeb(env, outcome.query, sources.length, signal, requestId);
         webMs = Date.now() - webStarted;
         web = found.length;
         sources.push(...found);
@@ -321,6 +329,10 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
       console.log(
         JSON.stringify({
           event: 'answer',
+          requestId,
+          versionId: env.CF_VERSION_METADATA.id,
+          model: env.OPENAI_MODEL,
+          lang,
           ms: Date.now() - started,
           retrievalMs,
           firstTokenMs,
@@ -328,7 +340,8 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
           sources: sources.length,
           web,
           images: turns.reduce((sum, turn) => sum + (turn.images?.length ?? 0), 0),
-          usage,
+          files: turns.reduce((sum, turn) => sum + (turn.files?.length ?? 0), 0),
+          usage: usage.map(tokenUsage),
         }),
       );
     } catch (error) {
@@ -340,6 +353,12 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
       console.error(
         JSON.stringify({
           event: 'answer_failed',
+          requestId,
+          versionId: env.CF_VERSION_METADATA.id,
+          outcome: signal.aborted && !timedOut ? 'cancelled' : 'error',
+          model: env.OPENAI_MODEL,
+          lang,
+          usage: usage.map(tokenUsage),
           code,
           status,
           ms: Date.now() - started,
@@ -363,20 +382,31 @@ async function chat(request: Request, env: Env, cors: HeadersInit): Promise<Resp
 
 export default {
   async fetch(request, env): Promise<Response> {
+    const requestId = crypto.randomUUID();
+    const revision = /^[a-f0-9]{40}$/i.test(env.CF_VERSION_METADATA.tag)
+      ? env.CF_VERSION_METADATA.tag
+      : null;
+    const url = new URL(request.url);
+    const operation =
+      url.pathname === '/api/chat' ? 'chat' : url.pathname === '/api/session' ? 'session' : 'other';
     const origin = request.headers.get('origin');
     // The Worker's own origin (it also serves the site) plus the listed embedding sites.
     const allowed =
       origin !== null &&
-      (origin === new URL(request.url).origin ||
+      (origin === url.origin ||
         env.ALLOWED_ORIGINS.split(',')
           .map((o) => o.trim())
           .filter(Boolean)
           .includes(origin));
-    const cors: Record<string, string> = allowed
-      ? { 'access-control-allow-origin': origin, vary: 'origin' }
-      : { vary: 'origin' };
+    const cors: Record<string, string> = {
+      ...(allowed ? { 'access-control-allow-origin': origin } : {}),
+      vary: 'origin',
+      'x-request-id': requestId,
+      'x-worker-version': env.CF_VERSION_METADATA.id,
+      ...(revision ? { 'x-worker-revision': revision } : {}),
+    };
     try {
-      const { pathname } = new URL(request.url);
+      const { pathname } = url;
       if (pathname !== '/api/session' && pathname !== '/api/chat')
         throw new HttpError(404, 'not_found');
       // Browsers always send Origin on these requests; anything else is not the site.
@@ -394,15 +424,26 @@ export default {
         });
       if (request.method !== 'POST') throw new HttpError(405, 'method');
       if (!env.OPENAI_API_KEY || !env.TURNSTILE_SECRET || !hasStrongSecret(env.SESSION_SECRET)) {
-        console.error(JSON.stringify({ event: 'misconfigured' }));
+        console.error(JSON.stringify({ event: 'misconfigured', requestId }));
         throw new HttpError(503, 'unavailable');
       }
       const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
       if (pathname === '/api/session') return json(await createSession(request, env, ip), cors);
-      return await chat(request, env, cors);
+      return await chat(request, env, cors, requestId);
     } catch (error) {
-      if (error instanceof HttpError) return json({ error: error.code }, cors, error.status);
-      console.error(JSON.stringify({ event: 'unhandled', error: `${error}` }));
+      if (error instanceof HttpError) {
+        console.log(
+          JSON.stringify({
+            event: 'request_rejected',
+            requestId,
+            operation,
+            status: error.status,
+            code: error.code,
+          }),
+        );
+        return json({ error: error.code }, cors, error.status);
+      }
+      console.error(JSON.stringify({ event: 'unhandled', requestId, operation }));
       return json({ error: 'unavailable' }, cors, 500);
     }
   },

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ingest, isAllowed, mainContent, parseRobots } from '../src/ingest.ts';
-import { DOCUMENTS, SITEMAPS } from '../src/sources.ts';
-import { ownerUrl } from '../src/web.ts';
+import { DOCUMENTS, SITEMAPS, ownerUrl } from '../src/sources.ts';
 
 test('robots.txt: own group wins, longest rule wins, allow wins ties', () => {
   const rules = parseRobots(`
@@ -126,6 +125,36 @@ const html = (title: string, body = '') =>
   new Response(`<html><head><title>${title}</title></head><body>${body}</body></html>`, {
     headers: { 'content-type': 'text/html; charset=utf-8' },
   });
+
+test('crawl failure telemetry correlates one run without retaining source text or SDK errors', async (t) => {
+  const logs = t.mock.method(console, 'log', () => {}),
+    errors = t.mock.method(console, 'error', () => {});
+  const site = stubWeb(t),
+    index = fakeIndex();
+  site.pages.set(PAGE_A, html('public page', 'source-text-canary'));
+  const api = index.binding.get('init');
+  api.items.upload = async () => {
+    throw new Error('provider-message-canary');
+  };
+  const result = await ingest({
+    AI_SEARCH: { get: () => api },
+    ASSETS: { fetch: globalThis.fetch },
+  } as never);
+  assert(result.failed > 0);
+  const summary = JSON.parse(String(logs.mock.calls.at(-1)?.arguments[0]));
+  assert.match(summary.crawlId, /^[a-f0-9-]{36}$/);
+  for (const call of errors.mock.calls) {
+    const entry = JSON.parse(String(call.arguments[0]));
+    assert.equal(entry.crawlId, summary.crawlId);
+    assert.match(entry.id, /^[a-f0-9]{16}$/);
+  }
+  const recorded = JSON.stringify([...logs.mock.calls, ...errors.mock.calls]);
+  assert(
+    !recorded.includes('source-text-canary') &&
+      !recorded.includes('provider-message-canary') &&
+      !recorded.includes(PAGE_A),
+  );
+});
 
 test('the crawl uploads new pages, skips unchanged ones and replaces changed ones', async (t) => {
   const site = stubWeb(t);
