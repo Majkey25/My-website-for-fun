@@ -165,9 +165,18 @@ const pages = [
                   />
                   <p class="muted">{project.kind}</p>
                   <span class="work-scene__open">
-                    {cs ? 'Případová studie' : 'View case study'} <Arrow direction="up-right" />
+                    {t.caseStudy} <Arrow direction="up-right" />
                   </span>
                 </a>
+                <ul class="work-links" aria-label={`${project.name}: ${t.links}`}>
+                  {project.links.map((link) => (
+                    <li>
+                      <a class="action-link ext" href={link.href} rel="noopener" target="_blank">
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </li>
             );
           })}
@@ -488,7 +497,7 @@ const pages = [
     --work-image-height: clamp(12rem, 34svh, 24rem);
     --card-padding: clamp(1.25rem, 2.5vw, 2rem);
     --portrait-min: 15rem;
-    align-items: flex-start;
+    align-items: stretch;
     position: relative;
     padding-inline: calc(var(--pad) + 0.25rem);
     scroll-padding-inline: calc(var(--pad) + 0.25rem);
@@ -498,6 +507,9 @@ const pages = [
   }
   .work-reel > li {
     flex-basis: 60%;
+    flex-direction: column;
+    border-radius: 1rem;
+    background: var(--surface);
   }
   .work-reel > li.work-card--portrait {
     flex-basis: clamp(
@@ -507,6 +519,7 @@ const pages = [
     );
   }
   .work-scene {
+    flex: 1;
     min-height: 0;
     padding: var(--card-padding);
     gap: 1rem;
@@ -530,6 +543,16 @@ const pages = [
     object-fit: contain;
     border: 0;
     background: transparent;
+  }
+  .work-scene__open {
+    margin-top: auto;
+  }
+  .work-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+    padding: 0 var(--card-padding) var(--card-padding);
+    font-size: 0.8125rem;
   }
   .more {
     margin-top: 1.25rem;

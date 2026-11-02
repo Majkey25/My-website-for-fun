@@ -424,7 +424,7 @@ test('an empty completed answer is an error, including whitespace-only deltas', 
       env(),
     );
     const stream = await events(response);
-    assert.deepEqual(stream.at(-1), { event: 'error', data: { code: 'unavailable' } });
+    assert.deepEqual(stream.at(-1), { event: 'error', data: { code: 'protocol' } });
     assert(!stream.some(({ event }) => event === 'done'));
     assert(!stream.some(({ event }) => event === 'suggestions'));
   }
@@ -451,6 +451,7 @@ test('an incomplete upstream answer never emits done', async (t) => {
   );
   const stream = await events(response);
   assert.equal(stream.at(-1)?.event, 'error');
+  assert.equal(stream.at(-1)?.data.code, 'incomplete');
   assert(!stream.some((event) => event.event === 'done'));
   assert(!stream.some((event) => event.event === 'suggestions'));
   assert.equal(stream.find(({ event }) => event === 'delta')?.data.text, 'An unfinished answer');
@@ -476,9 +477,85 @@ test('chat needs a valid session and reports spent credit as quota', async (t) =
     );
     assert.deepEqual((await events(res)).at(-1), {
       event: 'error',
-      data: { code: code === 'rate_limit_exceeded' ? 'busy' : 'quota' },
+      data: {
+        code:
+          code === 'rate_limit_exceeded'
+            ? 'busy'
+            : code === 'credit_balance_exhausted'
+              ? 'credits'
+              : 'quota',
+      },
     });
   }
+});
+
+test('provider HTTP and stream failures preserve safe actionable causes', async (t) => {
+  let reply: () => Response = () => Response.json({}, { status: 500 });
+  stubFetch(t, () => reply());
+  const { token } = await issueSession(SECRET);
+  const cases = [
+    { status: 401, code: 'invalid_api_key', expected: 'configuration' },
+    { status: 403, code: 'permission_denied', expected: 'configuration' },
+    { status: 404, code: 'model_not_found', expected: 'configuration' },
+    { status: 400, code: 'invalid_value', expected: 'invalid' },
+    { status: 500, code: 'server_error', expected: 'unavailable' },
+    { status: 429, type: 'insufficient_quota', expected: 'quota' },
+    { status: 200, code: 'credit_balance_exhausted', expected: 'credits' },
+    { status: 200, code: 'invalid_image', expected: 'invalid' },
+    { status: 200, code: 'image_parse_error', expected: 'invalid' },
+  ];
+  for (const sample of cases) {
+    const error = { code: sample.code, type: sample.type, message: 'private-provider-canary' };
+    reply = () =>
+      sample.status === 200
+        ? sse([{ type: 'response.failed', response: { error } }])
+        : Response.json({ error }, { status: sample.status });
+    const response = await worker.fetch(
+      post(
+        '/api/chat',
+        {
+          lang: 'en',
+          messages: [{ role: 'user', content: 'Projects?' }],
+        },
+        { authorization: `Bearer ${token}` },
+      ),
+      env(),
+    );
+    const stream = await events(response);
+    assert.deepEqual(stream.at(-1), { event: 'error', data: { code: sample.expected } });
+    assert(!stream.some(({ event }) => event === 'done'));
+    assert(!JSON.stringify(stream).includes('private-provider-canary'));
+  }
+});
+
+test('verification service failures never blame a successful human challenge or issue a session', async (t) => {
+  let reply: () => Response = () => Response.json({});
+  stubFetch(t, () => reply());
+  for (const sample of [
+    { status: 503, body: {}, expected: 'verification_unavailable' },
+    { status: 200, body: null, expected: 'verification_unavailable' },
+    {
+      status: 200,
+      body: { success: false, 'error-codes': ['internal-error'] },
+      expected: 'verification_unavailable',
+    },
+    {
+      status: 200,
+      body: { success: false, 'error-codes': ['invalid-input-secret'] },
+      expected: 'configuration',
+    },
+  ]) {
+    reply = () => Response.json(sample.body, { status: sample.status });
+    const response = await worker.fetch(post('/api/session', { turnstile: 'proof' }), env());
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { error: sample.expected });
+  }
+  reply = () => {
+    throw new TypeError('private-network-canary');
+  };
+  const response = await worker.fetch(post('/api/session', { turnstile: 'proof' }), env());
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { error: 'verification_unavailable' });
 });
 
 test('a rate-limited session gets 429 before any upstream call', async (t) => {
@@ -647,14 +724,20 @@ test('failed-answer telemetry distinguishes cancellation, deadlines and known ea
       );
       if (mode === 'later-failure') assert.equal((await events(response)).at(-1)?.event, 'error');
       else {
-        const rejected = assert.rejects(response.text(), {
-          name: mode === 'timeout' ? 'TimeoutError' : 'AbortError',
-        });
+        const body =
+          mode === 'timeout'
+            ? events(response)
+            : assert.rejects(response.text(), { name: 'AbortError' });
         await started;
         cancel.abort(
           new DOMException('test stop', mode === 'timeout' ? 'TimeoutError' : 'AbortError'),
         );
-        await rejected;
+        const stream = await body;
+        if (mode === 'timeout') {
+          assert(Array.isArray(stream));
+          assert.deepEqual(stream.at(-1), { event: 'error', data: { code: 'timeout' } });
+          assert(!stream.some(({ event }) => event === 'done'));
+        }
       }
       const entry = await failure;
       assert.equal(entry.requestId, response.headers.get('x-request-id'));
@@ -666,6 +749,138 @@ test('failed-answer telemetry distinguishes cancellation, deadlines and known ea
           ? [{ inputTokens: 11, outputTokens: 3, cachedTokens: null, reasoningTokens: null }]
           : [],
       );
+    });
+});
+
+test(
+  'deadline aborts a stalled reader after its bounded error delivery window',
+  { timeout: 4000 },
+  async (t) => {
+    const deadline = new AbortController();
+    t.mock.method(AbortSignal, 'timeout', () => deadline.signal);
+    const calls = stubFetch(t, () => sse([]));
+    const { token } = await issueSession(SECRET);
+    const response = await worker.fetch(
+      post(
+        '/api/chat',
+        {
+          lang: 'en',
+          messages: [{ role: 'user', content: 'Projects?' }],
+        },
+        { authorization: `Bearer ${token}` },
+      ),
+      env(),
+    );
+    deadline.abort(new DOMException('test deadline', 'TimeoutError'));
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    await assert.rejects(response.text(), { name: 'TimeoutError' });
+    assert.equal(calls.length, 0);
+  },
+);
+
+test('failed terminal responses retain available usage without logging provider data', async (t) => {
+  for (const [type, code] of [
+    ['response.completed', 'protocol'],
+    ['response.incomplete', 'incomplete'],
+    ['response.failed', 'quota'],
+  ] as const)
+    await t.test(type, async (st) => {
+      const logs = st.mock.method(console, 'error', () => {});
+      stubFetch(st, () =>
+        sse([
+          { type: 'response.output_text.delta', delta: '{"answer":"Partial","followups":[""]}' },
+          {
+            type,
+            response: {
+              usage: { input_tokens: 13, output_tokens: 7, secret: 'usage-canary' },
+              error: { code: 'insufficient_quota', message: 'provider-canary' },
+            },
+          },
+        ]),
+      );
+      const { token } = await issueSession(SECRET);
+      const response = await worker.fetch(
+        post(
+          '/api/chat',
+          {
+            lang: 'en',
+            messages: [{ role: 'user', content: 'Projects?' }],
+          },
+          { authorization: `Bearer ${token}` },
+        ),
+        env(),
+      );
+      const stream = await events(response);
+      assert.deepEqual(stream.at(-1), { event: 'error', data: { code } });
+      assert(!stream.some(({ event }) => event === 'done'));
+      const report = logs.mock.calls
+        .map(({ arguments: [line] }) => JSON.parse(String(line)))
+        .find((entry) => entry.event === 'answer_failed');
+      assert.deepEqual(report.usage, [
+        { inputTokens: 13, outputTokens: 7, cachedTokens: null, reasoningTokens: null },
+      ]);
+      assert(!JSON.stringify(logs.mock.calls).includes('canary'));
+    });
+});
+
+test('failed web responses retain search usage in their separate event', async (t) => {
+  for (const status of ['failed', 'incomplete'])
+    await t.test(status, async (st) => {
+      const logs = st.mock.method(console, 'error', () => {});
+      let call = 0;
+      stubFetch(st, () => {
+        call++;
+        if (call === 1)
+          return sse([
+            {
+              type: 'response.output_item.done',
+              item: {
+                type: 'function_call',
+                name: 'search_web',
+                arguments: '{"query":"projects"}',
+              },
+            },
+            {
+              type: 'response.completed',
+              response: { usage: { input_tokens: 3, output_tokens: 1 } },
+            },
+          ]);
+        if (call === 2)
+          return Response.json({
+            status,
+            usage: { input_tokens: 11, output_tokens: 4, secret: 'usage-canary' },
+            error: { code: 'insufficient_quota', message: 'provider-canary' },
+            output: [],
+          });
+        return sse([
+          { type: 'response.output_text.delta', delta: structuredAnswer('Indexed answer [S1].') },
+          { type: 'response.completed', response: {} },
+        ]);
+      });
+      const { token } = await issueSession(SECRET);
+      const response = await worker.fetch(
+        post(
+          '/api/chat',
+          {
+            lang: 'en',
+            messages: [{ role: 'user', content: 'Projects?' }],
+          },
+          { authorization: `Bearer ${token}` },
+        ),
+        env(),
+      );
+      const stream = await events(response);
+      assert.equal(stream.at(-1)?.event, status === 'failed' ? 'error' : 'done');
+      const report = logs.mock.calls
+        .map(({ arguments: [line] }) => JSON.parse(String(line)))
+        .find((entry) => entry.event === 'web_search_failed');
+      assert.deepEqual(report.usage, {
+        inputTokens: 11,
+        outputTokens: 4,
+        cachedTokens: null,
+        reasoningTokens: null,
+      });
+      assert(!JSON.stringify(logs.mock.calls).includes('canary'));
     });
 });
 
@@ -1082,11 +1297,10 @@ test('one web search runs on request, and only owner-page facts reach the answer
   assert.ok(!final.includes('Someone else') && !final.includes('github.com/other'));
 });
 
-test('a failed web search still ends with an answer from the sources', async (t) => {
+test('spent web-search credits stop before another generation request', async (t) => {
   let call = 0;
   stubFetch(t, () => {
-    call++;
-    if (call === 1)
+    if (++call === 1)
       return sse([
         {
           type: 'response.output_item.done',
@@ -1094,27 +1308,64 @@ test('a failed web search still ends with an answer from the sources', async (t)
         },
         { type: 'response.completed', response: {} },
       ]);
-    if (call === 2)
-      return Response.json({ error: { message: 'tool not supported' } }, { status: 400 });
-    return sse([
-      { type: 'response.output_text.delta', delta: structuredAnswer('I do not know.') },
-      { type: 'response.completed', response: {} },
-    ]);
+    return Response.json(
+      { error: { code: 'credit_balance_exhausted', message: 'private-credit-canary' } },
+      { status: 429 },
+    );
   });
   const { token } = await issueSession(SECRET);
-  const res = await worker.fetch(
+  const response = await worker.fetch(
     post(
       '/api/chat',
-      { lang: 'en', messages: [{ role: 'user', content: 'Hi' }] },
+      {
+        lang: 'en',
+        messages: [{ role: 'user', content: 'Find my project' }],
+      },
       { authorization: `Bearer ${token}` },
     ),
     env(),
   );
-  const stream = await events(res);
-  assert.equal(call, 3);
-  assert.deepEqual(stream.at(-1), { event: 'done', data: {} });
-  assert.equal(stream.filter((e) => e.event === 'sources').at(-1)?.data.length, 1);
+  const stream = await events(response);
+  assert.equal(call, 2);
+  assert.deepEqual(stream.at(-1), { event: 'error', data: { code: 'credits' } });
+  assert(!stream.some(({ event }) => event === 'done'));
+  assert(!JSON.stringify(stream).includes('private-credit-canary'));
 });
+
+for (const status of [400, 401, 403, 404])
+  test(`web search HTTP ${status} falls back to indexed sources`, async (t) => {
+    let call = 0;
+    stubFetch(t, () => {
+      call++;
+      if (call === 1)
+        return sse([
+          {
+            type: 'response.output_item.done',
+            item: { type: 'function_call', name: 'search_web', arguments: '{"query":"x"}' },
+          },
+          { type: 'response.completed', response: {} },
+        ]);
+      if (call === 2)
+        return Response.json({ error: { message: 'tool not supported' } }, { status });
+      return sse([
+        { type: 'response.output_text.delta', delta: structuredAnswer('I do not know.') },
+        { type: 'response.completed', response: {} },
+      ]);
+    });
+    const { token } = await issueSession(SECRET);
+    const res = await worker.fetch(
+      post(
+        '/api/chat',
+        { lang: 'en', messages: [{ role: 'user', content: 'Hi' }] },
+        { authorization: `Bearer ${token}` },
+      ),
+      env(),
+    );
+    const stream = await events(res);
+    assert.equal(call, 3);
+    assert.deepEqual(stream.at(-1), { event: 'done', data: {} });
+    assert.equal(stream.filter((e) => e.event === 'sources').at(-1)?.data.length, 1);
+  });
 
 test('server-sent events survive split chunks, CRLF and multi-byte characters', async () => {
   const text = 'data: {"type":"a","delta":"Matěj"}\r\n\r\ndata: {"type":"b"}\n\ndata: [DONE]\n\n';

@@ -507,6 +507,15 @@ const skills = cs
   )}
 
   {page === 'about' && (
+    <section id="username" class="section frame split" aria-labelledby="username-title">
+      <h2 id="username-title" class="label">
+        {cs ? 'Proč Majkey25?' : 'Why Majkey25?'}
+      </h2>
+      <p class="intro">{profile.usernameOrigin[lang]}</p>
+    </section>
+  )}
+
+  {page === 'about' && (
     <section id="music" class="section frame split" aria-labelledby="music-title">
       <h2 id="music-title" class="label">
         {cs ? 'Hudba' : 'Music'}

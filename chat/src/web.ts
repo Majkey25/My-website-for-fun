@@ -3,6 +3,7 @@
 // only when each page it cites is on the fixed list in sources.ts.
 
 import type { Settings, Source } from './answer.ts';
+import { UpstreamError, upstreamFailure, providerFailure } from './answer.ts';
 import { OWNER_PAGES, ownerUrl } from './sources.ts';
 import { tokenUsage } from './metrics.ts';
 
@@ -95,8 +96,8 @@ export function evidence(response: unknown, first: number): { sources: Source[];
 }
 
 /**
- * Searches the owner's pages for `query`. A failure gives an empty list, so the answer still
- * comes from the indexed sources; only an aborted answer throws.
+ * Search outages and tool permissions fall back to indexed sources. Known usage/rate limits
+ * stop further generation requests that cannot succeed.
  */
 export async function searchWeb(
   env: Settings,
@@ -105,6 +106,7 @@ export async function searchWeb(
   signal: AbortSignal,
   requestId: string,
 ): Promise<Source[]> {
+  let usage: unknown;
   try {
     const response = await fetch(`${env.OPENAI_BASE_URL}/responses`, {
       method: 'POST',
@@ -132,12 +134,17 @@ export async function searchWeb(
       signal,
     });
     if (!response.ok) {
-      console.error(
-        JSON.stringify({ event: 'web_search_failed', requestId, status: response.status }),
-      );
-      return [];
+      throw await upstreamFailure(response);
     }
-    const body = (await response.json()) as { usage?: unknown; output?: { type?: string }[] };
+    const body = (await response.json()) as {
+      status?: unknown;
+      error?: unknown;
+      usage?: unknown;
+      output?: { type?: string }[];
+    };
+    usage = body?.usage;
+    if (body?.status === 'failed') throw providerFailure(0, body.error);
+    if (body?.status === 'incomplete') throw new UpstreamError('incomplete');
     const { sources, dropped } = evidence(body, first);
     console.log(
       JSON.stringify({
@@ -145,7 +152,7 @@ export async function searchWeb(
         requestId,
         kept: sources.length,
         dropped,
-        usage: tokenUsage(body?.usage),
+        usage: tokenUsage(usage),
         toolCalls: Array.isArray(body?.output)
           ? body.output.filter((item) => item?.type === 'web_search_call').length
           : null,
@@ -154,7 +161,16 @@ export async function searchWeb(
     return sources;
   } catch (error) {
     if (signal.aborted) throw error;
-    console.error(JSON.stringify({ event: 'web_search_failed', requestId }));
+    console.error(
+      JSON.stringify({
+        event: 'web_search_failed',
+        requestId,
+        usage: tokenUsage(usage),
+        ...(error instanceof UpstreamError ? { code: error.code, status: error.status } : {}),
+      }),
+    );
+    if (error instanceof UpstreamError && ['credits', 'quota', 'busy'].includes(error.code))
+      throw error;
     return [];
   }
 }

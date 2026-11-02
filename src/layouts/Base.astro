@@ -60,24 +60,40 @@ const bands = [
   [82, 20, 58, 2.75],
 ] as const;
 // Matrix switch terminal: inert text that CSS types (speed: ms per character, 0 = instant).
-// Nothing runs and the output is fictional. Times are ms after the click; typing ends near
-// 2950ms, leaving slack before the theme swaps at 3200ms.
-const prompt = '~/init $ ';
-let typedAt = 950;
+// Nothing runs. The reveal waits for the last simulated command, with a short reading pause.
+const prompt = '$ ';
+let typedAt = 60;
 const terminal = (
   [
-    [noise(32), 4],
-    [noise(32), 4],
-    [noise(32), 4],
-    [`${prompt}pwd`, 18],
-    ['/home/visitor/init', 0],
-    [`${prompt}ls src/`, 18],
-    ['components layouts pages styles', 0],
-    [`${prompt}npm run build`, 18],
+    ['majkey25@init:~  /dev/pts/0', 0],
+    [`${prompt}pwd`, 12],
+    ['/home/majkey25/init', 0],
+    [`${prompt}ls src/`, 12],
+    ['components  layouts  pages  styles', 0],
+    [`${prompt}uname -s`, 12],
+    ['Linux', 0],
+    [`${prompt}node --version`, 12],
+    ['v24.15.0', 0],
+    [`${prompt}git status --short`, 12],
+    [`${prompt}npm run check`, 12],
+    ['astro check: 0 errors, 0 warnings', 0],
+    [`${prompt}npm run build`, 12],
     ['> astro build', 0],
-    [`building [${'#'.repeat(16)}] 33/33`, 8],
-    ['[ok] 33 pages built in 2.4s', 0],
-    [`${prompt}export THEME=matrix`, 18],
+    [`building [${'#'.repeat(16)}] 100%`, 10],
+    [`${prompt}test -d dist && du -sh dist`, 12],
+    ['4.2M  dist', 0],
+    [`${prompt}npm run preview -- --port 4321 &`, 12],
+    ['[1] 4321', 0],
+    ['Local: http://localhost:4321/', 0],
+    [`${prompt}curl -I localhost:4321`, 12],
+    ['HTTP/1.1 200 OK', 0],
+    [`${prompt}lsof -i :4321 -t`, 12],
+    ['4321', 0],
+    [`${prompt}cd chat`, 12],
+    [`${prompt}npx wrangler deploy --dry-run`, 12],
+    ['[dry-run] bundle ready; upload skipped', 0],
+    [`${prompt}export THEME=matrix`, 12],
+    ['[ready] opening init', 0],
   ] as const
 ).map(([text, speed]) => {
   const command = text.startsWith(prompt);
@@ -95,7 +111,7 @@ const person = {
   '@type': 'Person',
   '@id': url(href()) + '#person',
   name: 'Matěj Teplý',
-  alternateName: 'Majkey',
+  alternateName: ['Majkey', 'Majkey25'],
   url: url(href()),
   jobTitle: 'Technical Innovation Specialist | Applied AI/ML Engineer',
   description:
@@ -161,6 +177,7 @@ const structured = {
     <link rel="icon" type="image/svg+xml" href={href('favicon.svg')} />
     <link rel="apple-touch-icon" href={href('apple-touch-icon.png')} />
     {!noindex && <link rel="canonical" href={url(Astro.url.pathname)} />}
+    {!noindex && <link rel="describedby" href={href('llms.txt')} type="text/plain" />}
     {!noindex && (
       <>
         {languages.map((language) => (
@@ -249,7 +266,11 @@ const structured = {
           {noise(64).repeat(5)}
         </span>
       ))}
-      <div class="matrix-terminal">
+      <div
+        class="matrix-terminal"
+        data-duration={typedAt + 400}
+        style={`--prompt:${prompt.length}ch`}
+      >
         {terminal.map(({ Line, text, style }) => (
           <Line style={style}>{text}</Line>
         ))}
@@ -262,10 +283,7 @@ const structured = {
     <header class="header no-print">
       <div class="header__bar frame">
         <a class="header__name" href={href('', lang)}>
-          <span class="header__full">Matěj Teplý</span>
-          <span class="header__short" aria-hidden="true">
-            MT
-          </span>
+          Majkey25
         </a>
         {chat && <Chat lang={lang} api={chat.api} siteKey={chat.siteKey} />}
         <button class="header__menu" type="button" popovertarget="site-menu" aria-label={t.menu}>
@@ -361,7 +379,16 @@ const structured = {
         ))}
       </ul>
       <p class="meta">
-        © {new Date().getFullYear()} Matěj Teplý · {t.typography} ·{' '}
+        © {new Date().getFullYear()} Matěj Teplý · {t.typography}{' '}
+        <a href="https://github.com/github/mona-sans" rel="noopener" target="_blank">
+          Mona Sans
+        </a>
+        {' · '}
+        {t.builtWith}{' '}
+        <a href="https://astro.build/" rel="noopener" target="_blank">
+          Astro
+        </a>{' '}
+        ·{' '}
         <a href="https://github.com/Majkey25/init" rel="noopener" target="_blank" data-glitch>
           <GlitchText text={t.source} />
         </a>
@@ -389,7 +416,7 @@ const structured = {
         if ((event.target as Element).closest('a')) closeMenu();
       });
 
-      // Classic themes reveal from the button; Matrix escalates glyph bursts into a terminal.
+      // Classic themes reveal from the button; Matrix opens an inert terminal immediately.
       const button = document.querySelector<HTMLButtonElement>('.theme');
       const meta = document.querySelector('meta[name="theme-color"]');
       const themeLabel = button?.querySelector('.sr-only')?.textContent?.trim() ?? 'Theme';
@@ -478,11 +505,14 @@ const structured = {
           // a hidden tab or leaving the page finishes at once, so a cached page never freezes.
           closeMenu();
           root.classList.add('theme-switch', 'theme-hack');
-          let timer = setTimeout(() => {
-            apply();
-            root.classList.add('theme-reveal');
-            timer = setTimeout(finish, 700);
-          }, 3200);
+          let timer = setTimeout(
+            () => {
+              apply();
+              root.classList.add('theme-reveal');
+              timer = setTimeout(finish, 700);
+            },
+            Number(document.querySelector<HTMLElement>('.matrix-terminal')!.dataset.duration),
+          );
           const stop = new AbortController();
           const finish = () => {
             clearTimeout(timer);
@@ -1023,27 +1053,9 @@ const structured = {
     }
   }
 
-  .header__short {
-    display: none;
-  }
-
-  /* Narrow phones: initials instead of the full name, which stays readable for screen readers. */
   @media (width < 30rem) {
     .header__bar {
       gap: 0.25rem;
-    }
-
-    .header__full {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
-      white-space: nowrap;
-    }
-
-    .header__short {
-      display: inline;
     }
   }
 
