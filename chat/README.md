@@ -75,7 +75,9 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
 - Retrieval sends the latest question separately from up to three earlier text turns in one rewrite
   envelope. History resolves references; it must not replace a new topic. Hybrid keyword matching
   accepts any query term so a paraphrase does not require every word to occur in one document.
-- Client cancellation or the 60-second deadline aborts the stream and upstream generation.
+- Client cancellation immediately aborts the stream and upstream generation. The 60-second
+  deadline aborts generation immediately and allows one second to deliver a timeout event;
+  disconnected or stalled readers are still aborted.
   AI Search has no cancellation parameter: the Worker stops awaiting it and does not start an
   answer afterward, but the binding may finish its search in the background.
 
@@ -148,7 +150,9 @@ the runner revision. `retrieval` records returned chunks,
 accepted sources and top score. `answer` records language, model, first-token/retrieval/web/total
 timings, attachment counts and normalized answer-call token usage. `web_search` separately records
 search usage and returned tool-call count. Missing counts are null, not zero, and tool calls/token
-counts are not a billing invoice. Pre-stream rejection events record only operation/status/code;
+counts are not a billing invoice. `answer_failed` retains supplied terminal usage even when the
+answer is invalid or incomplete; `web_search_failed` keeps search usage separately. Pre-stream
+rejection events record only operation/status/code;
 cancelled streams are distinguished from errors. No prompts, file names, visitor IPs, session IDs,
 bearer tokens or raw provider errors are logged by these application events. Crawl events use
 a separate `crawlId` and hashed source IDs. Cloudflare Workers Logs holds these events;

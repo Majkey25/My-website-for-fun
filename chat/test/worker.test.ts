@@ -722,14 +722,20 @@ test('failed-answer telemetry distinguishes cancellation, deadlines and known ea
       );
       if (mode === 'later-failure') assert.equal((await events(response)).at(-1)?.event, 'error');
       else {
-        const rejected = assert.rejects(response.text(), {
-          name: mode === 'timeout' ? 'TimeoutError' : 'AbortError',
-        });
+        const body =
+          mode === 'timeout'
+            ? events(response)
+            : assert.rejects(response.text(), { name: 'AbortError' });
         await started;
         cancel.abort(
           new DOMException('test stop', mode === 'timeout' ? 'TimeoutError' : 'AbortError'),
         );
-        await rejected;
+        const stream = await body;
+        if (mode === 'timeout') {
+          assert(Array.isArray(stream));
+          assert.deepEqual(stream.at(-1), { event: 'error', data: { code: 'timeout' } });
+          assert(!stream.some(({ event }) => event === 'done'));
+        }
       }
       const entry = await failure;
       assert.equal(entry.requestId, response.headers.get('x-request-id'));
@@ -741,6 +747,138 @@ test('failed-answer telemetry distinguishes cancellation, deadlines and known ea
           ? [{ inputTokens: 11, outputTokens: 3, cachedTokens: null, reasoningTokens: null }]
           : [],
       );
+    });
+});
+
+test(
+  'deadline aborts a stalled reader after its bounded error delivery window',
+  { timeout: 4000 },
+  async (t) => {
+    const deadline = new AbortController();
+    t.mock.method(AbortSignal, 'timeout', () => deadline.signal);
+    const calls = stubFetch(t, () => sse([]));
+    const { token } = await issueSession(SECRET);
+    const response = await worker.fetch(
+      post(
+        '/api/chat',
+        {
+          lang: 'en',
+          messages: [{ role: 'user', content: 'Projects?' }],
+        },
+        { authorization: `Bearer ${token}` },
+      ),
+      env(),
+    );
+    deadline.abort(new DOMException('test deadline', 'TimeoutError'));
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    await assert.rejects(response.text(), { name: 'TimeoutError' });
+    assert.equal(calls.length, 0);
+  },
+);
+
+test('failed terminal responses retain available usage without logging provider data', async (t) => {
+  for (const [type, code] of [
+    ['response.completed', 'protocol'],
+    ['response.incomplete', 'incomplete'],
+    ['response.failed', 'quota'],
+  ] as const)
+    await t.test(type, async (st) => {
+      const logs = st.mock.method(console, 'error', () => {});
+      stubFetch(st, () =>
+        sse([
+          { type: 'response.output_text.delta', delta: '{"answer":"Partial","followups":[""]}' },
+          {
+            type,
+            response: {
+              usage: { input_tokens: 13, output_tokens: 7, secret: 'usage-canary' },
+              error: { code: 'insufficient_quota', message: 'provider-canary' },
+            },
+          },
+        ]),
+      );
+      const { token } = await issueSession(SECRET);
+      const response = await worker.fetch(
+        post(
+          '/api/chat',
+          {
+            lang: 'en',
+            messages: [{ role: 'user', content: 'Projects?' }],
+          },
+          { authorization: `Bearer ${token}` },
+        ),
+        env(),
+      );
+      const stream = await events(response);
+      assert.deepEqual(stream.at(-1), { event: 'error', data: { code } });
+      assert(!stream.some(({ event }) => event === 'done'));
+      const report = logs.mock.calls
+        .map(({ arguments: [line] }) => JSON.parse(String(line)))
+        .find((entry) => entry.event === 'answer_failed');
+      assert.deepEqual(report.usage, [
+        { inputTokens: 13, outputTokens: 7, cachedTokens: null, reasoningTokens: null },
+      ]);
+      assert(!JSON.stringify(logs.mock.calls).includes('canary'));
+    });
+});
+
+test('failed web responses retain search usage in their separate event', async (t) => {
+  for (const status of ['failed', 'incomplete'])
+    await t.test(status, async (st) => {
+      const logs = st.mock.method(console, 'error', () => {});
+      let call = 0;
+      stubFetch(st, () => {
+        call++;
+        if (call === 1)
+          return sse([
+            {
+              type: 'response.output_item.done',
+              item: {
+                type: 'function_call',
+                name: 'search_web',
+                arguments: '{"query":"projects"}',
+              },
+            },
+            {
+              type: 'response.completed',
+              response: { usage: { input_tokens: 3, output_tokens: 1 } },
+            },
+          ]);
+        if (call === 2)
+          return Response.json({
+            status,
+            usage: { input_tokens: 11, output_tokens: 4, secret: 'usage-canary' },
+            error: { code: 'insufficient_quota', message: 'provider-canary' },
+            output: [],
+          });
+        return sse([
+          { type: 'response.output_text.delta', delta: structuredAnswer('Indexed answer [S1].') },
+          { type: 'response.completed', response: {} },
+        ]);
+      });
+      const { token } = await issueSession(SECRET);
+      const response = await worker.fetch(
+        post(
+          '/api/chat',
+          {
+            lang: 'en',
+            messages: [{ role: 'user', content: 'Projects?' }],
+          },
+          { authorization: `Bearer ${token}` },
+        ),
+        env(),
+      );
+      const stream = await events(response);
+      assert.equal(stream.at(-1)?.event, status === 'failed' ? 'error' : 'done');
+      const report = logs.mock.calls
+        .map(({ arguments: [line] }) => JSON.parse(String(line)))
+        .find((entry) => entry.event === 'web_search_failed');
+      assert.deepEqual(report.usage, {
+        inputTokens: 11,
+        outputTokens: 4,
+        cachedTokens: null,
+        reasoningTokens: null,
+      });
+      assert(!JSON.stringify(logs.mock.calls).includes('canary'));
     });
 });
 

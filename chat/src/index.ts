@@ -277,9 +277,21 @@ async function chat(
     request.signal,
     AbortSignal.timeout(ANSWER_TIMEOUT_MS),
   ]);
+  let flushTimer: ReturnType<typeof setTimeout> | null = null;
   const abortWriter = () => void writer.abort(signal.reason).catch(() => undefined);
-  signal.addEventListener('abort', abortWriter, { once: true });
-  if (signal.aborted) abortWriter();
+  const onAbort = () => {
+    // Cancel upstream now, but give connected readers 1s to receive the timeout frame.
+    if (
+      !request.signal.aborted &&
+      signal.reason instanceof DOMException &&
+      signal.reason.name === 'TimeoutError'
+    )
+      flushTimer = setTimeout(abortWriter, 1000);
+    else abortWriter();
+  };
+  signal.addEventListener('abort', onAbort, { once: true });
+  request.signal.addEventListener('abort', abortWriter, { once: true });
+  if (signal.aborted) onAbort();
   void writer.closed.catch(() => stop.abort());
 
   const started = Date.now();
@@ -355,6 +367,7 @@ async function chat(
         }),
       );
     } catch (error) {
+      if (error instanceof UpstreamError && error.usage) usage.push(error.usage);
       const timedOut =
         signal.reason instanceof DOMException && signal.reason.name === 'TimeoutError';
       const code =
@@ -385,7 +398,9 @@ async function chat(
       );
       await send('error', { code }).catch(() => undefined);
     } finally {
-      signal.removeEventListener('abort', abortWriter);
+      clearTimeout(flushTimer);
+      signal.removeEventListener('abort', onAbort);
+      request.signal.removeEventListener('abort', abortWriter);
       stop.abort();
       await writer.close().catch(() => undefined);
     }

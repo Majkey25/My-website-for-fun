@@ -106,6 +106,7 @@ export async function searchWeb(
   signal: AbortSignal,
   requestId: string,
 ): Promise<Source[]> {
+  let usage: unknown;
   try {
     const response = await fetch(`${env.OPENAI_BASE_URL}/responses`, {
       method: 'POST',
@@ -141,6 +142,7 @@ export async function searchWeb(
       usage?: unknown;
       output?: { type?: string }[];
     };
+    usage = body?.usage;
     if (body?.status === 'failed') throw providerFailure(0, body.error);
     if (body?.status === 'incomplete') throw new UpstreamError('incomplete');
     const { sources, dropped } = evidence(body, first);
@@ -150,7 +152,7 @@ export async function searchWeb(
         requestId,
         kept: sources.length,
         dropped,
-        usage: tokenUsage(body?.usage),
+        usage: tokenUsage(usage),
         toolCalls: Array.isArray(body?.output)
           ? body.output.filter((item) => item?.type === 'web_search_call').length
           : null,
@@ -163,6 +165,7 @@ export async function searchWeb(
       JSON.stringify({
         event: 'web_search_failed',
         requestId,
+        usage: tokenUsage(usage),
         ...(error instanceof UpstreamError ? { code: error.code, status: error.status } : {}),
       }),
     );

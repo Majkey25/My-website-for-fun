@@ -14,7 +14,7 @@
     "check": "astro check",
     "test:fonts": "node --test tests/fonts.test.mjs",
     "test:contacts": "node --test tests/contact.test.ts",
-    "test:chat": "node --test tests/chat-history.test.ts",
+    "test:chat": "node --test tests/chat-history.test.ts tests/chat-errors.test.ts",
     "lighthouse": "lhci autorun",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

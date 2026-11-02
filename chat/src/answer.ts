@@ -136,6 +136,7 @@ export class UpstreamError extends Error {
     | 'protocol'
     | 'unavailable';
   readonly status: number;
+  usage?: Usage;
   constructor(code: UpstreamError['code'], status = 0) {
     super(code);
     this.code = code;
@@ -367,14 +368,24 @@ export async function* streamAnswer(
       event.item.name === 'search_web'
     )
       query ??= searchQuery(event.item.arguments);
-    else if (event.type === 'response.completed') {
-      if (query && !answer.raw && !refusal) return { usage: event.response?.usage, query };
-      if (refusal.trim() && !answer.raw && !query) return { usage: event.response?.usage };
-      if (query || refusal) throw new UpstreamError('unavailable');
-      return { usage: event.response?.usage, followups: answer.finish() };
-    } else if (event.type === 'response.incomplete') throw new UpstreamError('incomplete');
-    else if (event.type === 'response.failed') throw providerFailure(0, event.response?.error);
-    else if (event.type === 'error') throw providerFailure(0, { code: event.code });
+    else if (
+      event.type === 'response.completed' ||
+      event.type === 'response.incomplete' ||
+      event.type === 'response.failed'
+    ) {
+      const usage = event.response?.usage;
+      try {
+        if (event.type === 'response.incomplete') throw new UpstreamError('incomplete');
+        if (event.type === 'response.failed') throw providerFailure(0, event.response?.error);
+        if (query && !answer.raw && !refusal) return { usage, query };
+        if (refusal.trim() && !answer.raw && !query) return { usage };
+        if (query || refusal) throw new UpstreamError('unavailable');
+        return { usage, followups: answer.finish() };
+      } catch (error) {
+        if (error instanceof UpstreamError) error.usage = usage;
+        throw error;
+      }
+    } else if (event.type === 'error') throw providerFailure(0, { code: event.code });
   }
   throw new UpstreamError('incomplete');
 }
