@@ -118,7 +118,7 @@ The effort is recorded in each report; the public assistant still uses its confi
 `CHAT_EVAL_MODEL` in the GitHub environment can
 select another Responses model after checking access, cost, supported schema/reasoning settings
 and calibration. Using the same model family as the assistant is not independent human review.
-Thirteen prepared samples establish limited agreement, not general evaluator reliability. A false
+Fourteen prepared samples establish limited agreement, not general evaluator reliability. A false
 former name with a misleading citation tests correctness and grounding; an answer about another
 project tests context separately.
 The judge compares facts with the approved reference, which wins over excerpts. Additional facts
@@ -127,6 +127,9 @@ version control and a contradictory excerpt with injected instructions calibrate
 The judge also receives code-computed link results so a rendered citation is not mistaken
 for a missing link. These results do not grade facts, and both sets of checks must still pass.
 A correct date attributed to an older, contradictory CV must still fail grounding.
+A claim cited to an excerpt that does not support it must fail grounding, even when another supplied
+but uncited source supports it. The regression control uses a date correction and general
+public-claims policy as a near miss for research details.
 An abstention is supported when the reference confirms the information is unavailable and the
 supplied excerpts lack it; sources need not state their omissions. Calibration contrasts that
 limitation with failure to answer a known question;
