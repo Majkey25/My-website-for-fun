@@ -381,8 +381,9 @@ const structured = {
         if (matchMedia('(prefers-reduced-motion: reduce)').matches) return apply();
         if (next === 'matrix') {
           // Swap under the last burst; finish before navigation can freeze a cached page.
+          closeMenu();
           root.classList.add('theme-switch', 'theme-hack');
-          const swap = setTimeout(apply, 950);
+          const swap = setTimeout(apply, 1700);
           const finish = () => {
             clearTimeout(swap);
             clearTimeout(end);
@@ -390,7 +391,7 @@ const structured = {
             root.classList.remove('theme-switch', 'theme-hack');
             removeEventListener('pagehide', finish);
           };
-          const end = setTimeout(finish, 1800);
+          const end = setTimeout(finish, 2400);
           addEventListener('pagehide', finish, { once: true });
           return;
         }
@@ -716,6 +717,17 @@ const structured = {
     transform: none;
   }
 
+  .theme:where(:not([data-next-theme='matrix'])) {
+    background: transparent;
+  }
+
+  .theme:where(:not([data-next-theme='matrix']))::before {
+    transform: scale(0.4);
+    transition:
+      transform 320ms var(--ease),
+      opacity 200ms var(--ease);
+  }
+
   .theme svg {
     grid-area: 1 / 1;
     width: 21px;
@@ -727,7 +739,7 @@ const structured = {
     opacity: 0;
     transform: rotate(-30deg) scale(0.7);
     transition:
-      transform 180ms var(--ease),
+      transform 320ms var(--ease),
       opacity 180ms var(--ease);
   }
 
@@ -803,6 +815,14 @@ const structured = {
     }
 
     @media (hover: hover) and (pointer: fine) {
+      .theme[data-next-theme='dark']:hover .theme__moon {
+        transform: rotate(-24deg);
+      }
+
+      .theme[data-next-theme='light']:hover .theme__sun {
+        transform: rotate(60deg);
+      }
+
       .theme[data-next-theme='matrix']:hover .theme__matrix {
         animation: control-glitch 480ms steps(1, end);
       }
