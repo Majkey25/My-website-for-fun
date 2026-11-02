@@ -61,6 +61,7 @@ const report: {
   workerRevision: string | null;
   dataset: string;
   judgeModel: string;
+  judgeReasoning: string;
   mode: string;
   suite: string;
   repeats: number;
@@ -93,6 +94,7 @@ const report: {
   workerRevision: null,
   dataset: '',
   judgeModel: process.env.EVAL_MODEL ?? 'gpt-6-luna',
+  judgeReasoning: 'medium',
   mode: mode ?? '',
   suite,
   repeats,
@@ -148,7 +150,7 @@ async function judge(
     },
     body: JSON.stringify({
       model: report.judgeModel,
-      reasoning: { effort: 'low' },
+      reasoning: { effort: report.judgeReasoning },
       instructions: judgeInstructions,
       input: judgeInput(scenario, step, history, response),
       text: { format: judgeFormat },

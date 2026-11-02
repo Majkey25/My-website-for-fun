@@ -138,7 +138,7 @@ function followups(value: unknown): string[] {
   return parsed;
 }
 export function calibrations(value: unknown, cases: Scenario[]): Calibration[] {
-  if (!Array.isArray(value) || value.length < 2 || value.length > 12)
+  if (!Array.isArray(value) || value.length < 2 || value.length > 13)
     throw new Error('invalid_calibration');
   const ids = new Set<string>();
   for (const item of value as unknown[]) {
