@@ -1,0 +1,60 @@
+name: Chat behavior evals
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Calibrate only, or calibrate then test the live agent using existing credits
+        type: choice
+        options: [live, calibrate]
+        default: live
+      suite:
+        description: Smoke cases or the full bilingual regression set
+        type: choice
+        options: [smoke, full]
+        default: smoke
+      repeats:
+        description: Independent repetitions; three gives more evidence and consumes more credits
+        type: choice
+        options: ['1', '3']
+        default: '1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chat-evals
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: cloudflare
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      # Native Node TypeScript and standard libraries only; no installation or build has secrets.
+      - run: node --test chat/test/evals.test.ts
+      - name: Calibrate and evaluate
+        run: node chat/evals/run.ts "$EVAL_MODE" "$EVAL_SUITE" "$EVAL_REPEATS"
+        env:
+          EVAL_MODE: ${{ inputs.mode }}
+          EVAL_SUITE: ${{ inputs.suite }}
+          EVAL_REPEATS: ${{ inputs.repeats }}
+          EVAL_MODEL: ${{ vars.CHAT_EVAL_MODEL || 'gpt-6-luna' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SESSION_SECRET: ${{ inputs.mode == 'live' && secrets.SESSION_SECRET || '' }}
+      - name: Retain synthetic evaluation report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: chat-evals-${{ github.run_id }}
+          path: .reference/tmp/chat-evals/report.json
+          retention-days: 7
+          if-no-files-found: error

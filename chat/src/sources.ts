@@ -91,5 +91,48 @@ export const OWNER_FILES = new Map([
   ],
 ]);
 
+const PAGES = OWNER_PAGES.map((page) => new URL(page));
+
+/** One URL policy for ingestion, retrieval, live search and evaluation. */
+export function ownerUrl(raw: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'https:' || url.username || url.password || url.port) return null;
+  const path = url.pathname.toLowerCase();
+  // PRs, diffs and historical files can expose deliberately wrong evaluation answers.
+  if (['github.com', 'raw.githubusercontent.com'].includes(url.host)) {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(path);
+    } catch {
+      return null;
+    }
+    if (/^\/majkey25\/init(?:\.git)?(?:\/|$)/.test(decoded)) {
+      const allowed =
+        url.host === 'github.com'
+          ? ['/majkey25/init', '/majkey25/init/', '/majkey25/init/blob/main/readme.md']
+          : ['/majkey25/init/main/readme.md'];
+      if (!allowed.includes(path)) return null;
+    }
+  }
+  for (const key of [...url.searchParams.keys()])
+    if (key.startsWith('utm_')) url.searchParams.delete(key);
+  url.hash = '';
+  // Profile names are case-insensitive; "/Majkey25evil" must not pass as "/Majkey25".
+  const owned = PAGES.some((page) => {
+    const base = page.pathname.toLowerCase().replace(/\/$/, '');
+    return (
+      url.host === page.host &&
+      (path === base || path.startsWith(`${base}/`)) &&
+      (!page.search || page.search === url.search)
+    );
+  });
+  return owned ? url.href : null;
+}
+
 /** Identifies the crawler to site owners, as robots.txt rules expect. */
 export const USER_AGENT = 'init-chat-crawler/1.0 (+https://init-chat.majkeylab.workers.dev/)';

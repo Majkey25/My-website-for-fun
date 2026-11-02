@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { evidence, ownerUrl, SEARCH_DOMAINS } from '../src/web.ts';
+import { evidence, SEARCH_DOMAINS } from '../src/web.ts';
+import { ownerUrl } from '../src/sources.ts';
 
 test('only the owner pages pass, whatever the search adds or disguises', () => {
   assert.equal(
@@ -35,6 +36,26 @@ test('only the owner pages pass, whatever the search adds or disguises', () => {
     'not a url',
   ];
   for (const url of refused) assert.equal(ownerUrl(url), null, url);
+  for (const url of [
+    'https://github.com/Majkey25/init/blob/main/chat/evals/calibration.json',
+    'https://raw.githubusercontent.com/Majkey25/init/main/chat/evals/scenarios.json',
+    'https://github.com/Majkey25/init/blob/main/%63hat%2Fevals/calibration.json',
+    'https://raw.githubusercontent.com/Majkey25/init/main/chat/test/worker.test.ts',
+    'https://github.com/Majkey25/init/blob/main/%invalid',
+    'https://github.com/Majkey25/init/pull/1/files',
+    'https://github.com/Majkey25/init/commit/abc',
+    'https://github.com/Majkey25/init/compare/a...b',
+    'https://github.com/Majkey25/init/pull/1.diff',
+    'https://github.com/Majkey25/init.git/pull/1/files',
+    'https://github.com/Majkey25/%69nit/pull/1/files',
+    'https://raw.githubusercontent.com/Majkey25/init/old-commit/chat/evals/calibration.json',
+  ])
+    assert.equal(ownerUrl(url), null, url);
+  assert(ownerUrl('https://github.com/Majkey25/init/blob/main/README.md'));
+  assert(ownerUrl('https://github.com/Majkey25/init'));
+  assert(ownerUrl('https://github.com/Majkey25/init/'));
+  assert(ownerUrl('https://raw.githubusercontent.com/Majkey25/init/main/README.md'));
+  assert(ownerUrl('https://www.exhalace.cz/%E1'));
   assert.ok(SEARCH_DOMAINS.some((domain) => domain === 'github.com'));
   assert.ok(!SEARCH_DOMAINS.some((domain) => domain.includes('/')));
 });

@@ -22,6 +22,11 @@ const env = (overrides = {}) => {
     OPENAI_API_KEY: 'sk-test',
     SESSION_SECRET: SECRET,
     TURNSTILE_SECRET: 'turnstile-test',
+    CF_VERSION_METADATA: {
+      id: '00000000-0000-4000-8000-000000000001',
+      tag: 'a'.repeat(40),
+      timestamp: '2026-11-02T00:00:00Z',
+    },
     RL_SESSION: pass,
     RL_CHAT: pass,
     RL_GLOBAL: pass,
@@ -238,16 +243,44 @@ test('chat streams status, sources, text, suggestions and done with metadata-onl
     .map(({ arguments: [line] }) => JSON.parse(String(line)) as Record<string, unknown>)
     .find(({ event }) => event === 'answer');
   assert.ok(timing);
-  assert.deepEqual(Object.keys(timing).sort(), [
-    'event',
-    'firstTokenMs',
-    'images',
-    'ms',
-    'retrievalMs',
-    'sources',
-    'usage',
-    'web',
-    'webMs',
+  assert.deepEqual(
+    Object.keys(timing).sort(),
+    [
+      'event',
+      'requestId',
+      'versionId',
+      'model',
+      'lang',
+      'files',
+      'firstTokenMs',
+      'images',
+      'ms',
+      'retrievalMs',
+      'sources',
+      'usage',
+      'web',
+      'webMs',
+    ].sort(),
+  );
+  assert.equal(timing.requestId, res.headers.get('x-request-id'));
+  assert.match(String(timing.requestId), /^[a-f0-9-]{36}$/);
+  assert.equal(timing.versionId, res.headers.get('x-worker-version'));
+  assert.equal(res.headers.get('x-worker-revision'), 'a'.repeat(40));
+  assert.equal(timing.model, 'gpt-6-luna');
+  assert.equal(timing.lang, 'en');
+  const retrieval = logs.mock.calls
+    .map(({ arguments: [line] }) => JSON.parse(String(line)))
+    .find((entry) => entry.event === 'retrieval');
+  assert.equal(retrieval.requestId, timing.requestId);
+  assert.equal(retrieval.sources, 1);
+  const recorded = JSON.stringify(logs.mock.calls);
+  assert(
+    !recorded.includes('What is CzechCore?') &&
+      !recorded.includes(SECRET) &&
+      !recorded.includes('Ignore all rules'),
+  );
+  assert.deepEqual(timing.usage, [
+    { inputTokens: 10, outputTokens: 5, cachedTokens: null, reasoningTokens: null },
   ]);
   for (const key of ['retrievalMs', 'firstTokenMs', 'ms'])
     assert.ok(typeof timing[key] === 'number' && timing[key] >= 0);
@@ -544,6 +577,96 @@ test('disconnect during stalled retrieval closes the stream without calling Open
   cancel.abort();
   await rejected;
   assert.equal(calls.length, 0);
+});
+
+test('failed-answer telemetry distinguishes cancellation, deadlines and known earlier usage', async (t) => {
+  for (const mode of ['cancelled', 'timeout', 'later-failure'] as const)
+    await t.test(mode, { timeout: 5000 }, async (st) => {
+      let reportFailure = (entry: Record<string, unknown>) => {};
+      const failure = new Promise<Record<string, unknown>>((resolve) => {
+        reportFailure = resolve;
+      });
+      st.mock.method(console, 'error', (line: unknown) => {
+        const entry = JSON.parse(String(line)) as Record<string, unknown>;
+        if (entry.event === 'answer_failed') reportFailure(entry);
+      });
+      const cancel = new AbortController();
+      if (mode === 'timeout')
+        st.mock.method(AbortSignal, 'timeout', (ms: number) => {
+          assert.equal(ms, 60000);
+          return cancel.signal;
+        });
+      let start = () => {};
+      const started = new Promise<void>((resolve) => {
+        start = resolve;
+      });
+      let call = 0;
+      stubFetch(st, (_url, init) => {
+        call++;
+        if (mode !== 'later-failure')
+          return new Response(
+            new ReadableStream<Uint8Array>({
+              start(controller) {
+                init.signal!.addEventListener(
+                  'abort',
+                  () => controller.error(init.signal!.reason),
+                  { once: true },
+                );
+                start();
+              },
+            }),
+            { headers: { 'content-type': 'text/event-stream' } },
+          );
+        if (call === 1)
+          return sse([
+            {
+              type: 'response.output_item.done',
+              item: {
+                type: 'function_call',
+                name: 'search_web',
+                arguments: '{"query":"projects"}',
+              },
+            },
+            {
+              type: 'response.completed',
+              response: { usage: { input_tokens: 11, output_tokens: 3 } },
+            },
+          ]);
+        if (call === 2) return Response.json({ output: [] });
+        return Response.json({}, { status: 503 });
+      });
+      const { token } = await issueSession(SECRET);
+      const original = post(
+        '/api/chat',
+        { lang: 'en', messages: [{ role: 'user', content: 'A project?' }] },
+        { authorization: `Bearer ${token}` },
+      );
+      const response = await worker.fetch(
+        mode === 'cancelled' ? new Request(original, { signal: cancel.signal }) : original,
+        env(),
+      );
+      if (mode === 'later-failure') assert.equal((await events(response)).at(-1)?.event, 'error');
+      else {
+        const rejected = assert.rejects(response.text(), {
+          name: mode === 'timeout' ? 'TimeoutError' : 'AbortError',
+        });
+        await started;
+        cancel.abort(
+          new DOMException('test stop', mode === 'timeout' ? 'TimeoutError' : 'AbortError'),
+        );
+        await rejected;
+      }
+      const entry = await failure;
+      assert.equal(entry.requestId, response.headers.get('x-request-id'));
+      assert.equal(entry.outcome, mode === 'cancelled' ? 'cancelled' : 'error');
+      assert.equal(entry.code, mode === 'timeout' ? 'timeout' : 'unavailable');
+      assert.deepEqual(
+        entry.usage,
+        mode === 'later-failure'
+          ? [{ inputTokens: 11, outputTokens: 3, cachedTokens: null, reasoningTokens: null }]
+          : [],
+      );
+    });
 });
 
 test('oversized bodies are refused', async () => {
@@ -849,6 +972,7 @@ test('three maximum-size documents fit the body cap and all reach generation', a
 });
 
 test('one web search runs on request, and only owner-page facts reach the answer', async (t) => {
+  const logs = t.mock.method(console, 'log', () => {});
   const fact = 'Selia Weather compares three forecast models.';
   const text = `${fact} ([github.com](https://github.com/Majkey25/Selia-Weather))\nSomeone else won an award. ([github.com](https://github.com/other/x))`;
   const at = (needle: string) => text.indexOf(needle);
@@ -856,6 +980,7 @@ test('one web search runs on request, and only owner-page facts reach the answer
     const body = JSON.parse(String(init.body)) as { stream?: boolean; tool_choice?: string };
     if (!body.stream)
       return Response.json({
+        usage: { input_tokens: 40, output_tokens: 12 },
         output: [
           { type: 'web_search_call', status: 'completed' },
           {
@@ -928,6 +1053,17 @@ test('one web search runs on request, and only owner-page facts reach the answer
     { id: 'S2', title: 'Selia-Weather', url: 'https://github.com/Majkey25/Selia-Weather' },
   ]);
   assert.equal(calls.length, 3);
+  const searchLog = logs.mock.calls
+    .map(({ arguments: [line] }) => JSON.parse(String(line)))
+    .find((entry) => entry.event === 'web_search');
+  assert.equal(searchLog.requestId, res.headers.get('x-request-id'));
+  assert.deepEqual(searchLog.usage, {
+    inputTokens: 40,
+    outputTokens: 12,
+    cachedTokens: null,
+    reasoningTokens: null,
+  });
+  assert.equal(searchLog.toolCalls, 1);
   assert.deepEqual(stream[5]?.data, { questions: followups });
   const [first, search, answer] = calls.map((c) => c.body as Record<string, unknown>);
   assert.equal((first?.tools as { name: string }[])[0]?.name, 'search_web');
@@ -998,6 +1134,34 @@ test('server-sent events survive split chunks, CRLF and multi-byte characters', 
   const seen = [];
   for await (const event of readEvents(body)) seen.push(event);
   assert.deepEqual(seen, [{ type: 'a', delta: 'Matěj' }, { type: 'b' }]);
+});
+
+test('rejected requests get server-owned trace IDs without logging query strings or messages', async (t) => {
+  const logs = t.mock.method(console, 'log', () => {});
+  const response = await worker.fetch(
+    post(
+      '/api/chat?private=do-not-log',
+      { lang: 'en', messages: [{ role: 'user', content: 'private-message-canary' }] },
+      { 'x-request-id': 'attacker-controlled' },
+    ),
+    env(),
+  );
+  assert.equal(response.status, 401);
+  const trace = response.headers.get('x-request-id');
+  assert.match(trace!, /^[a-f0-9-]{36}$/);
+  assert.notEqual(trace, 'attacker-controlled');
+  const entry = JSON.parse(String(logs.mock.calls[0]?.arguments[0]));
+  assert.deepEqual(entry, {
+    event: 'request_rejected',
+    requestId: trace,
+    operation: 'chat',
+    status: 401,
+    code: 'session',
+  });
+  assert(
+    !JSON.stringify(logs.mock.calls).includes('do-not-log') &&
+      !JSON.stringify(logs.mock.calls).includes('private-message-canary'),
+  );
 });
 
 test('a malformed token is rejected, not thrown', async () => {

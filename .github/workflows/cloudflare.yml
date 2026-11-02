@@ -102,7 +102,7 @@ jobs:
             jq -n '{OPENAI_API_KEY: env.OPENAI_API_KEY, SESSION_SECRET: env.SESSION_SECRET, TURNSTILE_SECRET: env.TURNSTILE_SECRET}' |
               npx --no-install wrangler secret bulk --config "$config"
           fi
-          npx --no-install wrangler deploy --config "$config"
+          npx --no-install wrangler deploy --config "$config" --tag "$GITHUB_SHA"
           status=$(curl --silent --show-error --connect-timeout 10 --max-time 30 --output /dev/null --write-out '%{http_code}' \
             --header "Origin: $SITE" --header 'Content-Type: application/json' --data '{}' "$SITE/api/chat")
           [ "$status" = "$expected" ] || { echo "::error::Unexpected public API status: $status"; exit 1; }

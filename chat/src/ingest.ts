@@ -2,8 +2,7 @@
 // what disappeared. Item names are `<url hash>-<content hash>.<ext>`, so a listing alone says
 // which documents changed; no extra store is needed.
 
-import { DOCUMENTS, SITEMAPS, USER_AGENT } from './sources.ts';
-import { ownerUrl } from './web.ts';
+import { DOCUMENTS, SITEMAPS, USER_AGENT, ownerUrl } from './sources.ts';
 
 const MAX_BYTES = 4 * 1024 * 1024; // AI Search limit for HTML and PDFs without OCR.
 const MAX_CONTROL_BYTES = 512 * 1024;
@@ -138,6 +137,7 @@ async function readBody(response: Response, limit: number): Promise<ArrayBuffer>
 }
 
 export async function ingest(env: Pick<Env, 'AI_SEARCH' | 'ASSETS'>) {
+  const crawlId = crypto.randomUUID();
   const index = env.AI_SEARCH.get('init');
   const hosts = new Set([...SITEMAPS, ...DOCUMENTS].map((u) => new URL(u).host));
   const scopes = SITEMAPS.map((url) => new URL('.', url));
@@ -220,9 +220,15 @@ export async function ingest(env: Pick<Env, 'AI_SEARCH' | 'ASSETS'>) {
         )
           urls.add(url.href);
       }
-    } catch (error) {
+    } catch {
       complete = false;
-      console.error(JSON.stringify({ event: 'ingest_sitemap_failed', sitemap, error: `${error}` }));
+      console.error(
+        JSON.stringify({
+          event: 'ingest_sitemap_failed',
+          crawlId,
+          id: (await hex(sitemap)).slice(0, 16),
+        }),
+      );
     }
   }
 
@@ -316,10 +322,10 @@ export async function ingest(env: Pick<Env, 'AI_SEARCH' | 'ASSETS'>) {
       const remaining = versions.filter((item) => !withdrawn.includes(item));
       if (remaining.length) existing.set(id, remaining);
       else existing.delete(id);
-    } catch (error) {
+    } catch {
       report.failed++;
       complete = false;
-      console.error(JSON.stringify({ event: 'ingest_delete_failed', id, error: `${error}` }));
+      console.error(JSON.stringify({ event: 'ingest_delete_failed', crawlId, id }));
     }
   }
   // Start each refresh at the next batch, reserving a fetch per uncached robots.txt.
@@ -355,10 +361,10 @@ export async function ingest(env: Pick<Env, 'AI_SEARCH' | 'ASSETS'>) {
       try {
         await remove(existing.get(id) ?? []);
         existing.delete(id);
-      } catch (error) {
+      } catch {
         report.failed++;
         complete = false;
-        console.error(JSON.stringify({ event: 'ingest_delete_failed', id, error: `${error}` }));
+        console.error(JSON.stringify({ event: 'ingest_delete_failed', crawlId, id }));
       }
       continue;
     }
@@ -394,11 +400,11 @@ export async function ingest(env: Pick<Env, 'AI_SEARCH' | 'ASSETS'>) {
           ? undefined
           : versions.find((item) => item.status === 'completed');
       await remove(versions.filter((item) => item.key !== name && item.id !== fallback?.id));
-    } catch (error) {
+    } catch {
       // One bad document must not stop the crawl; deletions wait for a clean run.
       report.failed++;
       complete = false;
-      console.error(JSON.stringify({ event: 'ingest_item_failed', url, error: `${error}` }));
+      console.error(JSON.stringify({ event: 'ingest_item_failed', crawlId, id }));
     }
   }
 
@@ -407,11 +413,11 @@ export async function ingest(env: Pick<Env, 'AI_SEARCH' | 'ASSETS'>) {
   if (report.complete)
     for (const [id, items] of existing) {
       if (keep.has(id)) continue;
-      await remove(items).catch((error: unknown) => {
+      await remove(items).catch(() => {
         report.failed++;
-        console.error(JSON.stringify({ event: 'ingest_delete_failed', id, error: `${error}` }));
+        console.error(JSON.stringify({ event: 'ingest_delete_failed', crawlId, id }));
       });
     }
-  console.log(JSON.stringify({ event: 'ingest', ...report }));
+  console.log(JSON.stringify({ event: 'ingest', crawlId, ...report }));
   return report;
 }

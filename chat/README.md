@@ -79,7 +79,102 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
   AI Search has no cancellation parameter: the Worker stops awaiting it and does not start an
   answer afterward, but the binding may finish its search in the background.
 
-## What protects it
+## Behavior evaluation and operations
+
+`evals/scenarios.json` holds the public-profile regression set. It covers Czech and English,
+project facts and links, conversation references and explicit topic changes, dated corrections,
+unknown prices, private information, prompt injection and closing replies without suggestions.
+These are test references, never runtime answers. Add a sanitized case when a real defect is
+confirmed; do not copy visitor transcripts or private company test banks into this public repo.
+Negative calibration answers are deliberately incorrect controls, not claims about the owner.
+For this site's own repository, the shared URL policy accepts only the repository root and
+current main README as web evidence. Test files, PRs, commits, diffs and encoded alternatives
+are excluded; other approved project repositories keep their existing policy.
+
+Two independent checks must pass for each answer:
+
+- The model judge checks correctness, relevance, language, context, grounding and safety against
+  the reference. `calibration.json` contains known good and bad answers. Every calibration label
+  must agree before live tests start; uncertainty, invalid JSON and incomplete provider output fail.
+  Negative controls must fail their named dimension, such as language or context; rejecting them
+  for an unrelated reason does not calibrate the judge.
+- Code checks exact localized destinations, source IDs, the owner URL policy, required citations,
+  and suggestion counts. A correct-sounding answer with a homepage link instead of the requested
+  contact page fails. Retrieved but uncited links do not satisfy the requirement. EOF or an SSE
+  error cannot be counted as a completed answer.
+
+The judge starts with `gpt-6-luna`, low reasoning. `CHAT_EVAL_MODEL` in the GitHub environment can
+select another Responses model after checking access, cost, supported schema/reasoning settings
+and calibration. Using the same model family as the assistant is not independent human review.
+Six prepared samples establish limited agreement, not general evaluator reliability.
+The judge compares facts with the approved reference; public citation URLs alone do not prove
+that every sentence is entailed by the unseen page text. These evals do not certify full index
+coverage or every embedding/chunk in the managed search service.
+
+Use the manually dispatched **Chat behavior evals** workflow on `main`. It uses the protected
+`cloudflare` environment, whose deployment branch policy permits only `main`. Default: the three
+smoke cases, one repetition. Select the full set and three repetitions for a broader release
+check. Both spend existing API quota or credits; web tools may be billed separately. No purchase,
+recharge, provider fallback or retries are implemented. Managed retrieval may have separate
+Cloudflare inference usage; the request estimate is not an account spending cap. PR/fork checks
+run only free local tests.
+
+The operator workflow issues short-lived sessions using the existing HMAC issuer and protected
+`SESSION_SECRET`, then calls the real `POST /api/chat`. It adds no public auth exception and
+keeps the ordinary session/global rate limits. It does **not** test browser Turnstile issuance;
+that path still needs separate browser verification. Only the fixed canonical HTTPS target is
+used, redirects are rejected, and credentials never enter reports or logs. The unsigned preflight
+must return 401 and identify the deployed Worker version before any model calls. A deployment
+change during a run fails the comparison rather than mixing versions.
+
+Live steps reuse actual earlier answers, not reference answers. Requests are at least 6 seconds
+apart, with at most 3 turns per scenario, at most 3 repetitions, a 65 second call deadline and a 15 minute
+run deadline. Rate/quota errors stop the run. The report records dataset hash, runner revision,
+actual Worker version and source revision, total run duration, per-case verdicts, judge usage and first-token/total latency p50/p95 with
+sample counts. Small-sample percentiles are diagnostics, not field SLAs. Partial runs remain
+`completed:false` and exit unsuccessfully. Synthetic/public-profile reports are retained as
+workflow artifacts for 7 days. Source excerpts are removed when reports are serialized, including
+an interrupted active case; the judge can still use them in memory. Never add real visitor data.
+
+Local commands use the same runner: `npm run eval:calibrate --prefix chat` or
+`npm run eval:live --prefix chat -- full 3`. Supply credentials only through a private environment;
+never paste them into commands or commit them. Reports go to ignored
+`.reference/tmp/chat-evals/report.json`. Type checks and `npm test --prefix chat` need no model calls.
+
+Production events share a server-generated `requestId`; API headers expose `x-request-id` and
+`x-worker-version` for support and release comparisons. CI tags each Worker version with its
+Git commit; `x-worker-revision` and the eval report identify that deployed source separately from
+the runner revision. `retrieval` records returned chunks,
+accepted sources and top score. `answer` records language, model, first-token/retrieval/web/total
+timings, attachment counts and normalized answer-call token usage. `web_search` separately records
+search usage and returned tool-call count. Missing counts are null, not zero, and tool calls/token
+counts are not a billing invoice. Pre-stream rejection events record only operation/status/code;
+cancelled streams are distinguished from errors. No prompts, file names, visitor IPs, session IDs,
+bearer tokens or raw provider errors are logged by these application events. Crawl events use
+a separate `crawlId` and hashed source IDs. Cloudflare Workers Logs holds these events;
+retention and sampling follow account settings, not an application storage guarantee.
+
+Track zero-source rate, failures by code, cancelled requests separately, p50/p95 first-token and
+total latency, and input/output/cached/reasoning tokens per successful answer and web call. Compare
+the same version, language and time window with sample counts. Investigate sustained regressions
+before changing thresholds; do not claim a hard spend cap from token telemetry or local limiters.
+
+Copilot review is the second layer, alongside CI, CodeQL and dependency checks. Repository review
+instructions focus on these boundaries. A main-targeted ruleset requests reviews on draft PRs and
+new pushes; actual execution depends on the author's Copilot access and credits. Reviews remain
+advisory and do not enable automatic approval or merge.
+
+### Architectural choices
+
+The design adapts separation of indexing from answering, bounded conversation state, explicit
+terminal outcomes, source provenance, repeatable scenarios and trace-linked measurements from
+the reviewed reference architectures. Existing managed hybrid retrieval, staged indexing and
+rollback protection remain. The eval runner and runtime share the same owner URL policy.
+Course catalog logic, model-driven SQL, privileged mutation tools, central visitor transcript
+storage and a separate evaluation service are unnecessary for this personal site. No private
+source code or company scenarios are distributed here.
+
+## Runtime protection
 
 The source manifest includes the owner's 43 public repository READMEs discovered on 1 November 2026,
 Weather research notes and Music Analyzer. The sitemap supplies the site's public pages. Crawls
