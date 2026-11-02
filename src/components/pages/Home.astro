@@ -147,7 +147,7 @@ const pages = [
             return (
               <li
                 class:list={{ 'work-card--portrait': portrait }}
-                style={portrait ? `--project-ratio:${ratio}` : undefined}
+                style={`--project-ratio:${ratio}`}
               >
                 <a class="work-scene" href={href(`work/${slug(project.name)}/`)}>
                   <h3 class="work-scene__name">{project.name}</h3>
@@ -156,11 +156,7 @@ const pages = [
                     src={media.image}
                     alt={media.alt[lang]}
                     widths={portrait ? [160, 240, 320, 480] : [320, 480, 640, 960, 1200]}
-                    sizes={
-                      portrait
-                        ? `(max-width:40rem) clamp(${11 * ratio}rem, ${24 * ratio}svh, ${14 * ratio}rem), clamp(${12 * ratio}rem, ${34 * ratio}svh, ${24 * ratio}rem)`
-                        : '(max-width:40rem) 64vw, (max-width:84rem) 50vw, 700px'
-                    }
+                    sizes={`(max-width:40rem) min(64vw, clamp(${11 * ratio}rem, ${24 * ratio}svh, ${14 * ratio}rem)), min(70vw, clamp(${12 * ratio}rem, ${34 * ratio}svh, ${24 * ratio}rem))`}
                     priority={index === 0}
                   />
                   <p class="muted">{project.kind}</p>
@@ -496,7 +492,7 @@ const pages = [
   .work-reel {
     --work-image-height: clamp(12rem, 34svh, 24rem);
     --card-padding: clamp(1.25rem, 2.5vw, 2rem);
-    --portrait-min: 15rem;
+    --card-min-width: 15rem;
     align-items: stretch;
     position: relative;
     padding-inline: calc(var(--pad) + 0.25rem);
@@ -506,17 +502,14 @@ const pages = [
     margin: 0;
   }
   .work-reel > li {
-    flex-basis: 60%;
+    flex-basis: clamp(
+      var(--card-min-width),
+      calc(var(--work-image-height) * var(--project-ratio) + 2 * var(--card-padding)),
+      84%
+    );
     flex-direction: column;
     border-radius: 1rem;
     background: var(--surface);
-  }
-  .work-reel > li.work-card--portrait {
-    flex-basis: clamp(
-      var(--portrait-min),
-      calc(var(--work-image-height) * var(--project-ratio) + 2 * var(--card-padding)),
-      24rem
-    );
   }
   .work-scene {
     flex: 1;
@@ -603,10 +596,7 @@ const pages = [
   @media (width < 40rem) {
     .work-reel {
       --work-image-height: clamp(11rem, 24svh, 14rem);
-      --portrait-min: 12rem;
-    }
-    .work-reel > li {
-      flex-basis: 84%;
+      --card-min-width: 12rem;
     }
   }
   @media (prefers-reduced-motion: reduce) {
