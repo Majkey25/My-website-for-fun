@@ -1599,10 +1599,10 @@ const runtime = cs
   }
 
   .chat__suggest button {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    display: block;
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     max-width: 100%;
     min-height: 2.75rem;
     padding: 0.45rem 0.6rem;
@@ -1630,7 +1630,6 @@ const runtime = cs
 
   @media (width < 40rem) {
     .chat__suggest {
-      flex-wrap: nowrap;
       overflow-x: auto;
       scrollbar-width: thin;
       scroll-padding-inline: var(--gap);
@@ -1638,12 +1637,6 @@ const runtime = cs
     .chat__suggest li {
       flex: none;
       max-width: 85%;
-    }
-    .chat__suggest button {
-      display: block;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
   }
 
