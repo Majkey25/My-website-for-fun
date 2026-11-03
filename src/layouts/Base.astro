@@ -38,6 +38,8 @@ const {
 const t = ui[lang];
 const path = noindex ? '' : Astro.url.pathname.slice(href().length).replace(/^cs\//, '');
 const site = Astro.site ?? new URL('https://init-chat.majkeylab.workers.dev');
+// shortcut: local builds share a marker; CI must build deployed revisions.
+const buildRevision = process.env.GITHUB_SHA ?? 'local';
 const url = (path: string) => new URL(path, site).href;
 const pageTitle = title ? `${title} · Matěj Teplý` : t.title;
 const pageDescription = description ?? t.description;
@@ -172,6 +174,7 @@ const structured = {
     <meta name="description" content={pageDescription} />
     <meta name="theme-color" content="#fafaf9" />
     <meta name="author" content="Matěj Teplý" />
+    <meta name="app-revision" content={buildRevision} />
     <link rel="icon" type="image/svg+xml" href={href('favicon.svg')} />
     <link rel="apple-touch-icon" href={href('apple-touch-icon.png')} />
     {!noindex && <link rel="canonical" href={url(Astro.url.pathname)} />}
@@ -202,6 +205,13 @@ const structured = {
     <Font cssVariable="--font-sans" preload />
     <script is:inline>
       (() => {
+        // Restore browser history before enabling smooth in-page anchors.
+        document.documentElement.style.scrollBehavior = 'auto';
+        addEventListener(
+          'load',
+          () => document.documentElement.style.removeProperty('scroll-behavior'),
+          { once: true },
+        );
         let theme;
         let surprise;
         try {
@@ -232,6 +242,7 @@ const structured = {
     {intro && <script is:inline>
       try {
         if (
+          document.readyState === 'loading' &&
           sessionStorage.getItem('intro:v3') !== '1' &&
           !location.hash &&
           !document.prerendering &&
@@ -661,6 +672,16 @@ const structured = {
         return () => {
           finishTheme();
           closeMenu();
+        };
+      });
+      document.addEventListener('astro:before-preparation', (event) => {
+        const load = event.loader;
+        event.loader = async () => {
+          await load();
+          // A deployed revision needs a fresh script realm, including its custom elements.
+          const revision = (doc: Document) =>
+            doc.querySelector<HTMLMetaElement>('meta[name="app-revision"]')?.content;
+          if (revision(document) !== revision(event.newDocument)) event.preventDefault();
         };
       });
       document.addEventListener('astro:before-swap', (event) => {

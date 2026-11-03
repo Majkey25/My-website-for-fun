@@ -44,6 +44,7 @@ queries and anchors; its old full-site deployment workflow remains disabled.
 Astro's built-in client router prefetches internal pages and swaps their content without a full
 reload. Page listeners, animation loops and pending chat work are released before each swap;
 theme choice and saved conversations survive, and each incoming heading still decodes.
+An open tab reloads once when CI deploys a new revision, keeping its scripts consistent.
 The current release serves the site with the assistant off. The manual `Deploy to Cloudflare`
 workflow defaults to static assets and requires the shared CodeQL gate, audits, types, tests
 and build before deployment. Its `enable_ai` input enables the configured assistant only after

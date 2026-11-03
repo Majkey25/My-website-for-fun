@@ -200,6 +200,11 @@ const pages = [
 
 <script>
   import { onPage } from '../../scripts/page';
+  // Same-URL clicks retain the old coordinate; only traversal or initial load restores it.
+  let traversed = true;
+  document.addEventListener('astro:before-swap', (event) => {
+    traversed = event.navigationType === 'traverse';
+  });
   onPage((signal) => {
     const ask = document.querySelector<HTMLFormElement>('[data-ask]');
     const send = (question: string) =>
@@ -347,7 +352,7 @@ const pages = [
       if (box.left < bounds.left + inset || box.right > bounds.right - inset)
         scrollTo({ top: start + Math.min(travel, card.offsetLeft - inset), behavior: 'instant' });
     });
-    const restoredY = history.state?.scrollY;
+    const restoredY = traversed ? history.state?.scrollY : undefined;
     measure();
     // Astro restores before this track expands; retain its existing history coordinate.
     if (typeof restoredY === 'number' && restoredY > 0)

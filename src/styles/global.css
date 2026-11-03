@@ -251,6 +251,10 @@ html {
   scroll-padding-top: 5rem;
 }
 
+html[data-astro-transition] {
+  scroll-behavior: auto;
+}
+
 body {
   min-height: 100svh;
   background: var(--bg);

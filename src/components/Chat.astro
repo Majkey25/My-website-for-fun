@@ -329,6 +329,9 @@ const runtime = cs
   };
   type Attachment = { kind: 'image'; data: string } | { kind: 'file'; file: ChatFile };
 
+  // Share the SDK load across swaps; removing an async script does not cancel its execution.
+  let turnstileLoading: Promise<Turnstile> | null = null;
+
   const STORE = 'chat:v3';
   const LEGACY_STORE = 'chat:v2';
   const SESSION = 'chat:session';
@@ -496,10 +499,8 @@ const runtime = cs
     #threads: ChatThread[] = [];
     #activeId = '';
     #busy: AbortController | null = null;
-    #turnstile: Promise<Turnstile> | null = null;
     #current: Session | null = null;
     #listeners: AbortController | null = null;
-    #cancelWidget: (() => void) | null = null;
 
     connectedCallback() {
       if (this.#listeners) return;
@@ -643,7 +644,6 @@ const runtime = cs
       this.#listeners?.abort();
       this.#listeners = null;
       this.#clearAttachment();
-      this.#cancelWidget?.();
       this.#dialog.close();
       document.documentElement.classList.remove('chat-open');
     }
@@ -1126,7 +1126,7 @@ const runtime = cs
     // ---------- Network ----------
 
     #widget(): Promise<Turnstile> {
-      this.#turnstile ??= new Promise<Turnstile>((resolve, reject) => {
+      turnstileLoading ??= new Promise<Turnstile>((resolve, reject) => {
         const existing = (window as unknown as { turnstile?: Turnstile }).turnstile;
         if (existing) return resolve(existing);
         const script = document.createElement('script');
@@ -1136,15 +1136,12 @@ const runtime = cs
           clearTimeout(timer);
           script.onload = script.onerror = null;
           script.remove();
-          this.#turnstile = null;
-          this.#cancelWidget = null;
+          turnstileLoading = null;
           reject(new ChatError('challenge'));
         };
         const timer = setTimeout(fail, 15_000);
-        this.#cancelWidget = fail;
         script.onload = () => {
           clearTimeout(timer);
-          this.#cancelWidget = null;
           const api = (window as unknown as { turnstile?: Turnstile }).turnstile;
           if (api) resolve(api);
           else fail();
@@ -1152,7 +1149,7 @@ const runtime = cs
         script.onerror = fail;
         document.head.append(script);
       });
-      return this.#turnstile;
+      return turnstileLoading;
     }
 
     /** Reuse a valid session; otherwise the submitted question owns its browser check. */
