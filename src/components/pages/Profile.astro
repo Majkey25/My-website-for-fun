@@ -3,6 +3,7 @@ import { Image } from 'astro:assets';
 import schoolLogo from '../../assets/brands/spszl.png';
 import stcLogo from '../../assets/brands/stc.png';
 import utbLogo from '../../assets/brands/utb.png';
+import portrait from '../../assets/matej-teply.webp';
 import GlitchText from '../../components/GlitchText.astro';
 import SocialIcon from '../../components/SocialIcon.astro';
 import ContactLink from '../ContactLink.astro';
@@ -275,10 +276,26 @@ const skills = cs
   description={summary}
   ogType={page === 'about' ? 'profile' : 'website'}
 >
-  <section class="hero frame" aria-labelledby="hero-title">
+  <section
+    class:list={['hero', 'frame', { 'hero--profile': page === 'about' }]}
+    aria-labelledby="hero-title"
+  >
     <h1 id="hero-title" class={page === 'about' ? 'name' : 'title'} data-enter style="--i: 0">
       <GlitchText text={page === 'about' ? 'Matěj Teplý' : t[page]} scramble />
     </h1>
+    {page === 'about' && (
+      <Image
+        class="hero__portrait"
+        src={portrait}
+        alt={cs ? 'Portrét Matěje Teplého' : 'Portrait of Matěj Teplý'}
+        width={224}
+        widths={[128, 224, 256, 448]}
+        sizes="(min-width:56rem) 14rem, 8rem"
+        priority
+        data-enter
+        style="--i: 1"
+      />
+    )}
     <p class="statement" data-enter style="--i: 1">
       {summary}
     </p>
@@ -629,6 +646,19 @@ const skills = cs
     line-height: 0.9;
   }
 
+  .hero--profile {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .hero__portrait {
+    grid-column: 2;
+    grid-row: 2 / span 2;
+    width: 14rem;
+    height: auto;
+    aspect-ratio: 1;
+    border-radius: 1rem;
+  }
+
   .hero__copy {
     display: grid;
     grid-column: 1;
@@ -688,6 +718,24 @@ const skills = cs
   }
 
   @media (width < 56rem) {
+    .hero--profile {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hero__portrait {
+      grid-column: 1;
+      grid-row: 2;
+      width: 8rem;
+    }
+
+    .hero--profile .statement {
+      grid-row: 3;
+    }
+
+    .hero--profile .hero__copy {
+      grid-row: 4;
+    }
+
     .split {
       grid-template-columns: minmax(0, 1fr);
     }
