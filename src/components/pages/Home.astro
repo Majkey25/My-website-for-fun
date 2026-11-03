@@ -199,150 +199,164 @@ const pages = [
 </Base>
 
 <script>
-  const ask = document.querySelector<HTMLFormElement>('[data-ask]');
-  const send = (question: string) =>
-    document.dispatchEvent(new CustomEvent('chat:ask', { detail: question }));
-  ask?.addEventListener('focusin', () => document.dispatchEvent(new Event('chat:warm')), {
-    once: true,
-  });
-  ask?.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const input = ask.querySelector('input');
-    if (input?.value.trim()) send(input.value);
-    if (input) input.value = '';
-  });
-  ask
-    ?.querySelector<HTMLButtonElement>('[data-ask-starter]')
-    ?.addEventListener('click', (event) => {
-      const question = (event.currentTarget as HTMLButtonElement).dataset.askStarter;
-      if (question) send(question);
+  import { onPage } from '../../scripts/page';
+  onPage((signal) => {
+    const ask = document.querySelector<HTMLFormElement>('[data-ask]');
+    const send = (question: string) =>
+      document.dispatchEvent(new CustomEvent('chat:ask', { detail: question }));
+    ask?.addEventListener('focusin', () => document.dispatchEvent(new Event('chat:warm')), {
+      once: true,
     });
-  const reel = document.querySelector<HTMLElement>('.work-reel');
-  // Warm the visible panel and its next neighbour before sideways scrolling reveals it.
-  const panels = new IntersectionObserver(
-    (entries, observer) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        for (const panel of [entry.target, entry.target.nextElementSibling]) {
-          const image = panel?.querySelector('img');
-          if (image) image.loading = 'eager';
-        }
-        observer.unobserve(entry.target);
-      }
-    },
-    { rootMargin: '200px 0px' },
-  );
-  reel?.querySelectorAll('li').forEach((panel) => panels.observe(panel));
-  const showcase = document.querySelector<HTMLElement>('.work-showcase');
-  const stage = document.querySelector<HTMLElement>('.work-stage');
-  const viewport = document.querySelector<HTMLElement>('.work-viewport');
-  const header = document.querySelector<HTMLElement>('.header');
-  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-work-step]');
-  const quiet = matchMedia('(prefers-reduced-motion: reduce)');
-  let pinned = false;
-  let start = 0;
-  let travel = 0;
-  let frame = 0;
-  let position = 0;
-  const syncControls = () => {
-    if (!reel) return;
-    const offset = pinned ? position : reel.scrollLeft;
-    buttons.forEach((button) => {
-      button.disabled = Number(button.dataset.workStep) < 0 ? offset <= 1 : offset >= travel - 1;
+    ask?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const input = ask.querySelector('input');
+      if (input?.value.trim()) send(input.value);
+      if (input) input.value = '';
     });
-  };
-  reel?.addEventListener('scroll', syncControls, { passive: true });
-  const update = () => {
-    frame = 0;
-    if (pinned && reel) {
-      position = Math.max(0, Math.min(travel, scrollY - start));
-      reel.style.transform = `translate3d(${-position}px, 0, 0)`;
-    }
-    syncControls();
-  };
-  const measure = () => {
-    if (!reel || !showcase || !stage) return;
-    const top = (header?.offsetHeight ?? 0) + 16;
-    const height = stage.offsetHeight;
-    const padding = parseFloat(getComputedStyle(showcase).paddingTop);
-    const last = reel.lastElementChild as HTMLElement | null;
-    // Include the end gutter in both native-overflow and transformed-track modes.
-    travel = last
-      ? Math.max(
-          0,
-          last.offsetLeft +
-            last.offsetWidth +
-            parseFloat(getComputedStyle(reel).paddingInlineEnd) -
-            reel.clientWidth,
-        )
-      : 0;
-    start = showcase.getBoundingClientRect().top + scrollY + padding - top;
-    // Short viewports keep native horizontal scrolling so the full card stays reachable.
-    const wasPinned = pinned;
-    pinned = !quiet.matches && travel > 0 && height <= innerHeight - top - 16;
-    showcase.style.setProperty('--work-top', `${top}px`);
-    showcase.classList.toggle('is-pinned', pinned);
-    showcase.style.height = pinned ? `${height + padding + travel}px` : '';
-    if (pinned) reel.scrollLeft = 0;
-    else {
-      reel.style.removeProperty('transform');
-      if (wasPinned) reel.scrollLeft = position;
-    }
-    update();
-  };
-  addEventListener(
-    'scroll',
-    () => {
-      if (pinned && !frame) frame = requestAnimationFrame(update);
-    },
-    { passive: true },
-  );
-  addEventListener('resize', measure);
-  quiet.addEventListener('change', measure);
-  if (stage && header) {
-    const observer = new ResizeObserver(measure);
-    observer.observe(stage);
-    observer.observe(header);
-  }
-  const move = (direction: number, behavior: ScrollBehavior) => {
-    if (!reel) return;
-    const offset = pinned ? position : reel.scrollLeft;
-    const inset = parseFloat(getComputedStyle(reel).paddingInlineStart);
-    const stops = Array.from(reel.children, (card) =>
-      Math.max(0, Math.min(travel, (card as HTMLElement).offsetLeft - inset)),
-    );
-    if (direction < 0) stops.reverse();
-    const target =
-      stops.find((stop) => (direction < 0 ? stop < offset - 1 : stop > offset + 1)) ??
-      (direction < 0 ? 0 : travel);
-    if (pinned)
-      scrollTo({
-        top: start + target,
-        behavior,
+    ask
+      ?.querySelector<HTMLButtonElement>('[data-ask-starter]')
+      ?.addEventListener('click', (event) => {
+        const question = (event.currentTarget as HTMLButtonElement).dataset.askStarter;
+        if (question) send(question);
       });
-    else reel.scrollTo({ left: target, behavior });
-  };
-  buttons.forEach((button) => {
-    button.addEventListener('click', (event) => {
-      move(
-        Number(button.dataset.workStep),
-        quiet.matches || event.detail === 0 ? 'instant' : 'smooth',
+    const reel = document.querySelector<HTMLElement>('.work-reel');
+    if (!reel) return;
+    // Warm the visible panel and its next neighbour before sideways scrolling reveals it.
+    const panels = new IntersectionObserver(
+      (entries, observer) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          for (const panel of [entry.target, entry.target.nextElementSibling]) {
+            const image = panel?.querySelector('img');
+            if (image) image.loading = 'eager';
+          }
+          observer.unobserve(entry.target);
+        }
+      },
+      { rootMargin: '200px 0px' },
+    );
+    reel?.querySelectorAll('li').forEach((panel) => panels.observe(panel));
+    const showcase = document.querySelector<HTMLElement>('.work-showcase');
+    const stage = document.querySelector<HTMLElement>('.work-stage');
+    const viewport = document.querySelector<HTMLElement>('.work-viewport');
+    const header = document.querySelector<HTMLElement>('.header');
+    const buttons = document.querySelectorAll<HTMLButtonElement>('[data-work-step]');
+    const quiet = matchMedia('(prefers-reduced-motion: reduce)');
+    let pinned = false;
+    let start = 0;
+    let travel = 0;
+    let frame = 0;
+    let position = 0;
+    const syncControls = () => {
+      if (!reel) return;
+      const offset = pinned ? position : reel.scrollLeft;
+      buttons.forEach((button) => {
+        button.disabled = Number(button.dataset.workStep) < 0 ? offset <= 1 : offset >= travel - 1;
+      });
+    };
+    reel?.addEventListener('scroll', syncControls, { passive: true });
+    const update = () => {
+      frame = 0;
+      if (pinned && reel) {
+        position = Math.max(0, Math.min(travel, scrollY - start));
+        reel.style.transform = `translate3d(${-position}px, 0, 0)`;
+      }
+      syncControls();
+    };
+    const measure = () => {
+      if (!reel || !showcase || !stage) return;
+      const top = (header?.offsetHeight ?? 0) + 16;
+      const height = stage.offsetHeight;
+      const padding = parseFloat(getComputedStyle(showcase).paddingTop);
+      const last = reel.lastElementChild as HTMLElement | null;
+      // Include the end gutter in both native-overflow and transformed-track modes.
+      travel = last
+        ? Math.max(
+            0,
+            last.offsetLeft +
+              last.offsetWidth +
+              parseFloat(getComputedStyle(reel).paddingInlineEnd) -
+              reel.clientWidth,
+          )
+        : 0;
+      start = showcase.getBoundingClientRect().top + scrollY + padding - top;
+      // Short viewports keep native horizontal scrolling so the full card stays reachable.
+      const wasPinned = pinned;
+      pinned = !quiet.matches && travel > 0 && height <= innerHeight - top - 16;
+      showcase.style.setProperty('--work-top', `${top}px`);
+      showcase.classList.toggle('is-pinned', pinned);
+      showcase.style.height = pinned ? `${height + padding + travel}px` : '';
+      if (pinned) reel.scrollLeft = 0;
+      else {
+        reel.style.removeProperty('transform');
+        if (wasPinned) reel.scrollLeft = position;
+      }
+      update();
+    };
+    addEventListener(
+      'scroll',
+      () => {
+        if (pinned && !frame) frame = requestAnimationFrame(update);
+      },
+      { passive: true, signal },
+    );
+    addEventListener('resize', measure, { signal });
+    quiet.addEventListener('change', measure, { signal });
+    const observer = new ResizeObserver(measure);
+    if (stage && header) {
+      observer.observe(stage);
+      observer.observe(header);
+    }
+    const move = (direction: number, behavior: ScrollBehavior) => {
+      if (!reel) return;
+      const offset = pinned ? position : reel.scrollLeft;
+      const inset = parseFloat(getComputedStyle(reel).paddingInlineStart);
+      const stops = Array.from(reel.children, (card) =>
+        Math.max(0, Math.min(travel, (card as HTMLElement).offsetLeft - inset)),
       );
+      if (direction < 0) stops.reverse();
+      const target =
+        stops.find((stop) => (direction < 0 ? stop < offset - 1 : stop > offset + 1)) ??
+        (direction < 0 ? 0 : travel);
+      if (pinned)
+        scrollTo({
+          top: start + target,
+          behavior,
+        });
+      else reel.scrollTo({ left: target, behavior });
+    };
+    buttons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        move(
+          Number(button.dataset.workStep),
+          quiet.matches || event.detail === 0 ? 'instant' : 'smooth',
+        );
+      });
     });
-  });
-  reel?.addEventListener('keydown', (event) => {
-    if (!pinned || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
-    event.preventDefault();
-    move(event.key === 'ArrowRight' ? 1 : -1, 'instant');
-  });
-  reel?.addEventListener('focusin', (event) => {
-    const card = (event.target as Element).closest<HTMLElement>('li');
-    if (!pinned || !card || !viewport || !reel) return;
-    const box = card.getBoundingClientRect();
-    const bounds = viewport.getBoundingClientRect();
-    const inset = parseFloat(getComputedStyle(reel).paddingInlineStart);
-    if (box.left < bounds.left + inset || box.right > bounds.right - inset)
-      scrollTo({ top: start + Math.min(travel, card.offsetLeft - inset), behavior: 'instant' });
+    reel?.addEventListener('keydown', (event) => {
+      if (!pinned || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      event.preventDefault();
+      move(event.key === 'ArrowRight' ? 1 : -1, 'instant');
+    });
+    reel?.addEventListener('focusin', (event) => {
+      const card = (event.target as Element).closest<HTMLElement>('li');
+      if (!pinned || !card || !viewport || !reel) return;
+      const box = card.getBoundingClientRect();
+      const bounds = viewport.getBoundingClientRect();
+      const inset = parseFloat(getComputedStyle(reel).paddingInlineStart);
+      if (box.left < bounds.left + inset || box.right > bounds.right - inset)
+        scrollTo({ top: start + Math.min(travel, card.offsetLeft - inset), behavior: 'instant' });
+    });
+    const restoredY = history.state?.scrollY;
+    measure();
+    // Astro restores before this track expands; retain its existing history coordinate.
+    if (!location.hash && typeof restoredY === 'number' && restoredY > 0)
+      scrollTo({ top: restoredY, behavior: 'instant' });
+    return () => {
+      panels.disconnect();
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
   });
 </script>
 

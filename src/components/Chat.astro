@@ -498,8 +498,12 @@ const runtime = cs
     #busy: AbortController | null = null;
     #turnstile: Promise<Turnstile> | null = null;
     #current: Session | null = null;
+    #listeners: AbortController | null = null;
+    #cancelWidget: (() => void) | null = null;
 
     connectedCallback() {
+      if (this.#listeners) return;
+      const { signal } = (this.#listeners = new AbortController());
       let local = null;
       let session = null;
       try {
@@ -518,27 +522,43 @@ const runtime = cs
       if (history.activeId) this.#selectThread(history.activeId);
       else this.#newThread();
 
-      this.querySelector('[data-chat-open]')?.addEventListener('click', () => this.open());
-      this.querySelector('[data-chat-close]')?.addEventListener('click', () => {
-        if (!this.#history.hidden) this.#showHistory(false);
-        else this.#dialog.close();
+      this.querySelector('[data-chat-open]')?.addEventListener('click', () => this.open(), {
+        signal,
       });
-      this.querySelector('[data-chat-reset]')?.addEventListener('click', () => this.#newThread());
-      this.#historyButton.addEventListener('click', () =>
-        this.#showHistory(!!this.#history.hidden),
+      this.querySelector('[data-chat-close]')?.addEventListener(
+        'click',
+        () => {
+          if (!this.#history.hidden) this.#showHistory(false);
+          else this.#dialog.close();
+        },
+        { signal },
       );
-      this.#remember.addEventListener('change', () => this.#save(false));
-      this.#send.addEventListener('click', (event) => {
-        if (!this.#busy) return;
-        // Aborting can restore type=submit before the click's default action runs.
-        event.preventDefault();
-        this.#busy.abort();
+      this.querySelector('[data-chat-reset]')?.addEventListener('click', () => this.#newThread(), {
+        signal,
       });
-      this.#attach.addEventListener('click', () => this.#file.click());
-      this.querySelector('[data-chat-remove]')?.addEventListener('click', () =>
-        this.#clearAttachment(),
+      this.#historyButton.addEventListener(
+        'click',
+        () => this.#showHistory(!!this.#history.hidden),
+        { signal },
       );
-      this.#file.addEventListener('change', () => void this.#prepareAttachment());
+      this.#remember.addEventListener('change', () => this.#save(false), { signal });
+      this.#send.addEventListener(
+        'click',
+        (event) => {
+          if (!this.#busy) return;
+          // Aborting can restore type=submit before the click's default action runs.
+          event.preventDefault();
+          this.#busy.abort();
+        },
+        { signal },
+      );
+      this.#attach.addEventListener('click', () => this.#file.click(), { signal });
+      this.querySelector('[data-chat-remove]')?.addEventListener(
+        'click',
+        () => this.#clearAttachment(),
+        { signal },
+      );
+      this.#file.addEventListener('change', () => void this.#prepareAttachment(), { signal });
       // A click on the backdrop closes the panel. The dialog element is also the target of clicks
       // in its own padding and of a text selection dragged out of it, so both the press and the
       // release must land outside its box.
@@ -553,41 +573,79 @@ const runtime = cs
         );
       };
       let pressedOutside = false;
-      this.#dialog.addEventListener('pointerdown', (e) => (pressedOutside = outside(e)));
-      this.#dialog.addEventListener('click', (e) => {
-        if (pressedOutside && outside(e)) this.#dialog.close();
+      this.#dialog.addEventListener('pointerdown', (e) => (pressedOutside = outside(e)), {
+        signal,
       });
-      this.#dialog.addEventListener('close', () =>
-        document.documentElement.classList.remove('chat-open'),
+      this.#dialog.addEventListener(
+        'click',
+        (e) => {
+          if (pressedOutside && outside(e)) this.#dialog.close();
+        },
+        { signal },
       );
-      this.addEventListener('click', (e) => {
-        const ask = (e.target as HTMLElement).closest<HTMLElement>('[data-chat-ask]');
-        if (ask?.dataset.chatAsk) {
-          if (this.#busy) this.#input.value = ask.dataset.chatAsk;
-          else this.ask(ask.dataset.chatAsk);
-          this.#log.focus({ preventScroll: true });
-        }
-      });
-      this.#form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        if (this.#busy) return;
-        this.ask(this.#input.value);
-      });
-      this.#input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      this.#dialog.addEventListener(
+        'close',
+        () => document.documentElement.classList.remove('chat-open'),
+        { signal },
+      );
+      this.addEventListener(
+        'click',
+        (e) => {
+          const ask = (e.target as HTMLElement).closest<HTMLElement>('[data-chat-ask]');
+          if (ask?.dataset.chatAsk) {
+            if (this.#busy) this.#input.value = ask.dataset.chatAsk;
+            else this.ask(ask.dataset.chatAsk);
+            this.#log.focus({ preventScroll: true });
+          }
+        },
+        { signal },
+      );
+      this.#form.addEventListener(
+        'submit',
+        (e) => {
           e.preventDefault();
-          this.#form.requestSubmit();
-        }
-      });
-      document.addEventListener('chat:ask', (e) => {
-        const question = (e as CustomEvent<string>).detail;
-        this.open();
-        // While an answer streams, keep the question in the composer instead of dropping it.
-        if (question && this.#busy) this.#input.value = question;
-        else if (question) this.ask(question);
-      });
+          if (this.#busy) return;
+          this.ask(this.#input.value);
+        },
+        { signal },
+      );
+      this.#input.addEventListener(
+        'keydown',
+        (e) => {
+          if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+            e.preventDefault();
+            this.#form.requestSubmit();
+          }
+        },
+        { signal },
+      );
+      document.addEventListener(
+        'chat:ask',
+        (e) => {
+          const question = (e as CustomEvent<string>).detail;
+          this.open();
+          // While an answer streams, keep the question in the composer instead of dropping it.
+          if (question && this.#busy) this.#input.value = question;
+          else if (question) this.ask(question);
+        },
+        { signal },
+      );
       // Preload the script without starting an invisible challenge in the closed dialog.
-      document.addEventListener('chat:warm', () => this.#widget().catch(() => undefined));
+      document.addEventListener('chat:warm', () => this.#widget().catch(() => undefined), {
+        signal,
+      });
+    }
+
+    disconnectedCallback() {
+      const running = this.#busy;
+      this.#busy = null;
+      running?.abort();
+      this.#listeners?.abort();
+      this.#listeners = null;
+      this.#clearAttachment();
+      this.#cancelWidget?.();
+      this.#dialog.close();
+      document.documentElement.classList.remove('chat-open');
     }
 
     open() {
@@ -1076,13 +1134,17 @@ const runtime = cs
         script.async = true;
         const fail = () => {
           clearTimeout(timer);
+          script.onload = script.onerror = null;
           script.remove();
           this.#turnstile = null;
+          this.#cancelWidget = null;
           reject(new ChatError('challenge'));
         };
         const timer = setTimeout(fail, 15_000);
+        this.#cancelWidget = fail;
         script.onload = () => {
           clearTimeout(timer);
+          this.#cancelWidget = null;
           const api = (window as unknown as { turnstile?: Turnstile }).turnstile;
           if (api) resolve(api);
           else fail();

@@ -35,43 +35,47 @@ const lines =
 
 <script>
   import { startMatrix } from '../scripts/matrix';
-  const screen = document.querySelector<HTMLElement>('.intro-screen');
-  const root = document.documentElement;
-  if (screen && root.classList.contains('intro-active')) {
-    const motion = matchMedia('(prefers-reduced-motion: reduce)');
-    let stopMatrix = () => {};
-    let ended = false;
-    const finish = (immediate = false) => {
-      if (ended) return;
-      ended = true;
-      stopMatrix();
-      clearTimeout(expiry);
-      document.removeEventListener('keydown', key);
-      document.removeEventListener('visibilitychange', visibility);
-      motion.removeEventListener('change', skip);
-      const animate = !immediate && !motion.matches && !document.hidden;
-      if (animate) screen.classList.add('is-out');
-      root.classList.remove('intro-active');
-      document.dispatchEvent(new Event('init:intro-finished'));
-      if (animate) setTimeout(() => screen.remove(), 320);
-      else screen.remove();
-    };
-    const skip = () => finish(true);
-    const key = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' || event.key === 'Tab') skip();
-    };
-    const visibility = () => {
-      if (document.hidden) skip();
-    };
-    const expiry = setTimeout(() => finish(), 1550);
-    document.addEventListener('keydown', key);
-    document.addEventListener('visibilitychange', visibility);
-    motion.addEventListener('change', skip);
-    if (performance.now() > 2000 || document.hidden) skip();
+  import { onPage } from '../scripts/page';
+  onPage(() => {
+    const screen = document.querySelector<HTMLElement>('.intro-screen');
+    const root = document.documentElement;
+    if (screen && root.classList.contains('intro-active')) {
+      const motion = matchMedia('(prefers-reduced-motion: reduce)');
+      let stopMatrix = () => {};
+      let ended = false;
+      const finish = (immediate = false) => {
+        if (ended) return;
+        ended = true;
+        stopMatrix();
+        clearTimeout(expiry);
+        document.removeEventListener('keydown', key);
+        document.removeEventListener('visibilitychange', visibility);
+        motion.removeEventListener('change', skip);
+        const animate = !immediate && !motion.matches && !document.hidden;
+        if (animate) screen.classList.add('is-out');
+        root.classList.remove('intro-active');
+        document.dispatchEvent(new Event('init:intro-finished'));
+        if (animate) setTimeout(() => screen.remove(), 320);
+        else screen.remove();
+      };
+      const skip = () => finish(true);
+      const key = (event: KeyboardEvent) => {
+        if (event.key === 'Escape' || event.key === 'Tab') skip();
+      };
+      const visibility = () => {
+        if (document.hidden) skip();
+      };
+      const expiry = setTimeout(() => finish(), 1550);
+      document.addEventListener('keydown', key);
+      document.addEventListener('visibilitychange', visibility);
+      motion.addEventListener('change', skip);
+      if (performance.now() > 2000 || document.hidden) skip();
 
-    const canvas = screen.querySelector('canvas');
-    if (canvas && !ended) stopMatrix = startMatrix(canvas, '#93a4ff');
-  } else screen?.remove();
+      const canvas = screen.querySelector('canvas');
+      if (canvas && !ended) stopMatrix = startMatrix(canvas, '#93a4ff');
+      return skip;
+    } else screen?.remove();
+  });
 </script>
 
 <style>

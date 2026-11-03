@@ -44,7 +44,7 @@ jobs:
       - run: npm run check
       - run: npm run test:fonts
       - run: npm run build -- --timings
-      - run: node --test tests/output.test.mjs
+      - run: node --test tests/output.test.mjs tests/page.test.ts
       - run: node scripts/check-output.mjs
       - run: npm run test:contacts
       - run: npm run test:chat
