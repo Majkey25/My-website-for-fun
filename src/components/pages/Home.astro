@@ -156,7 +156,7 @@ const pages = [
                     src={media.image}
                     alt={media.alt[lang]}
                     widths={portrait ? [160, 240, 320, 480] : [320, 480, 640, 960, 1200]}
-                    sizes={`(max-width:40rem) min(64vw, clamp(${11 * ratio}rem, ${24 * ratio}svh, ${14 * ratio}rem)), min(70vw, clamp(${12 * ratio}rem, ${34 * ratio}svh, ${24 * ratio}rem))`}
+                    sizes={`(max-width:40rem) min(64vw, ${24 * ratio}svh, max(${5 * ratio}rem, calc(${100 * ratio}svh - ${32 * ratio}rem)), ${14 * ratio}rem), min(70vw, ${34 * ratio}svh, max(${5 * ratio}rem, calc(${100 * ratio}svh - ${32 * ratio}rem)), ${24 * ratio}rem)`}
                     priority={index === 0}
                   />
                   <p class="muted">{project.kind}</p>
@@ -452,7 +452,7 @@ const pages = [
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.25rem;
   }
   .section-heading .label {
     margin-bottom: 0;
@@ -490,12 +490,14 @@ const pages = [
     will-change: transform;
   }
   .work-reel {
-    --work-image-height: clamp(12rem, 34svh, 24rem);
-    --card-padding: clamp(1.25rem, 2.5vw, 2rem);
-    --card-min-width: 15rem;
+    /* Keep room for headings and links so the pinned gallery fits the viewport. */
+    --work-image-height: min(34svh, max(5rem, calc(100svh - 32rem)), 24rem);
+    --card-padding: clamp(1rem, 1.5vw, 1.25rem);
+    --card-min-width: 16.5rem;
     align-items: stretch;
     position: relative;
     padding-inline: calc(var(--pad) + 0.25rem);
+    padding-bottom: 0.25rem;
     scroll-padding-inline: calc(var(--pad) + 0.25rem);
   }
   .work-controls {
@@ -515,7 +517,7 @@ const pages = [
     flex: 1;
     min-height: 0;
     padding: var(--card-padding);
-    gap: 1rem;
+    gap: 0.75rem;
   }
   .work-scene__name {
     font-size: clamp(1.6rem, 3.5vw, 3rem);
@@ -529,16 +531,17 @@ const pages = [
   }
   .work-scene__image {
     align-self: center;
-    width: auto;
+    width: calc(var(--work-image-height) * var(--project-ratio));
     height: auto;
     max-height: var(--work-image-height);
-    aspect-ratio: auto;
+    aspect-ratio: var(--project-ratio);
     object-fit: contain;
     border: 0;
     background: transparent;
   }
   .work-scene__open {
     margin-top: auto;
+    padding-top: 0;
   }
   .work-links {
     display: flex;
@@ -547,8 +550,12 @@ const pages = [
     padding: 0 var(--card-padding) var(--card-padding);
     font-size: 0.8125rem;
   }
+  .work-links .action-link {
+    padding-inline: 0.25rem;
+    font-size: inherit;
+  }
   .more {
-    margin-top: 1.25rem;
+    margin-top: 0.75rem;
   }
   .explore {
     display: grid;
@@ -595,8 +602,12 @@ const pages = [
   }
   @media (width < 40rem) {
     .work-reel {
-      --work-image-height: clamp(11rem, 24svh, 14rem);
-      --card-min-width: 12rem;
+      --work-image-height: min(24svh, max(5rem, calc(100svh - 32rem)), 14rem);
+    }
+  }
+  @media (height < 50rem) {
+    .work-scene__name {
+      font-size: clamp(1.6rem, 2vw, 2rem);
     }
   }
   @media (prefers-reduced-motion: reduce) {
