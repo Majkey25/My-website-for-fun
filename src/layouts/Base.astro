@@ -1,5 +1,6 @@
 ---
 import { Font } from 'astro:assets';
+import { ClientRouter } from 'astro:transitions';
 import type { ImageMetadata } from 'astro';
 import socialImage from '../assets/social.png';
 import Chat from '../components/Chat.astro';
@@ -37,6 +38,8 @@ const {
 const t = ui[lang];
 const path = noindex ? '' : Astro.url.pathname.slice(href().length).replace(/^cs\//, '');
 const site = Astro.site ?? new URL('https://init-chat.majkeylab.workers.dev');
+// shortcut: local builds share a marker; CI must build deployed revisions.
+const buildRevision = process.env.GITHUB_SHA ?? 'local';
 const url = (path: string) => new URL(path, site).href;
 const pageTitle = title ? `${title} · Matěj Teplý` : t.title;
 const pageDescription = description ?? t.description;
@@ -102,10 +105,6 @@ const terminal = (
   typedAt += steps * speed + (command ? 90 : 40);
   return { Line: command ? ('kbd' as const) : ('samp' as const), text, style };
 });
-// Prefetch internal pages on hover; their scripts start only when the visitor navigates.
-const speculation = {
-  prefetch: [{ where: { href_matches: href('*') }, eagerness: 'moderate' }],
-};
 const person = {
   '@context': 'https://schema.org',
   '@type': 'Person',
@@ -170,10 +169,12 @@ const structured = {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <ClientRouter fallback="swap" />
     <title>{pageTitle}</title>
     <meta name="description" content={pageDescription} />
     <meta name="theme-color" content="#fafaf9" />
     <meta name="author" content="Matěj Teplý" />
+    <meta name="app-revision" content={buildRevision} />
     <link rel="icon" type="image/svg+xml" href={href('favicon.svg')} />
     <link rel="apple-touch-icon" href={href('apple-touch-icon.png')} />
     {!noindex && <link rel="canonical" href={url(Astro.url.pathname)} />}
@@ -204,6 +205,17 @@ const structured = {
     <Font cssVariable="--font-sans" preload />
     <script is:inline>
       (() => {
+        // Keep the saved coordinate before Astro can clamp an unmeasured gallery on reload.
+        const initialScroll = history.state?.scrollY;
+        if (typeof initialScroll === 'number' && initialScroll > 0)
+          document.documentElement.dataset.initialScroll = String(initialScroll);
+        // Restore browser history before enabling smooth in-page anchors.
+        document.documentElement.style.scrollBehavior = 'auto';
+        addEventListener(
+          'load',
+          () => document.documentElement.style.removeProperty('scroll-behavior'),
+          { once: true },
+        );
         let theme;
         let surprise;
         try {
@@ -234,6 +246,7 @@ const structured = {
     {intro && <script is:inline>
       try {
         if (
+          document.readyState === 'loading' &&
           sessionStorage.getItem('intro:v3') !== '1' &&
           !location.hash &&
           !document.prerendering &&
@@ -252,7 +265,6 @@ const structured = {
       type="application/ld+json"
       set:html={JSON.stringify(structured).replace(/</g, '\\u003c')}
     />
-    <script type="speculationrules" set:html={JSON.stringify(speculation)} />
   </head>
   <body data-problem-label={t.problem}>
     {intro && <Intro lang={lang} />}
@@ -397,239 +409,306 @@ const structured = {
 
     <script>
       import '../scripts/interactions';
-      const root = document.documentElement;
-      const updateLanguageLinks = () => {
-        document.querySelectorAll<HTMLAnchorElement>('[data-language]').forEach((link) => {
-          link.hash = location.hash;
-        });
-      };
-      updateLanguageLinks();
-      addEventListener('hashchange', updateLanguageLinks);
-
-      const menuPanel = document.querySelector<HTMLElement>('#site-menu');
-      const phone = matchMedia('(width < 48rem)');
-      const closeMenu = () => {
-        if (menuPanel?.matches(':popover-open')) menuPanel.hidePopover();
-      };
-      phone.addEventListener('change', closeMenu);
-      menuPanel?.addEventListener('click', (event) => {
-        if ((event.target as Element).closest('a')) closeMenu();
-      });
-
-      // Classic themes reveal from the button; Matrix opens an inert terminal immediately.
-      const button = document.querySelector<HTMLButtonElement>('.theme');
-      const meta = document.querySelector('meta[name="theme-color"]');
-      const themeLabel = button?.querySelector('.sr-only')?.textContent?.trim() ?? 'Theme';
-      const systemTheme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      const rollSurprise = () => 3 + Math.floor(Math.random() * 6);
-      const loadSurprise = () => {
-        try {
-          const saved = Number(sessionStorage.getItem('theme:surprise'));
-          if (Number.isInteger(saved) && saved >= 1 && saved <= 8) return saved;
-        } catch {}
-        const count = rollSurprise();
-        try {
-          sessionStorage.setItem('theme:surprise', String(count));
-        } catch {}
-        return count;
-      };
-      let remaining = loadSurprise();
-      const set = (theme: string) => {
-        root.dataset.theme = theme;
-        // Matrix always exits to light. Keep in sync with the inline script in <head>.
-        const next =
-          theme === 'matrix'
-            ? 'light'
-            : remaining === 1
-              ? 'matrix'
-              : theme === 'dark'
-                ? 'light'
-                : 'dark';
-        root.dataset.nextTheme = next;
-        meta?.setAttribute(
-          'content',
-          theme === 'light' ? '#fafaf9' : theme === 'matrix' ? '#040a06' : '#0b0b0c',
-        );
-        button?.setAttribute(
-          'aria-label',
-          `${themeLabel}: ${next === 'matrix' ? 'Matrix' : root.lang === 'cs' ? (next === 'dark' ? 'tmavý' : 'světlý') : next}`,
-        );
-      };
-      set(root.dataset.theme ?? 'light');
-      // A page restored by Back/Forward keeps the theme it was left with; apply a newer choice.
-      addEventListener('pageshow', (e) => {
-        if (!e.persisted) return;
-        remaining = loadSurprise();
-        let theme = root.dataset.theme ?? systemTheme;
-        try {
-          if (sessionStorage.getItem('theme:matrix') === '1') theme = 'matrix';
-          else {
-            const saved = localStorage.getItem('theme');
-            if (saved === 'light' || saved === 'dark') theme = saved;
-          }
-        } catch {
-          // Keep the cached theme if its stored choice is unavailable.
-        }
-        set(theme);
-      });
-      button?.addEventListener('click', async () => {
-        if (root.classList.contains('theme-switch')) return;
-        const next = root.dataset.nextTheme!;
-        const remainingAfter =
-          next === 'matrix'
-            ? rollSurprise()
-            : root.dataset.theme === 'matrix'
-              ? remaining
-              : remaining - 1;
-        const apply = () => {
-          remaining = remainingAfter;
-          try {
-            sessionStorage.setItem('theme:surprise', String(remaining));
-          } catch {}
-          set(next);
-          try {
-            if (next === 'matrix') sessionStorage.setItem('theme:matrix', '1');
-            else sessionStorage.removeItem('theme:matrix');
-          } catch {
-            // Storage blocked: Matrix lasts for this page only.
-          }
-          if (next !== 'matrix')
-            try {
-              localStorage.setItem('theme', next);
-            } catch {}
+      import { onPage } from '../scripts/page';
+      onPage((signal) => {
+        const root = document.documentElement;
+        const updateLanguageLinks = () => {
+          document.querySelectorAll<HTMLAnchorElement>('[data-language]').forEach((link) => {
+            link.hash = location.hash;
+          });
         };
-        const motion = matchMedia('(prefers-reduced-motion: reduce)');
-        if (motion.matches) return apply();
-        if (next === 'matrix') {
-          // Swap under the opaque terminal after its last line (global.css), then reveal. Escape,
-          // a hidden tab or leaving the page finishes at once, so a cached page never freezes.
-          closeMenu();
-          root.classList.add('theme-switch', 'theme-hack');
-          let timer = setTimeout(
-            () => {
-              apply();
-              root.classList.add('theme-reveal');
-              timer = setTimeout(finish, 700);
-            },
-            Number(document.querySelector<HTMLElement>('.matrix-terminal')!.dataset.duration),
+        updateLanguageLinks();
+        addEventListener('hashchange', updateLanguageLinks, { signal });
+
+        const menuPanel = document.querySelector<HTMLElement>('#site-menu');
+        const phone = matchMedia('(width < 48rem)');
+        const closeMenu = () => {
+          if (menuPanel?.matches(':popover-open')) menuPanel.hidePopover();
+        };
+        phone.addEventListener('change', closeMenu, { signal });
+        menuPanel?.addEventListener('click', (event) => {
+          if ((event.target as Element).closest('a')) closeMenu();
+        });
+
+        // Classic themes reveal from the button; Matrix opens an inert terminal immediately.
+        const button = document.querySelector<HTMLButtonElement>('.theme');
+        const meta = document.querySelector('meta[name="theme-color"]');
+        const themeLabel = button?.querySelector('.sr-only')?.textContent?.trim() ?? 'Theme';
+        const systemTheme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        const rollSurprise = () => 3 + Math.floor(Math.random() * 6);
+        const loadSurprise = () => {
+          try {
+            const saved = Number(sessionStorage.getItem('theme:surprise'));
+            if (Number.isInteger(saved) && saved >= 1 && saved <= 8) return saved;
+          } catch {}
+          const count = rollSurprise();
+          try {
+            sessionStorage.setItem('theme:surprise', String(count));
+          } catch {}
+          return count;
+        };
+        let remaining = loadSurprise();
+        let finishTheme = () => {};
+        const set = (theme: string) => {
+          root.dataset.theme = theme;
+          // Matrix always exits to light. Keep in sync with the inline script in <head>.
+          const next =
+            theme === 'matrix'
+              ? 'light'
+              : remaining === 1
+                ? 'matrix'
+                : theme === 'dark'
+                  ? 'light'
+                  : 'dark';
+          root.dataset.nextTheme = next;
+          meta?.setAttribute(
+            'content',
+            theme === 'light' ? '#fafaf9' : theme === 'matrix' ? '#040a06' : '#0b0b0c',
           );
-          const stop = new AbortController();
-          const finish = () => {
-            clearTimeout(timer);
-            stop.abort();
-            if (root.dataset.theme !== next) apply();
-            root.classList.remove('theme-switch', 'theme-hack', 'theme-reveal');
+          button?.setAttribute(
+            'aria-label',
+            `${themeLabel}: ${next === 'matrix' ? 'Matrix' : root.lang === 'cs' ? (next === 'dark' ? 'tmavý' : 'světlý') : next}`,
+          );
+        };
+        set(root.dataset.theme ?? 'light');
+        // A page restored by Back/Forward keeps the theme it was left with; apply a newer choice.
+        const refreshTheme = () => {
+          remaining = loadSurprise();
+          let theme = root.dataset.theme ?? systemTheme;
+          try {
+            if (sessionStorage.getItem('theme:matrix') === '1') theme = 'matrix';
+            else {
+              const saved = localStorage.getItem('theme');
+              if (saved === 'light' || saved === 'dark') theme = saved;
+            }
+          } catch {
+            // Keep the cached theme if its stored choice is unavailable.
+          }
+          set(theme);
+        };
+        addEventListener(
+          'pageshow',
+          (e) => {
+            if (e.persisted) refreshTheme();
+          },
+          { signal },
+        );
+        button?.addEventListener('click', async () => {
+          if (root.classList.contains('theme-switch')) return;
+          const next = root.dataset.nextTheme!;
+          const remainingAfter =
+            next === 'matrix'
+              ? rollSurprise()
+              : root.dataset.theme === 'matrix'
+                ? remaining
+                : remaining - 1;
+          const apply = () => {
+            remaining = remainingAfter;
+            try {
+              sessionStorage.setItem('theme:surprise', String(remaining));
+            } catch {}
+            set(next);
+            try {
+              if (next === 'matrix') sessionStorage.setItem('theme:matrix', '1');
+              else sessionStorage.removeItem('theme:matrix');
+            } catch {
+              // Storage blocked: Matrix lasts for this page only.
+            }
+            if (next !== 'matrix')
+              try {
+                localStorage.setItem('theme', next);
+              } catch {}
           };
-          const { signal } = stop;
-          addEventListener('pagehide', finish, { signal });
-          addEventListener('keydown', (e) => e.key === 'Escape' && finish(), { signal });
-          document.addEventListener('visibilitychange', () => document.hidden && finish(), {
+          const motion = matchMedia('(prefers-reduced-motion: reduce)');
+          if (motion.matches) return apply();
+          if (next === 'matrix') {
+            // Swap under the opaque terminal after its last line (global.css), then reveal. Escape,
+            // a hidden tab or leaving the page finishes at once, so a cached page never freezes.
+            closeMenu();
+            root.classList.add('theme-switch', 'theme-hack');
+            let timer = setTimeout(
+              () => {
+                apply();
+                root.classList.add('theme-reveal');
+                timer = setTimeout(finish, 700);
+              },
+              Number(document.querySelector<HTMLElement>('.matrix-terminal')!.dataset.duration),
+            );
+            const stop = new AbortController();
+            const finish = () => {
+              clearTimeout(timer);
+              stop.abort();
+              if (root.dataset.theme !== next) apply();
+              root.classList.remove('theme-switch', 'theme-hack', 'theme-reveal');
+              finishTheme = () => {};
+            };
+            finishTheme = finish;
+            const { signal } = stop;
+            addEventListener('pagehide', finish, { signal });
+            addEventListener('keydown', (e) => e.key === 'Escape' && finish(), { signal });
+            document.addEventListener('visibilitychange', () => document.hidden && finish(), {
+              signal,
+            });
+            motion.addEventListener('change', () => motion.matches && finish(), { signal });
+            return;
+          }
+          if (!document.startViewTransition) return apply();
+          const box = button.getBoundingClientRect();
+          const x = box.left + box.width / 2;
+          const y = box.top + box.height / 2;
+          const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+          root.classList.add('theme-switch');
+          const vt = document.startViewTransition(() => {
+            if (!signal.aborted) apply();
+          });
+          let reveal: Animation | undefined;
+          finishTheme = () => {
+            if (root.dataset.theme !== next) apply();
+            vt.skipTransition();
+            reveal?.cancel();
+            root.classList.remove('theme-switch');
+          };
+          try {
+            await vt.ready;
+            if (signal.aborted) return;
+            reveal = root.animate(
+              { clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
+              {
+                duration: 560,
+                easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)',
+                pseudoElement: '::view-transition-new(root)',
+              },
+            );
+          } catch {
+            // A skipped transition still applies the selected theme.
+          } finally {
+            await vt.finished;
+            if (!signal.aborted) {
+              root.classList.remove('theme-switch');
+              finishTheme = () => {};
+            }
+          }
+        });
+
+        const hint = document.querySelector<HTMLButtonElement>('.theme-hint');
+        const showHint = () => {
+          if (hint) delete hint.dataset.dismissed;
+        };
+        for (const event of ['pointerenter', 'focus']) hint?.addEventListener(event, showHint);
+        hint?.addEventListener('click', () => {
+          showHint();
+          hint.focus();
+        });
+        addEventListener(
+          'keydown',
+          (event) => {
+            if (
+              event.key !== 'Escape' ||
+              !hint ||
+              getComputedStyle(hint.querySelector('.theme-hint__tip')!).visibility !== 'visible'
+            )
+              return;
+            event.preventDefault();
+            event.stopPropagation();
+            hint.dataset.dismissed = '';
+          },
+          { signal },
+        );
+
+        // Project rows: a card with the project's problem statement trails the pointer.
+        const rows = document.querySelectorAll<HTMLElement>('a.row[data-desc]');
+        if (rows.length && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+          const card = document.createElement('div');
+          const label = document.createElement('span');
+          const text = document.createElement('span');
+          card.className = 'peek';
+          label.className = 'peek__label';
+          label.textContent = document.body.dataset.problemLabel ?? 'problem';
+          card.setAttribute('aria-hidden', 'true');
+          card.append(label, text);
+          document.body.append(card);
+          const lag = matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0.2;
+          let x = 0;
+          let y = 0;
+          let cx = 0;
+          let cy = 0;
+          let frame = 0;
+          const follow = () => {
+            cx += (x - cx) * lag;
+            cy += (y - cy) * lag;
+            card.style.translate = `${cx}px ${cy}px`;
+            frame = Math.abs(x - cx) + Math.abs(y - cy) > 0.5 ? requestAnimationFrame(follow) : 0;
+          };
+          // Right of and below the pointer, flipped when that would leave the viewport, and kept
+          // inside it when neither side fits (narrow windows).
+          const fit = (at: number, size: number, room: number) =>
+            Math.max(
+              12,
+              Math.min(at + 24 + size > room - 12 ? at - 24 - size : at + 24, room - 12 - size),
+            );
+          const aim = (e: PointerEvent) => {
+            x = fit(e.clientX, card.offsetWidth, innerWidth);
+            y = fit(e.clientY, card.offsetHeight, innerHeight);
+          };
+          // Escape dismisses the card until the pointer enters another row.
+          addEventListener('keydown', (e) => e.key === 'Escape' && card.classList.remove('is-on'), {
             signal,
           });
-          motion.addEventListener('change', () => motion.matches && finish(), { signal });
-          return;
-        }
-        if (!document.startViewTransition) return apply();
-        const box = button.getBoundingClientRect();
-        const x = box.left + box.width / 2;
-        const y = box.top + box.height / 2;
-        const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
-        root.classList.add('theme-switch');
-        const vt = document.startViewTransition(apply);
-        try {
-          await vt.ready;
-          root.animate(
-            { clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
-            {
-              duration: 560,
-              easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)',
-              pseudoElement: '::view-transition-new(root)',
-            },
-          );
-        } catch {
-          // A skipped transition still applies the selected theme.
-        } finally {
-          await vt.finished;
-          root.classList.remove('theme-switch');
-        }
-      });
-
-      const hint = document.querySelector<HTMLButtonElement>('.theme-hint');
-      const showHint = () => {
-        if (hint) delete hint.dataset.dismissed;
-      };
-      for (const event of ['pointerenter', 'focus']) hint?.addEventListener(event, showHint);
-      hint?.addEventListener('click', () => {
-        showHint();
-        hint.focus();
-      });
-      addEventListener('keydown', (event) => {
-        if (
-          event.key !== 'Escape' ||
-          !hint ||
-          getComputedStyle(hint.querySelector('.theme-hint__tip')!).visibility !== 'visible'
-        )
-          return;
-        event.preventDefault();
-        event.stopPropagation();
-        hint.dataset.dismissed = '';
-      });
-
-      // Project rows: a card with the project's problem statement trails the pointer.
-      const rows = document.querySelectorAll<HTMLElement>('a.row[data-desc]');
-      if (rows.length && matchMedia('(hover: hover) and (pointer: fine)').matches) {
-        const card = document.createElement('div');
-        const label = document.createElement('span');
-        const text = document.createElement('span');
-        card.className = 'peek';
-        label.className = 'peek__label';
-        label.textContent = document.body.dataset.problemLabel ?? 'problem';
-        card.setAttribute('aria-hidden', 'true');
-        card.append(label, text);
-        document.body.append(card);
-        const lag = matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0.2;
-        let x = 0;
-        let y = 0;
-        let cx = 0;
-        let cy = 0;
-        let frame = 0;
-        const follow = () => {
-          cx += (x - cx) * lag;
-          cy += (y - cy) * lag;
-          card.style.translate = `${cx}px ${cy}px`;
-          frame = Math.abs(x - cx) + Math.abs(y - cy) > 0.5 ? requestAnimationFrame(follow) : 0;
-        };
-        // Right of and below the pointer, flipped when that would leave the viewport, and kept
-        // inside it when neither side fits (narrow windows).
-        const fit = (at: number, size: number, room: number) =>
-          Math.max(
-            12,
-            Math.min(at + 24 + size > room - 12 ? at - 24 - size : at + 24, room - 12 - size),
-          );
-        const aim = (e: PointerEvent) => {
-          x = fit(e.clientX, card.offsetWidth, innerWidth);
-          y = fit(e.clientY, card.offsetHeight, innerHeight);
-        };
-        // Escape dismisses the card until the pointer enters another row.
-        addEventListener('keydown', (e) => e.key === 'Escape' && card.classList.remove('is-on'));
-        rows.forEach((row) => {
-          row.addEventListener('pointerenter', (e) => {
-            text.textContent = row.dataset.desc ?? '';
-            aim(e);
-            if (!card.classList.contains('is-on')) {
-              cx = x;
-              cy = y;
-              card.style.translate = `${cx}px ${cy}px`;
-            }
-            card.classList.add('is-on');
+          rows.forEach((row) => {
+            row.addEventListener('pointerenter', (e) => {
+              text.textContent = row.dataset.desc ?? '';
+              aim(e);
+              if (!card.classList.contains('is-on')) {
+                cx = x;
+                cy = y;
+                card.style.translate = `${cx}px ${cy}px`;
+              }
+              card.classList.add('is-on');
+            });
+            row.addEventListener('pointermove', (e) => {
+              aim(e);
+              if (!frame) frame = requestAnimationFrame(follow);
+            });
+            row.addEventListener('pointerleave', () => card.classList.remove('is-on'));
           });
-          row.addEventListener('pointermove', (e) => {
-            aim(e);
-            if (!frame) frame = requestAnimationFrame(follow);
-          });
-          row.addEventListener('pointerleave', () => card.classList.remove('is-on'));
-        });
-      }
+          signal.addEventListener('abort', () => cancelAnimationFrame(frame), { once: true });
+        }
+        return () => {
+          finishTheme();
+          closeMenu();
+        };
+      });
+      document.addEventListener('astro:before-preparation', (event) => {
+        const load = event.loader;
+        event.loader = async () => {
+          await load();
+          // A deployed revision needs a fresh script realm, including its custom elements.
+          const revision = (doc: Document) =>
+            doc.querySelector<HTMLMetaElement>('meta[name="app-revision"]')?.content;
+          if (revision(document) === revision(event.newDocument)) return;
+          event.preventDefault();
+          // Traversal already changed the URL, so its fragment fallback needs an explicit reload.
+          if (event.navigationType === 'traverse' && event.to.hash && !event.signal.aborted)
+            location.reload();
+        };
+      });
+      document.addEventListener('astro:before-swap', (event) => {
+        // Transfer only the selected theme; route labels and temporary classes belong to the new page.
+        const root = document.documentElement;
+        const next = event.newDocument;
+        for (const key of ['theme', 'nextTheme'])
+          next.documentElement.dataset[key] = root.dataset[key];
+        next
+          .querySelector('meta[name="theme-color"]')
+          ?.setAttribute(
+            'content',
+            document.querySelector('meta[name="theme-color"]')?.getAttribute('content') ??
+              '#fafaf9',
+          );
+        // Skipping the route snapshot rejects ready; the page and its own entrances still load.
+        void event.viewTransition.ready.catch(() => undefined);
+        event.viewTransition.skipTransition();
+      });
     </script>
   </body>
 </html>

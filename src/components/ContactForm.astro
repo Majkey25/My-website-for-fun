@@ -116,61 +116,68 @@ const text =
 </noscript>
 
 <script>
-  const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
-  const status = form?.querySelector<HTMLElement>('[role="status"]');
-  const button = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
-  const fields = form?.querySelector('fieldset');
-  if (form && status && button && fields) {
-    form.inert = false;
-    let submitting = false;
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      if (submitting || !form.reportValidity()) return;
-      const data = Object.fromEntries(new FormData(form));
-      const say = (message: string, error: boolean) => {
-        status.textContent = message;
-        status.classList.toggle('is-error', error);
-      };
-      if (data.botcheck) return say(form.dataset.error ?? '', true);
-      data.subject = `Matěj Teplý · init — ${data.topic}: ${data.name}`;
-      const controller = new AbortController();
-      const deadline = setTimeout(() => controller.abort(), 60_000);
-      submitting = true;
-      fields.disabled = true;
-      form.setAttribute('aria-busy', 'true');
-      button.setAttribute('aria-disabled', 'true');
-      say(form.dataset.sending ?? '', false);
-      try {
-        const response = await fetch(form.action, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          credentials: 'omit',
-          redirect: 'error',
-          body: JSON.stringify(data),
-          signal: controller.signal,
-        });
-        const body: unknown = await response.json();
-        if (
-          !response.ok ||
-          !body ||
-          typeof body !== 'object' ||
-          !('success' in body) ||
-          body.success !== true
-        )
-          throw new Error(`status ${response.status}`);
-        form.reset();
-        say(form.dataset.sent ?? '', false);
-      } catch {
-        say(form.dataset.error ?? '', true);
-      } finally {
-        clearTimeout(deadline);
-        submitting = false;
-        fields.disabled = false;
-        form.removeAttribute('aria-busy');
-        button.removeAttribute('aria-disabled');
-      }
-    });
-  }
+  import { onPage } from '../scripts/page';
+  onPage((signal) => {
+    const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+    const status = form?.querySelector<HTMLElement>('[role="status"]');
+    const button = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+    const fields = form?.querySelector('fieldset');
+    if (form && status && button && fields) {
+      form.inert = false;
+      let submitting = false;
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (submitting || !form.reportValidity()) return;
+        const data = Object.fromEntries(new FormData(form));
+        const say = (message: string, error: boolean) => {
+          status.textContent = message;
+          status.classList.toggle('is-error', error);
+        };
+        if (data.botcheck) return say(form.dataset.error ?? '', true);
+        data.subject = `Matěj Teplý · init — ${data.topic}: ${data.name}`;
+        const controller = new AbortController();
+        const cancel = () => controller.abort();
+        signal.addEventListener('abort', cancel, { once: true });
+        const deadline = setTimeout(() => controller.abort(), 60_000);
+        submitting = true;
+        fields.disabled = true;
+        form.setAttribute('aria-busy', 'true');
+        button.setAttribute('aria-disabled', 'true');
+        say(form.dataset.sending ?? '', false);
+        try {
+          const response = await fetch(form.action, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            credentials: 'omit',
+            redirect: 'error',
+            body: JSON.stringify(data),
+            signal: controller.signal,
+          });
+          const body: unknown = await response.json();
+          if (signal.aborted) return;
+          if (
+            !response.ok ||
+            !body ||
+            typeof body !== 'object' ||
+            !('success' in body) ||
+            body.success !== true
+          )
+            throw new Error(`status ${response.status}`);
+          form.reset();
+          say(form.dataset.sent ?? '', false);
+        } catch {
+          if (!signal.aborted) say(form.dataset.error ?? '', true);
+        } finally {
+          clearTimeout(deadline);
+          signal.removeEventListener('abort', cancel);
+          submitting = false;
+          fields.disabled = false;
+          form.removeAttribute('aria-busy');
+          button.removeAttribute('aria-disabled');
+        }
+      });
+    }
+  });
 </script>
 
 <style>

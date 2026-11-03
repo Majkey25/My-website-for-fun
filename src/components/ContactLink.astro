@@ -19,6 +19,7 @@ const Tag = action === 'email' ? 'a' : 'button';
     class={className}
     type={action === 'email' ? undefined : 'button'}
     href={action === 'email' ? href('contact/', lang) : undefined}
+    data-astro-reload={action === 'email' || undefined}
     data-contact-value={encodeEmail(value)}
     data-contact-action={action}
     data-glitch={glitch || undefined}
@@ -47,9 +48,12 @@ const Tag = action === 'email' ? 'a' : 'button';
 
 <script>
   import { decodeEmail, emailUri } from '../contact';
+  import { onPage } from '../scripts/page';
 
-  document.querySelectorAll<HTMLButtonElement>('button[data-contact-value]').forEach((button) => {
-    button.hidden = false;
+  onPage(() => {
+    document.querySelectorAll<HTMLButtonElement>('button[data-contact-value]').forEach((button) => {
+      button.hidden = false;
+    });
   });
   document.addEventListener('click', async (event) => {
     if (!event.isTrusted || event.defaultPrevented || !(event.target instanceof Element)) return;

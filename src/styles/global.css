@@ -251,6 +251,10 @@ html {
   scroll-padding-top: 5rem;
 }
 
+html[data-astro-transition] {
+  scroll-behavior: auto;
+}
+
 body {
   min-height: 100svh;
   background: var(--bg);
@@ -763,7 +767,6 @@ a.row:focus-visible {
   display: inline-grid;
   max-width: 100%;
   white-space: pre-wrap;
-  clip-path: inset(-0.2em 0);
 }
 
 .glitch-label::before {
