@@ -205,6 +205,10 @@ const structured = {
     <Font cssVariable="--font-sans" preload />
     <script is:inline>
       (() => {
+        // Keep the saved coordinate before Astro can clamp an unmeasured gallery on reload.
+        const initialScroll = history.state?.scrollY;
+        if (typeof initialScroll === 'number' && initialScroll > 0)
+          document.documentElement.dataset.initialScroll = String(initialScroll);
         // Restore browser history before enabling smooth in-page anchors.
         document.documentElement.style.scrollBehavior = 'auto';
         addEventListener(
@@ -681,7 +685,11 @@ const structured = {
           // A deployed revision needs a fresh script realm, including its custom elements.
           const revision = (doc: Document) =>
             doc.querySelector<HTMLMetaElement>('meta[name="app-revision"]')?.content;
-          if (revision(document) !== revision(event.newDocument)) event.preventDefault();
+          if (revision(document) === revision(event.newDocument)) return;
+          event.preventDefault();
+          // Traversal already changed the URL, so its fragment fallback needs an explicit reload.
+          if (event.navigationType === 'traverse' && event.to.hash && !event.signal.aborted)
+            location.reload();
         };
       });
       document.addEventListener('astro:before-swap', (event) => {

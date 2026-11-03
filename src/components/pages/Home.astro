@@ -352,7 +352,13 @@ const pages = [
       if (box.left < bounds.left + inset || box.right > bounds.right - inset)
         scrollTo({ top: start + Math.min(travel, card.offsetLeft - inset), behavior: 'instant' });
     });
-    const restoredY = traversed ? history.state?.scrollY : undefined;
+    const initialScroll = document.documentElement.dataset.initialScroll;
+    delete document.documentElement.dataset.initialScroll;
+    const restoredY = traversed
+      ? initialScroll === undefined
+        ? history.state?.scrollY
+        : Number(initialScroll)
+      : undefined;
     measure();
     // Astro restores before this track expands; retain its existing history coordinate.
     if (typeof restoredY === 'number' && restoredY > 0)
