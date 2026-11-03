@@ -350,7 +350,7 @@ const pages = [
     const restoredY = history.state?.scrollY;
     measure();
     // Astro restores before this track expands; retain its existing history coordinate.
-    if (!location.hash && typeof restoredY === 'number' && restoredY > 0)
+    if (typeof restoredY === 'number' && restoredY > 0)
       scrollTo({ top: restoredY, behavior: 'instant' });
     return () => {
       panels.disconnect();
