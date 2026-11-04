@@ -523,7 +523,7 @@ button {
 /* The name: Mona Sans at its widest cut. */
 .name {
   white-space: nowrap;
-  font-size: clamp(2.6rem, 1.4rem + 5.2vw, 4.9rem);
+  font-size: clamp(2rem, 1rem + 5.2vw, 4.9rem);
   font-weight: 760;
   font-stretch: 125%;
   line-height: 0.98;

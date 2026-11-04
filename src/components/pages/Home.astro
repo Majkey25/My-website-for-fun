@@ -1,6 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
+import portrait from '../../assets/matej-teply.png';
 import Arrow from '../Arrow.astro';
 import GlitchText from '../GlitchText.astro';
 import Workbench from '../Workbench.astro';
@@ -50,9 +51,24 @@ const pages = [
 
 <Base lang={lang} intro>
   <section class="hero frame" aria-labelledby="hero-title">
-    <h1 id="hero-title" class="name" data-enter style="--i:0">
-      <GlitchText text="Matěj Teplý" scramble />
-    </h1>
+    <div class="hero__identity">
+      <Image
+        class="hero__portrait"
+        src={portrait}
+        alt={cs ? 'Portrét Matěje Teplého' : 'Portrait of Matěj Teplý'}
+        width={128}
+        widths={[64, 128, 256]}
+        sizes="clamp(4rem, 15vw, 8rem)"
+        format="png"
+        quality="max"
+        priority
+        data-enter
+        style="--i:0"
+      />
+      <h1 id="hero-title" class="name" data-enter style="--i:0">
+        <GlitchText text="Matěj Teplý" scramble />
+      </h1>
+    </div>
     <div class="hero__copy" data-enter style="--i:1">
       <p class="statement">
         {cs
@@ -378,11 +394,18 @@ const pages = [
     gap: 2.5rem 4rem;
     padding-top: clamp(3rem, 9vw, 6.5rem);
   }
-  .hero .name {
+  .hero__identity {
     grid-column: 1/-1;
-    font-size: clamp(2.75rem, 0.8rem + 10.2vw, 9.75rem);
-    letter-spacing: -0.045em;
-    line-height: 0.9;
+    display: flex;
+    align-items: center;
+    gap: clamp(1rem, 3vw, 2rem);
+  }
+  .hero__portrait {
+    flex: none;
+    width: clamp(4rem, 15vw, 8rem);
+    height: auto;
+    aspect-ratio: 1;
+    border-radius: 50%;
   }
   .hero__copy {
     display: grid;

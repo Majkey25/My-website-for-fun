@@ -3,7 +3,7 @@ import { Image } from 'astro:assets';
 import schoolLogo from '../../assets/brands/spszl.png';
 import stcLogo from '../../assets/brands/stc.png';
 import utbLogo from '../../assets/brands/utb.png';
-import portrait from '../../assets/matej-teply.webp';
+import portrait from '../../assets/matej-teply.png';
 import GlitchText from '../../components/GlitchText.astro';
 import SocialIcon from '../../components/SocialIcon.astro';
 import ContactLink from '../ContactLink.astro';
@@ -291,6 +291,8 @@ const skills = cs
         width={224}
         widths={[128, 224, 256, 448]}
         sizes="(min-width:56rem) 14rem, 8rem"
+        format="png"
+        quality="max"
         priority
         data-enter
         style="--i: 1"
@@ -641,9 +643,6 @@ const skills = cs
 
   .hero .name {
     grid-column: 1 / -1;
-    font-size: clamp(2.75rem, 0.8rem + 10.2vw, 9.75rem);
-    letter-spacing: -0.045em;
-    line-height: 0.9;
   }
 
   .hero--profile {
@@ -656,7 +655,7 @@ const skills = cs
     width: 14rem;
     height: auto;
     aspect-ratio: 1;
-    border-radius: 1rem;
+    border-radius: 50%;
   }
 
   .hero__copy {
