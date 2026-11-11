@@ -8,6 +8,7 @@ import GlitchText from '../../components/GlitchText.astro';
 import SocialIcon from '../../components/SocialIcon.astro';
 import ContactLink from '../ContactLink.astro';
 import ContactForm from '../ContactForm.astro';
+import { certifications } from '../../data/certifications';
 import Base from '../../layouts/Base.astro';
 import { href as siteHref, profile } from '../../site';
 import { ui, type Lang } from '../../i18n';
@@ -106,51 +107,14 @@ const services = cs
       },
     ];
 // Certifications and completed courses are labelled separately.
-const certs = [
-  {
-    org: 'Microsoft',
-    list: ['Azure AI Fundamentals', 'Azure Fundamentals'],
-    note: cs ? 'certifikace Microsoft, 2023' : 'Microsoft Certified, 2023',
-  },
-  {
-    org: 'Google Cloud',
-    list: [
-      'Engineer AI Agents with Agent Development Kit (ADK)',
-      'Inspect Rich Documents with Gemini Multimodality and Multimodal RAG',
-      'Orchestrate Multi-agent Workflows with Gemini Enterprise',
-      'Implement CI/CD Pipelines on Google Cloud',
-    ],
-    note: cs ? 'odznaky dovedností, říjen 2026' : 'skill badges, Oct 2026',
-  },
-  {
-    org: 'Anthropic',
-    list: [
-      'Model Context Protocol: Advanced Topics',
-      'Building with the Claude API',
-      'Claude Code in Action',
-    ],
-    note: cs ? '3 z 20 kurzů, červenec 2026' : '3 of 20 courses, Jul 2026',
-  },
-  {
-    org: 'OpenAI',
-    list: [
-      'Design and Build Agentic Systems',
-      'Build with Retrieval-Augmented Generation',
-      'Evaluate AI Applications',
-    ],
-    note: cs ? '3 ze 17 kurzů, září 2026' : '3 of 17 courses, Sep 2026',
-  },
-  {
-    org: 'AWS',
-    list: ['Foundations of Prompt Engineering'],
-    note: cs ? 'kurz, srpen 2026' : 'course, Aug 2026',
-  },
-  {
-    org: 'Cambridge',
-    list: ['B2 First (FCE)'],
-    note: cs ? 'zkouška z angličtiny, 2024' : 'English exam, 2024',
-  },
-];
+const certificateCount = certifications.reduce((count, group) => count + group.list.length, 0);
+const certificateDate = new Intl.DateTimeFormat(lang, {
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+const formatCertificateDate = (date: string) =>
+  certificateDate.format(new Date(`${date}-01T00:00:00Z`));
 const habits = cs
   ? [
       {
@@ -483,28 +447,47 @@ const skills = cs
   {page === 'about' && (
     <section id="certs" class="section frame split" aria-labelledby="certs-title">
       <h2 id="certs-title" class="label">
-        {cs ? 'Certifikace a kurzy' : 'Certifications and courses'}
+        {cs ? 'Certifikace a kurzy' : 'Certifications and courses'}{' '}
+        <span class="count">({certificateCount})</span>
       </h2>
       <dl class="certs" data-reveal>
-        {certs.map((c) => (
+        {certifications.map((c) => (
           <div>
             <dt>{c.org}</dt>
             <dd>
               <ul>
-                {c.list.map((name) => (
-                  <li>{name}</li>
+                {c.list.map((certificate) => (
+                  <li>
+                    {certificate.href ? (
+                      <a href={certificate.href} rel="noopener" target="_blank">
+                        {certificate.name}
+                      </a>
+                    ) : (
+                      certificate.name
+                    )}
+                    <span class="meta">
+                      {cs ? 'Vydáno' : 'Issued'}{' '}
+                      <time datetime={certificate.issued}>
+                        {formatCertificateDate(certificate.issued)}
+                      </time>
+                      {certificate.expires && (
+                        <>
+                          {' · '}
+                          {cs ? 'platnost do' : 'expires'}{' '}
+                          <time datetime={certificate.expires}>
+                            {formatCertificateDate(certificate.expires)}
+                          </time>
+                        </>
+                      )}
+                    </span>
+                  </li>
                 ))}
               </ul>
-              <span class="meta">{c.note}</span>
+              <span class="meta">{c.note[lang]}</span>
             </dd>
           </div>
         ))}
       </dl>
-      <p class="muted intro">
-        {cs
-          ? 'Dále Google AI Essentials, Elements of AI z Helsinské univerzity a kurzy od IBM, Cisco a ITU.'
-          : 'Also Google AI Essentials, Elements of AI from the University of Helsinki, and courses from IBM, Cisco and the ITU.'}
-      </p>
       <p class="more">
         <a
           class="action-link ext"
@@ -874,8 +857,13 @@ const skills = cs
   /* Tighter inside a name than between names, so a wrapped name still reads as one. */
   .certs ul {
     display: grid;
-    gap: 0.4rem;
+    gap: 0.8rem;
     line-height: 1.35;
+  }
+
+  .certs li > .meta {
+    display: block;
+    margin-top: 0.2rem;
   }
 
   @media (width < 34rem) {
