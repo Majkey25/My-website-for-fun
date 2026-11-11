@@ -340,7 +340,14 @@ async function chat(
       if (outcome.query && !outcome.wrote) {
         await send('status', { stage: 'web' });
         const webStarted = Date.now();
-        const found = await searchWeb(env, outcome.query, sources.length, signal, requestId);
+        const found = await searchWeb(
+          env,
+          outcome.query,
+          sources.length,
+          signal,
+          requestId,
+          (urls) => send('status', { stage: 'web', urls }),
+        );
         webMs = Date.now() - webStarted;
         web = found.length;
         sources.push(...found);

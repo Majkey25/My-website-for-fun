@@ -3,7 +3,7 @@
 // only when each page it cites is on the fixed list in sources.ts.
 
 import type { Settings, Source } from './answer.ts';
-import { UpstreamError, upstreamFailure, providerFailure } from './answer.ts';
+import { UpstreamError, upstreamFailure, providerFailure, readEvents } from './answer.ts';
 import { OWNER_PAGES, ownerUrl } from './sources.ts';
 import { tokenUsage } from './metrics.ts';
 
@@ -105,6 +105,7 @@ export async function searchWeb(
   first: number,
   signal: AbortSignal,
   requestId: string,
+  progress: (urls: string[]) => Promise<void>,
 ): Promise<Source[]> {
   let usage: unknown;
   try {
@@ -129,19 +130,56 @@ export async function searchWeb(
         ],
         max_tool_calls: 2,
         max_output_tokens: 1200,
+        include: ['web_search_call.action.sources'],
         store: false,
+        stream: true,
       }),
       signal,
     });
     if (!response.ok) {
       throw await upstreamFailure(response);
     }
-    const body = (await response.json()) as {
+    type Result = {
       status?: unknown;
       error?: unknown;
       usage?: unknown;
-      output?: { type?: string }[];
+      output?: unknown;
     };
+    let body: Result | undefined;
+    if (response.headers.get('content-type')?.includes('text/event-stream')) {
+      if (!response.body) throw new UpstreamError('protocol');
+      const visited = new Set<string>();
+      for await (const event of readEvents(response.body)) {
+        signal.throwIfAborted();
+        if (event.type === 'response.output_item.done' && event.item?.type === 'web_search_call') {
+          const action = event.item.action;
+          const candidates = [
+            action?.url,
+            ...list<{ url?: unknown }>(action?.sources).map((source) => source?.url),
+          ];
+          const urls: string[] = [];
+          for (const raw of candidates) {
+            if (typeof raw !== 'string' || raw.length > 2048) continue;
+            const url = ownerUrl(raw);
+            if (!url || visited.has(url) || visited.size === 10) continue;
+            visited.add(url);
+            urls.push(url);
+          }
+          if (urls.length) await progress(urls);
+        } else if (
+          event.type === 'response.completed' ||
+          event.type === 'response.incomplete' ||
+          event.type === 'response.failed'
+        ) {
+          usage = event.response?.usage;
+          if (event.type === 'response.failed') throw providerFailure(0, event.response?.error);
+          if (event.type === 'response.incomplete') throw new UpstreamError('incomplete');
+          body = event.response;
+          break;
+        } else if (event.type === 'error') throw providerFailure(0, { code: event.code });
+      }
+      if (!body) throw new UpstreamError('incomplete');
+    } else body = (await response.json()) as Result;
     usage = body?.usage;
     if (body?.status === 'failed') throw providerFailure(0, body.error);
     if (body?.status === 'incomplete') throw new UpstreamError('incomplete');
@@ -154,7 +192,8 @@ export async function searchWeb(
         dropped,
         usage: tokenUsage(usage),
         toolCalls: Array.isArray(body?.output)
-          ? body.output.filter((item) => item?.type === 'web_search_call').length
+          ? list<{ type?: unknown }>(body.output).filter((item) => item?.type === 'web_search_call')
+              .length
           : null,
       }),
     );

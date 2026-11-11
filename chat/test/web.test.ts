@@ -1,8 +1,111 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { evidence, SEARCH_DOMAINS } from '../src/web.ts';
+import { evidence, searchWeb, SEARCH_DOMAINS } from '../src/web.ts';
 import { MAX_SOURCE_CHARS, ownerLinks, ownerUrl } from '../src/sources.ts';
+
+test(
+  'real search actions publish bounded owned URLs before research completes',
+  { timeout: 3000 },
+  async (t) => {
+    const stop = new AbortController();
+    t.after(() => stop.abort());
+    const ready = Promise.withResolvers<void>();
+    let stream: ReadableStreamDefaultController<Uint8Array>;
+    const encode = (event: unknown) =>
+      new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`);
+    t.mock.method(globalThis, 'fetch', async (_url: unknown, init: RequestInit) => {
+      const body = JSON.parse(String(init.body));
+      assert.equal(body.stream, true);
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            stream = controller;
+            controller.enqueue(
+              encode({
+                type: 'response.output_item.done',
+                item: {
+                  type: 'web_search_call',
+                  action: {
+                    sources: [
+                      { url: 'javascript:alert(1)' },
+                      { url: 'https://github.com/other/x' },
+                      ...Array.from({ length: 15 }, (_, i) => ({
+                        url: `https://github.com/Majkey25/project${i}`,
+                      })),
+                      { url: 'https://github.com/Majkey25/project0' },
+                    ],
+                  },
+                },
+              }),
+            );
+          },
+        }),
+        { headers: { 'content-type': 'text/event-stream' } },
+      );
+    });
+    const updates: string[][] = [];
+    let completed = false;
+    const pending = searchWeb(
+      {
+        OPENAI_API_KEY: 'test',
+        OPENAI_BASE_URL: 'https://api.openai.test/v1',
+        OPENAI_MODEL: 'test',
+        OPENAI_REASONING: 'low',
+      },
+      'projects',
+      0,
+      stop.signal,
+      'test-request',
+      async (urls) => {
+        updates.push(urls);
+        ready.resolve();
+      },
+    ).then((value) => {
+      completed = true;
+      return value;
+    });
+    await ready.promise;
+    assert.equal(completed, false);
+    assert.deepEqual(updates, [
+      Array.from({ length: 10 }, (_, i) => `https://github.com/Majkey25/project${i}`),
+    ]);
+    stream!.enqueue(encode({ type: 'response.completed', response: { output: [] } }));
+    stream!.close();
+    assert.deepEqual(await pending, []);
+  },
+);
+
+test('search progress is never promoted to evidence when the provider disconnects', async (t) => {
+  t.mock.method(console, 'error', () => {});
+  t.mock.method(
+    globalThis,
+    'fetch',
+    async () =>
+      new Response(
+        'data: {"type":"response.output_item.done","item":{"type":"web_search_call","action":{"url":"https://github.com/Majkey25/CzechCore"}}}\n\n',
+        { headers: { 'content-type': 'text/event-stream' } },
+      ),
+  );
+  const updates: string[][] = [];
+  const result = await searchWeb(
+    {
+      OPENAI_API_KEY: 'test',
+      OPENAI_BASE_URL: 'https://api.openai.test/v1',
+      OPENAI_MODEL: 'test',
+      OPENAI_REASONING: 'low',
+    },
+    'projects',
+    0,
+    new AbortController().signal,
+    'test-request',
+    async (urls) => {
+      updates.push(urls);
+    },
+  );
+  assert.equal(updates.length, 1);
+  assert.deepEqual(result, []);
+});
 
 test('source-body links stay owned, bounded and separate from model output', () => {
   const text = [

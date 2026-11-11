@@ -198,9 +198,14 @@ type StreamEvent = {
   item_id?: unknown;
   output_index?: unknown;
   content_index?: unknown;
-  item?: { type?: unknown; name?: unknown; arguments?: unknown };
+  item?: {
+    type?: unknown;
+    name?: unknown;
+    arguments?: unknown;
+    action?: { url?: unknown; sources?: unknown };
+  };
   code?: unknown;
-  response?: { usage?: Usage; error?: unknown };
+  response?: { usage?: Usage; error?: unknown; status?: unknown; output?: unknown };
 };
 
 /** Decode only the first JSON string while retaining the full bounded payload for validation. */
