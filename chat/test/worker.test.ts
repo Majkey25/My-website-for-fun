@@ -1282,12 +1282,9 @@ test('one web search runs on request, and only owner-page facts reach the answer
   const text = `${fact} ([github.com](https://github.com/Majkey25/Selia-Weather))\nSomeone else won an award. ([github.com](https://github.com/other/x))`;
   const at = (needle: string) => text.indexOf(needle);
   const calls = stubFetch(t, (_url, init) => {
-    const body = JSON.parse(String(init.body)) as {
-      tools?: { type: string }[];
-      tool_choice?: string;
-    };
-    if (body.tools?.[0]?.type === 'web_search') {
-      const search = {
+    const body = JSON.parse(String(init.body)) as { stream?: boolean; tool_choice?: string };
+    if (!body.stream)
+      return Response.json({
         usage: { input_tokens: 40, output_tokens: 12 },
         output: [
           { type: 'web_search_call', status: 'completed' },
@@ -1317,24 +1314,7 @@ test('one web search runs on request, and only owner-page facts reach the answer
             ],
           },
         ],
-      };
-      return sse([
-        {
-          type: 'response.output_item.done',
-          item: {
-            type: 'web_search_call',
-            action: {
-              type: 'search',
-              sources: [
-                { url: 'https://github.com/Majkey25/Selia-Weather' },
-                { url: 'https://github.com/other/x' },
-              ],
-            },
-          },
-        },
-        { type: 'response.completed', response: search },
-      ]);
-    }
+      });
     if (body.tool_choice === 'auto')
       return sse([
         {
@@ -1370,14 +1350,10 @@ test('one web search runs on request, and only owner-page facts reach the answer
   const stream = await events(res);
   assert.deepEqual(
     stream.map((e) => e.event),
-    ['status', 'sources', 'status', 'status', 'sources', 'delta', 'suggestions', 'done'],
+    ['status', 'sources', 'status', 'sources', 'delta', 'suggestions', 'done'],
   );
   assert.deepEqual(stream[2]?.data, { stage: 'web' });
-  assert.deepEqual(stream[3]?.data, {
-    stage: 'web',
-    urls: ['https://github.com/Majkey25/Selia-Weather'],
-  });
-  assert.deepEqual(stream[4]?.data, [
+  assert.deepEqual(stream[3]?.data, [
     {
       id: 'S1',
       title: 'CzechCore',
@@ -1398,15 +1374,13 @@ test('one web search runs on request, and only owner-page facts reach the answer
     reasoningTokens: null,
   });
   assert.equal(searchLog.toolCalls, 1);
-  assert.deepEqual(stream[6]?.data, { questions: followups });
+  assert.deepEqual(stream[5]?.data, { questions: followups });
   const [first, search, answer] = calls.map((c) => c.body as Record<string, unknown>);
   assert.equal((first?.tools as { name: string }[])[0]?.name, 'search_web');
   assert.equal(first?.parallel_tool_calls, false);
   // The search sees the query only: no conversation, no image.
   assert.equal(search?.input, 'Selia Weather models');
   assert.equal(search?.store, false);
-  assert.equal(search?.stream, true);
-  assert.deepEqual(search?.include, ['web_search_call.action.sources']);
   const tool = (search?.tools as { type: string; filters: { allowed_domains: string[] } }[])[0];
   assert.equal(tool?.type, 'web_search');
   assert.ok(tool?.filters.allowed_domains.some((domain) => domain === 'github.com'));

@@ -34,7 +34,7 @@ const MAX_HISTORY_CHARS = 2 * 1024 * 1024;
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-export function chatSourceUrl(value: unknown): string | null {
+function sourceUrl(value: unknown): string | null {
   if (typeof value !== 'string' || value.length > 2048) return null;
   try {
     const url = new URL(value);
@@ -54,13 +54,13 @@ export function chatSources(value: unknown): ChatSource[] {
       typeof source.title !== 'string'
     )
       return [];
-    const url = source.url === null ? null : chatSourceUrl(source.url);
+    const url = source.url === null ? null : sourceUrl(source.url);
     if (source.url !== null && url === null) return [];
     const links: string[] = [];
     if (source.links !== undefined) {
       if (!Array.isArray(source.links) || source.links.length > 10) return [];
       for (const link of source.links as unknown[]) {
-        if (typeof link !== 'string' || chatSourceUrl(link) !== link) return [];
+        if (typeof link !== 'string' || sourceUrl(link) !== link) return [];
         links.push(link);
       }
     }

@@ -80,13 +80,10 @@ const text = cs
 const runtime = cs
   ? {
       sources: 'Zdroje',
-      acknowledgement: 'Podívám se na to. Nejdřív ověřím dostupné zdroje, potom odpovím.',
-      searching: 'Hledám v podkladech k Matějově práci…',
+      searching: 'Hledám na webu…',
       verifying: 'Ověřuji prohlížeč. Pokud se zobrazí kontrola, potvrďte ji níže.',
-      sending: 'Odesílám otázku…',
       web: 'Prohledávám povolené veřejné zdroje…',
       writing: 'Píšu odpověď…',
-      found: 'Nalezené podklady',
       ready: 'Odpověď je hotová.',
       copy: 'Kopírovat',
       copied: 'Zkopírováno',
@@ -110,13 +107,10 @@ const runtime = cs
     }
   : {
       sources: 'Sources',
-      acknowledgement: 'I’ll look into it. I’ll check the available sources before answering.',
       searching: 'Searching the site…',
       verifying: 'Checking your browser. Complete the check below if it appears.',
-      sending: 'Sending your question…',
       web: 'Searching approved public sources…',
       writing: 'Writing…',
-      found: 'Sources found',
       ready: 'Answer ready.',
       copy: 'Copy',
       copied: 'Copied',
@@ -275,7 +269,6 @@ const runtime = cs
   } from '../chat-file';
   import {
     chatSources,
-    chatSourceUrl,
     chatFollowups,
     HISTORY_LIMIT,
     HISTORY_TTL_MS,
@@ -296,13 +289,10 @@ const runtime = cs
   type Session = { token: string; expires: number };
   type Runtime = Record<
     | 'sources'
-    | 'acknowledgement'
     | 'searching'
     | 'verifying'
-    | 'sending'
     | 'web'
     | 'writing'
-    | 'found'
     | 'ready'
     | 'copy'
     | 'copied'
@@ -1260,7 +1250,7 @@ const runtime = cs
         this.#status.textContent = this.#text.verifying;
         const token = await this.#session(signal, fresh);
         signal.throwIfAborted();
-        this.#status.textContent = this.#text.sending;
+        this.#status.textContent = this.#text.searching;
         const res = await fetch(`${this.#api}/chat`, {
           method: 'POST',
           headers: {
@@ -1282,33 +1272,11 @@ const runtime = cs
       this.#setBusy(controller);
       const turn: Stored = { role: 'assistant', content: '', sources: [] };
       const item = this.#bubble(turn);
-      // This acknowledgement is not evidence or completed conversation history.
-      item.querySelector('.msg__body')!.textContent = this.#text.acknowledgement;
-      const research = document.createElement('details');
-      research.className = 'msg__research';
-      research.open = true;
-      research.hidden = true;
-      const stage = document.createElement('summary');
-      const pages = document.createElement('ul');
-      research.append(stage, pages);
-      item.append(research);
-      this.#log.scrollTop = this.#log.scrollHeight;
-      const found = new Set<string>();
-      const addSource = (title: string, url: string | null) => {
-        const key = url ?? title;
-        if (found.has(key) || found.size === 10) return;
-        found.add(key);
-        const li = document.createElement('li');
-        const label = document.createElement(url ? 'a' : 'span');
-        label.textContent = title;
-        if (label instanceof HTMLAnchorElement && url) {
-          label.href = url;
-          label.target = '_blank';
-          label.rel = 'noopener';
-        }
-        li.append(label);
-        pages.append(li);
-      };
+      // Three dots breathe in turn until the first word arrives.
+      const dots = document.createElement('span');
+      dots.className = 'msg__dots';
+      dots.append(...Array.from({ length: 3 }, () => document.createElement('i')));
+      item.querySelector('.msg__body')!.append(dots);
       this.#status.textContent = this.#text.verifying;
       let frame = 0;
       const paint = () => {
@@ -1344,40 +1312,18 @@ const runtime = cs
         let buffer = '';
         let done = false;
         for await (const chunk of res.body.pipeThrough(new TextDecoderStream())) {
-          if (stale()) return;
-          controller.signal.throwIfAborted();
           buffer += chunk;
           for (let end = buffer.indexOf('\n\n'); end !== -1; end = buffer.indexOf('\n\n')) {
             const block = buffer.slice(0, end);
             buffer = buffer.slice(end + 2);
-            const lines = block.split('\n');
-            const event = lines.find((line) => line.startsWith('event: '))?.slice(7);
-            const data = JSON.parse(
-              lines.find((line) => line.startsWith('data: '))?.slice(6) ?? 'null',
-            ) as unknown;
-            const following =
-              this.#log.scrollHeight - this.#log.scrollTop - this.#log.clientHeight < 120;
-            if (event === 'sources') {
-              turn.sources = chatSources(data);
-              for (const source of turn.sources) addSource(source.title, source.url);
-              research.hidden = !found.size;
-              stage.textContent = this.#text.found;
-            } else if (event === 'suggestions')
+            const event = /^event: (.+)$/m.exec(block)?.[1];
+            const data = JSON.parse(/^data: (.*)$/m.exec(block)?.[1] ?? 'null') as unknown;
+            if (event === 'sources') turn.sources = chatSources(data);
+            else if (event === 'suggestions')
               turn.followups = chatFollowups((data as { questions?: unknown } | null)?.questions);
-            else if (event === 'status') {
-              const status = data as { stage?: unknown; urls?: unknown } | null;
-              if (status?.stage === 'search' || status?.stage === 'web') {
-                const label = status.stage === 'web' ? this.#text.web : this.#text.searching;
-                this.#status.textContent = label;
-                stage.textContent = label;
-                research.hidden = false;
-                if (Array.isArray(status.urls))
-                  for (const raw of status.urls.slice(0, 10)) {
-                    const url = chatSourceUrl(raw);
-                    if (url) addSource(url, url);
-                  }
-              }
-            } else if (event === 'delta') {
+            else if (event === 'status' && (data as { stage?: string } | null)?.stage === 'web')
+              this.#status.textContent = this.#text.web;
+            else if (event === 'delta') {
               const delta = (data as { text?: unknown } | null)?.text;
               if (typeof delta !== 'string' || turn.content.length + delta.length > MAX_ASSISTANT)
                 throw new ChatError('protocol');
@@ -1387,14 +1333,10 @@ const runtime = cs
             } else if (event === 'done') done = true;
             else if (event === 'error')
               throw new ChatError((data as { code?: unknown } | null)?.code);
-            if (following) this.#log.scrollTop = this.#log.scrollHeight;
           }
         }
         // Without `done` the connection dropped mid-answer.
         if (!done || !turn.content.trim()) throw new ChatError('protocol');
-        research.open = false;
-        research.hidden = !found.size;
-        stage.textContent = this.#text.found;
         this.#status.textContent = this.#text.ready;
       } catch (error) {
         if (stale()) return;
@@ -1914,27 +1856,27 @@ const runtime = cs
     animation: caret 900ms steps(1, end) infinite;
   }
 
-  .msg__research {
-    color: var(--muted);
-    font-size: 0.8125rem;
+  .msg__dots {
+    display: flex;
+    gap: 0.3rem;
+    height: 1.5rem;
+    align-items: center;
   }
 
-  .msg__research summary {
-    min-height: 2rem;
-    cursor: pointer;
+  .msg__dots i {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: breathe 1s ease-in-out infinite;
   }
 
-  .msg__research ul {
-    display: grid;
-    gap: 0.4rem;
-    max-height: 12rem;
-    overflow-y: auto;
-    overflow-wrap: anywhere;
+  .msg__dots i:nth-child(2) {
+    animation-delay: 150ms;
   }
 
-  .msg__research a {
-    display: inline-block;
-    padding-block: 0.25rem;
+  .msg__dots i:nth-child(3) {
+    animation-delay: 300ms;
   }
 
   .msg__sources {
@@ -2272,6 +2214,13 @@ const runtime = cs
   @keyframes caret {
     50% {
       opacity: 0;
+    }
+  }
+
+  @keyframes breathe {
+    50% {
+      opacity: 0.25;
+      transform: scale(0.75);
     }
   }
 

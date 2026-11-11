@@ -55,10 +55,6 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
 - The body may be up to 9 MiB, including base64 overhead for all three documents; text keeps its limits (12 turns, 2,000 characters per question,
   6,000 per answer, 30,000 in total). Text-only requests are unchanged.
 - Events: `status` (`{ "stage": "search" }`, then `{ "stage": "web" }` when a web search runs),
-  with optional `urls` on web status updates from completed provider search actions. These are
-  deduplicated, capped at ten and checked by the existing owner URL policy. They are progress,
-  not evidence; only the separate citation-checked sources can support the final answer.
-  Subsequent events are
   `sources` (sent again with the web results appended; the last list is the complete one),
   `delta`, then `suggestions` (`{ "questions": ["…", "…", "…"] }`) and `done`, or `error`.
   Provider safety refusals may omit suggestions. Citations `[S1]`…`[S10]` refer to the last `sources` list.
@@ -79,10 +75,6 @@ by hand ──▶ owner-cv-page-1.md + owner-cv-page-2.md ──▶ AI Search (t
   Existing data migrates only when the current key is absent; old keys are retired after successful
   writes. An empty current envelope prevents deleted legacy conversations from returning.
 - Browser verification has its own visible state and bounded wait, before retrieval starts.
-  The browser immediately shows a short acknowledgement before that check, without another
-  model call or unverified factual claims. It then shows indexed source titles and actual
-  provider search URLs while work runs. The source list collapses after completion. This
-  acknowledgement and progress stay outside conversation history; only the final answer is saved.
   Logs record retrieval, first-token, optional web-search and total timing without message text.
 - Retrieval sends the latest question separately from up to three earlier text turns in one rewrite
   envelope. History resolves references; it must not replace a new topic. Hybrid keyword matching
